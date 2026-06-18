@@ -1,13 +1,27 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarDays,
+  NotebookPen,
+  TrendingDown,
+  Wallet,
+} from "lucide-react";
 
+import { RecentNotes } from "@/components/dashboard/recent-notes";
+import { DashboardUpcoming } from "@/components/dashboard/upcoming-list";
+import { StatCard } from "@/components/stat-card";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { displayName, greetingForTimeZone } from "@/lib/format";
+import { upcomingEvents } from "@/lib/agenda";
+import { listEvents } from "@/lib/data/events";
+import { listNotes } from "@/lib/data/notes";
+import { listTransactions } from "@/lib/data/transactions";
+import { currentMonthKey, summariseMonth } from "@/lib/finance";
+import { displayName, formatEuro, greetingForTimeZone } from "@/lib/format";
 import { navItems } from "@/lib/nav";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -19,31 +33,77 @@ const MODULE_BESCHRIJVING: Record<string, string> = {
 };
 
 export default async function DashboardPage() {
-  let email: string | null = null;
-
-  if (supabaseConfigured) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    email = user?.email ?? null;
+  if (!supabaseConfigured) {
+    return <PreviewDashboard />;
   }
 
-  const name = displayName(email);
-  const greeting = greetingForTimeZone();
-  const modules = navItems.filter((item) => item.href !== "/dashboard");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [notes, transactions, events] = await Promise.all([
+    listNotes(),
+    listTransactions(),
+    listEvents(),
+  ]);
+
+  const name = displayName(user?.email);
+  const summary = summariseMonth(transactions, currentMonthKey());
+  const upcoming = upcomingEvents(events, new Date(), 5);
 
   return (
     <div className="space-y-8">
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          {greeting}, {name}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Welkom in je persoonlijke portaal. Kies een module om te beginnen.
-        </p>
+      <Greeting name={name} />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Saldo deze maand"
+          value={formatEuro(summary.saldo)}
+          icon={Wallet}
+          valueClassName={
+            summary.saldo < 0 ? "text-rose-600 dark:text-rose-400" : undefined
+          }
+        />
+        <StatCard
+          label="Uitgaven deze maand"
+          value={formatEuro(summary.uitgaven)}
+          icon={TrendingDown}
+        />
+        <StatCard
+          label="Komende afspraken"
+          value={upcoming.length}
+          icon={CalendarDays}
+        />
+        <StatCard label="Notities" value={notes.length} icon={NotebookPen} />
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-2">
+        <RecentNotes notes={notes.slice(0, 4)} />
+        <DashboardUpcoming events={upcoming} />
+      </div>
+    </div>
+  );
+}
+
+function Greeting({ name }: { name: string }) {
+  return (
+    <div className="space-y-1">
+      <h2 className="text-2xl font-semibold tracking-tight">
+        {greetingForTimeZone()}, {name}
+      </h2>
+      <p className="text-sm text-muted-foreground">
+        Hier is je overzicht voor vandaag.
+      </p>
+    </div>
+  );
+}
+
+function PreviewDashboard() {
+  const modules = navItems.filter((item) => item.href !== "/dashboard");
+  return (
+    <div className="space-y-8">
+      <Greeting name="Jarno" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map((item) => (
           <Link key={item.href} href={item.href} className="group">
