@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
 
 /** Datum in NL-notatie, standaard "12 jun 2026". */
@@ -14,6 +14,13 @@ export function formatDateTime(value: string | Date) {
 /** Relatieve tijd, "3 dagen geleden". */
 export function fromNow(value: string | Date) {
   return formatDistanceToNow(new Date(value), { addSuffix: true, locale: nl });
+}
+
+/** Tijdstip "14:30" (lokale tijd). */
+export function formatTime(value: string | Date) {
+  return format(typeof value === "string" ? parseISO(value) : value, "HH:mm", {
+    locale: nl,
+  });
 }
 
 /** Bedrag in euro, Belgische notatie ("€ 1.234,56"). */

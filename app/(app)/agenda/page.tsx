@@ -1,25 +1,20 @@
-import { CalendarDays, Plus } from "lucide-react";
+import { AgendaView } from "@/components/agenda/agenda-view";
+import { currentDayKey, upcomingEvents } from "@/lib/agenda";
+import { listEvents } from "@/lib/data/events";
+import { currentMonthKey } from "@/lib/month";
+import { supabaseConfigured } from "@/lib/supabase/env";
 
-import { EmptyState } from "@/components/empty-state";
-import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
+export default async function AgendaPage() {
+  const events = supabaseConfigured ? await listEvents() : [];
+  const upcoming = upcomingEvents(events, new Date(), 5);
 
-export default function AgendaPage() {
   return (
-    <div>
-      <PageHeader
-        title="Agenda"
-        description="Je afspraken en komende activiteiten."
-      >
-        <Button disabled>
-          <Plus className="size-4" /> Nieuwe afspraak
-        </Button>
-      </PageHeader>
-      <EmptyState
-        icon={CalendarDays}
-        title="Module in aanbouw"
-        description="De agenda-module wordt zo geactiveerd."
-      />
-    </div>
+    <AgendaView
+      events={events}
+      upcoming={upcoming}
+      initialMonth={currentMonthKey()}
+      todayKey={currentDayKey()}
+      preview={!supabaseConfigured}
+    />
   );
 }

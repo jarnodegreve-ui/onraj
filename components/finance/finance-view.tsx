@@ -1,19 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { FinanceCharts } from "@/components/finance/finance-charts";
 import { TransactionEditor } from "@/components/finance/transaction-editor";
 import { TransactionList } from "@/components/finance/transaction-list";
+import { MonthSelector } from "@/components/month-selector";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +23,6 @@ import {
   monthKeyOf,
   monthLabel,
   monthlyTrend,
-  shiftMonth,
   summariseMonth,
 } from "@/lib/finance";
 import { formatEuro } from "@/lib/format";
@@ -167,40 +160,6 @@ export function FinanceView({
         defaultDate={defaultDate}
         categories={allCategories}
       />
-    </div>
-  );
-}
-
-function MonthSelector({
-  month,
-  onChange,
-}: {
-  month: string;
-  onChange: (month: string) => void;
-}) {
-  return (
-    <div className="flex items-center gap-1 rounded-lg border bg-card p-0.5">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7"
-        onClick={() => onChange(shiftMonth(month, -1))}
-        aria-label="Vorige maand"
-      >
-        <ChevronLeft className="size-4" />
-      </Button>
-      <span className="min-w-28 text-center text-sm font-medium capitalize">
-        {monthLabel(month)}
-      </span>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7"
-        onClick={() => onChange(shiftMonth(month, 1))}
-        aria-label="Volgende maand"
-      >
-        <ChevronRight className="size-4" />
-      </Button>
     </div>
   );
 }
