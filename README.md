@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ONRAJ — Persoonlijk portaal
 
-## Getting Started
+Eén persoonlijk portaal voor **notities**, **financiën**, **agenda** en een
+**dashboard**. Gebouwd met Next.js (App Router) + Supabase + Tailwind/shadcn,
+gehost op Vercel. Single-user.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Next.js 16 (App Router) · React 19 · TypeScript (strict)
+- Tailwind CSS v4 + shadcn/ui (Base UI)
+- Supabase (Postgres + Auth) via `@supabase/ssr`
+- Recharts · date-fns (`nl`) · zod
+
+## Aan de slag
+
+1. `npm install`
+2. Maak een Supabase-project, kopieer `.env.example` → `.env.local` en vul in:
+   - `NEXT_PUBLIC_SUPABASE_URL` en `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Supabase → Project Settings → API)
+   - `ALLOWED_EMAIL` — enkel dit adres mag inloggen
+3. Draai `supabase/migrations/0001_init.sql` in de Supabase SQL-editor.
+4. Supabase → Authentication → URL Configuration: zet de **Site URL** en voeg
+   `…/auth/callback` toe aan de redirect-URLs (zowel `http://localhost:3000` als
+   je Vercel-domein).
+5. Zet **public signups uit** (Authentication → Sign In / Providers).
+6. `npm run dev` → http://localhost:3000
+
+> Zonder ingevulde `.env.local` draait ONRAJ in **preview-modus**: de shell is
+> zichtbaar, maar login en data zijn uitgeschakeld.
+
+## Scripts
+
+| Script          | Doel                       |
+| --------------- | -------------------------- |
+| `npm run dev`   | Dev-server (Turbopack)     |
+| `npm run build` | Productiebuild             |
+| `npm start`     | Productieserver            |
+| `npm run lint`  | ESLint                     |
+
+## Structuur
+
+```
+app/
+  (app)/            beschermde shell: dashboard, notities, financien, agenda
+  (auth)/login      magic-link login
+  auth/callback     wisselt de code in voor een sessie + e-mail-allowlist
+components/         app-shell + ui/ (shadcn)
+lib/
+  supabase/         server-/browser-clients, sessie-proxy, env-detectie
+  mappers.ts        snake_case (DB) ↔ camelCase (app)
+  types.ts · format.ts · nav.ts
+supabase/migrations/0001_init.sql   tabellen + RLS + triggers
+proxy.ts            route-bescherming (Next 16-conventie)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Auth & beveiliging
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Single-user via Supabase **magic link**. `proxy.ts` beschermt alle routes en
+ververst de sessie; `app/auth/callback` controleert de `ALLOWED_EMAIL`-allowlist.
+**Row Level Security** in Postgres scope't elke query op `auth.uid()`, dus je
+ziet enkel je eigen data.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy (Vercel)
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Koppel deze repo aan een **nieuw** Vercel-project.
+- Zet dezelfde env-vars (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+  `ALLOWED_EMAIL`).
+- Voeg het Vercel-domein toe aan de Supabase Auth redirect-URLs.
