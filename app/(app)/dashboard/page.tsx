@@ -23,7 +23,12 @@ import { listNotes } from "@/lib/data/notes";
 import { listTasks } from "@/lib/data/tasks";
 import { listTransactions } from "@/lib/data/transactions";
 import { currentMonthKey, summariseMonth } from "@/lib/finance";
-import { displayName, formatEuro, greetingForTimeZone } from "@/lib/format";
+import {
+  displayName,
+  formatDate,
+  formatEuro,
+  greetingForTimeZone,
+} from "@/lib/format";
 import { navItems } from "@/lib/nav";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -99,8 +104,8 @@ function Greeting({ name }: { name: string }) {
       <h2 className="text-2xl font-semibold tracking-tight">
         {greetingForTimeZone()}, {name}
       </h2>
-      <p className="text-sm text-muted-foreground">
-        Hier is je overzicht voor vandaag.
+      <p className="text-sm text-muted-foreground first-letter:uppercase">
+        {formatDate(currentDayKey(), "EEEE d MMMM")}
       </p>
     </div>
   );

@@ -18,7 +18,7 @@ export function AppTopbar() {
         orientation="vertical"
         className="mr-1 data-[orientation=vertical]:h-4"
       />
-      <h1 className="text-sm font-medium">{current?.title ?? "ONRAJ"}</h1>
+      <h1 className="text-sm font-semibold">{current?.title ?? "ONRAJ"}</h1>
       <div className="ml-auto">
         <CommandPalette />
       </div>

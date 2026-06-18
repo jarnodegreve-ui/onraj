@@ -58,9 +58,9 @@ export function LoginForm({ error }: { error?: string }) {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm shadow-xl">
       <CardHeader className="items-center text-center">
-        <div className="mx-auto mb-1 flex size-11 items-center justify-center rounded-xl bg-primary text-lg font-semibold text-primary-foreground">
+        <div className="mx-auto mb-1 flex size-12 items-center justify-center rounded-xl bg-primary text-xl font-semibold text-primary-foreground shadow-sm">
           O
         </div>
         <CardTitle className="text-xl">ONRAJ</CardTitle>
