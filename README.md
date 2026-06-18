@@ -17,7 +17,8 @@ gehost op Vercel. Single-user.
 2. Maak een Supabase-project, kopieer `.env.example` → `.env.local` en vul in:
    - `NEXT_PUBLIC_SUPABASE_URL` en `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Supabase → Project Settings → API)
    - `ALLOWED_EMAIL` — enkel dit adres mag inloggen
-3. Draai `supabase/migrations/0001_init.sql` in de Supabase SQL-editor.
+3. Draai de migraties in `supabase/migrations/` in volgorde in de Supabase
+   SQL-editor: eerst `0001_init.sql`, daarna `0002_extensions.sql`.
 4. Supabase → Authentication → URL Configuration: zet de **Site URL** en voeg
    `…/auth/callback` toe aan de redirect-URLs (zowel `http://localhost:3000` als
    je Vercel-domein).
@@ -40,7 +41,8 @@ gehost op Vercel. Single-user.
 
 ```
 app/
-  (app)/            beschermde shell: dashboard, notities, financien, agenda
+  (app)/            beschermde shell: dashboard, taken, notities, financien, agenda
+  api/notes/export  ZIP-export van notities als .md (Obsidian)
   (auth)/login      magic-link login
   auth/callback     wisselt de code in voor een sessie + e-mail-allowlist
 components/         app-shell + ui/ (shadcn)
@@ -48,7 +50,7 @@ lib/
   supabase/         server-/browser-clients, sessie-proxy, env-detectie
   mappers.ts        snake_case (DB) ↔ camelCase (app)
   types.ts · format.ts · nav.ts
-supabase/migrations/0001_init.sql   tabellen + RLS + triggers
+supabase/migrations/  0001 (basis) + 0002 (taken/budgetten/vaste posten) — RLS + triggers
 proxy.ts            route-bescherming (Next 16-conventie)
 ```
 
