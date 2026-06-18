@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { NotebookPen, Plus, Search } from "lucide-react";
+import { Download, NotebookPen, Plus, Search } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { NoteCard } from "@/components/notes/note-card";
@@ -55,12 +55,22 @@ export function NotesView({
     setEditorOpen(true);
   }
 
+  function exportNotes() {
+    // De route stuurt een ZIP met één .md-bestand per notitie (Obsidian-klaar).
+    window.location.href = "/api/notes/export";
+  }
+
   return (
     <div>
       <PageHeader
         title="Notities"
         description="Je markdown-notities met tags en zoeken."
       >
+        {!preview && notes.length > 0 && (
+          <Button variant="outline" onClick={exportNotes}>
+            <Download className="size-4" /> Exporteer
+          </Button>
+        )}
         <Button onClick={openNew} disabled={preview}>
           <Plus className="size-4" /> Nieuwe notitie
         </Button>
