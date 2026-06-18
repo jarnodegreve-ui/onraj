@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Loader2, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, Loader2, LogIn } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
@@ -17,16 +18,18 @@ import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
-type Status = "idle" | "sending" | "sent" | "error";
+type Status = "idle" | "signing" | "resetSent";
 
-// Vertaalt foutcodes uit de auth-callback naar leesbare meldingen.
+// Vertaalt foutcodes uit de proxy/callback naar leesbare meldingen.
 const ERROR_MESSAGES: Record<string, string> = {
   "geen-toegang": "Dit account heeft geen toegang tot ONRAJ.",
-  auth: "Aanmelden mislukt. Vraag de magische link opnieuw aan.",
+  auth: "Aanmelden mislukt. Probeer opnieuw.",
 };
 
 export function LoginForm({ error }: { error?: string }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string | null>(
     error ? (ERROR_MESSAGES[error] ?? "Er ging iets mis.") : null,
@@ -34,28 +37,52 @@ export function LoginForm({ error }: { error?: string }) {
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-
     if (!supabaseConfigured) {
-      setStatus("error");
       setMessage("Supabase is nog niet geconfigureerd.");
       return;
     }
 
-    setStatus("sending");
+    setStatus("signing");
     setMessage(null);
 
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithOtp({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      password,
     });
 
     if (signInError) {
-      setStatus("error");
-      setMessage(signInError.message);
+      setStatus("idle");
+      setMessage(
+        signInError.message === "Invalid login credentials"
+          ? "Onjuist e-mailadres of wachtwoord."
+          : signInError.message,
+      );
     } else {
-      setStatus("sent");
+      router.push("/dashboard");
+      router.refresh();
     }
+  }
+
+  async function onReset() {
+    if (!supabaseConfigured) {
+      setMessage("Supabase is nog niet geconfigureerd.");
+      return;
+    }
+    if (!email) {
+      setMessage("Vul eerst je e-mailadres in.");
+      return;
+    }
+
+    setMessage(null);
+    const supabase = createClient();
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      email,
+      { redirectTo: `${window.location.origin}/auth/callback?next=/wachtwoord` },
+    );
+
+    if (resetError) setMessage(resetError.message);
+    else setStatus("resetSent");
   }
 
   return (
@@ -67,16 +94,17 @@ export function LoginForm({ error }: { error?: string }) {
           Overzicht · Focus · Groei
         </p>
         <CardDescription>
-          Meld je aan met je e-mailadres — je ontvangt een magische link.
+          Meld je aan met je e-mailadres en wachtwoord.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {status === "sent" ? (
+        {status === "resetSent" ? (
           <div className="flex flex-col items-center gap-2 py-4 text-center">
             <CheckCircle2 className="size-8 text-primary" />
             <p className="font-medium">Check je mailbox</p>
             <p className="text-sm text-muted-foreground">
-              We stuurden een aanmeldlink naar <strong>{email}</strong>.
+              We stuurden een link om je wachtwoord in te stellen naar{" "}
+              <strong>{email}</strong>.
             </p>
           </div>
         ) : (
@@ -87,25 +115,46 @@ export function LoginForm({ error }: { error?: string }) {
                 id="email"
                 type="email"
                 required
-                placeholder="jij@voorbeeld.be"
                 autoComplete="email"
+                placeholder="jij@voorbeeld.be"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Wachtwoord</Label>
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Wachtwoord vergeten?
+                </button>
+              </div>
+              <Input
+                id="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
               />
             </div>
             {message && <p className="text-sm text-destructive">{message}</p>}
             <Button
               type="submit"
               className="w-full"
-              disabled={status === "sending"}
+              disabled={status === "signing"}
             >
-              {status === "sending" ? (
+              {status === "signing" ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" /> Versturen…
+                  <Loader2 className="size-4 animate-spin" /> Aanmelden…
                 </>
               ) : (
                 <>
-                  <Mail className="size-4" /> Stuur magische link
+                  <LogIn className="size-4" /> Aanmelden
                 </>
               )}
             </Button>

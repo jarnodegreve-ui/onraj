@@ -43,8 +43,9 @@ gehost op Vercel. Single-user.
 app/
   (app)/            beschermde shell: dashboard, taken, notities, financien, agenda
   api/notes/export  ZIP-export van notities als .md (Obsidian)
-  (auth)/login      magic-link login
-  auth/callback     wisselt de code in voor een sessie + e-mail-allowlist
+  (auth)/login      e-mail + wachtwoord login
+  auth/callback     wisselt de reset-code in voor een sessie
+  wachtwoord        wachtwoord instellen / resetten
 components/         app-shell + ui/ (shadcn)
 lib/
   supabase/         server-/browser-clients, sessie-proxy, env-detectie
@@ -56,10 +57,14 @@ proxy.ts            route-bescherming (Next 16-conventie)
 
 ## Auth & beveiliging
 
-Single-user via Supabase **magic link**. `proxy.ts` beschermt alle routes en
-ververst de sessie; `app/auth/callback` controleert de `ALLOWED_EMAIL`-allowlist.
-**Row Level Security** in Postgres scope't elke query op `auth.uid()`, dus je
-ziet enkel je eigen data.
+Single-user via Supabase **e-mail + wachtwoord** (`signInWithPassword`). Je
+wachtwoord instellen of resetten gaat via "Wachtwoord vergeten?" → reset-mail →
+`app/wachtwoord`. `proxy.ts` beschermt alle routes, ververst de sessie en dwingt
+de **`ALLOWED_EMAIL`-allowlist** af. **Row Level Security** in Postgres scope't
+elke query op `auth.uid()`, dus je ziet enkel je eigen data.
+
+> Eerste keer inloggen? Je account heeft nog geen wachtwoord — gebruik
+> **"Wachtwoord vergeten?"** op de loginpagina om er meteen een in te stellen.
 
 ## Deploy (Vercel)
 

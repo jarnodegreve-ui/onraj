@@ -6,6 +6,9 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseConfigured } from "./env";
 // Routes die zonder sessie bereikbaar moeten blijven.
 const PUBLIC_PREFIXES = ["/login", "/auth"];
 
+// Single-user allowlist: enkel dit e-mailadres krijgt toegang.
+const ALLOWED_EMAIL = process.env.ALLOWED_EMAIL?.toLowerCase();
+
 /**
  * Ververst de Supabase-sessie bij elke request en beschermt de routes:
  * niet-ingelogde gebruikers worden naar /login gestuurd, ingelogde gebruikers
@@ -42,16 +45,22 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Toegang vereist een sessie én (indien gezet) het juiste e-mailadres.
+  const allowed =
+    !!user && (!ALLOWED_EMAIL || user.email?.toLowerCase() === ALLOWED_EMAIL);
+
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
-  if (!user && !isPublic) {
+  if (!allowed && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    // Wel ingelogd maar niet op de allowlist → toon de foutmelding.
+    if (user) url.searchParams.set("error", "geen-toegang");
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname === "/login") {
+  if (allowed && pathname === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
