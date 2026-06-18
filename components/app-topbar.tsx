@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
+import { CommandPalette } from "@/components/command-palette";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { activeNavItem } from "@/lib/nav";
@@ -18,6 +19,9 @@ export function AppTopbar() {
         className="mr-1 data-[orientation=vertical]:h-4"
       />
       <h1 className="text-sm font-medium">{current?.title ?? "ONRAJ"}</h1>
+      <div className="ml-auto">
+        <CommandPalette />
+      </div>
     </header>
   );
 }
