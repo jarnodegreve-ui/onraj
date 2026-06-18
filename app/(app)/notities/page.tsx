@@ -1,25 +1,8 @@
-import { NotebookPen, Plus } from "lucide-react";
+import { NotesView } from "@/components/notes/notes-view";
+import { listNotes } from "@/lib/data/notes";
+import { supabaseConfigured } from "@/lib/supabase/env";
 
-import { EmptyState } from "@/components/empty-state";
-import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
-
-export default function NotitiesPage() {
-  return (
-    <div>
-      <PageHeader
-        title="Notities"
-        description="Je markdown-notities met tags en zoeken."
-      >
-        <Button disabled>
-          <Plus className="size-4" /> Nieuwe notitie
-        </Button>
-      </PageHeader>
-      <EmptyState
-        icon={NotebookPen}
-        title="Module in aanbouw"
-        description="De notities-module wordt zo geactiveerd."
-      />
-    </div>
-  );
+export default async function NotitiesPage() {
+  const notes = supabaseConfigured ? await listNotes() : [];
+  return <NotesView notes={notes} preview={!supabaseConfigured} />;
 }
