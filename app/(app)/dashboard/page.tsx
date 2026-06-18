@@ -2,12 +2,13 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarDays,
-  NotebookPen,
+  ListTodo,
   TrendingDown,
   Wallet,
 } from "lucide-react";
 
 import { RecentNotes } from "@/components/dashboard/recent-notes";
+import { DashboardTasks } from "@/components/dashboard/tasks-list";
 import { DashboardUpcoming } from "@/components/dashboard/upcoming-list";
 import { StatCard } from "@/components/stat-card";
 import {
@@ -16,9 +17,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { upcomingEvents } from "@/lib/agenda";
+import { currentDayKey, upcomingEvents } from "@/lib/agenda";
 import { listEvents } from "@/lib/data/events";
 import { listNotes } from "@/lib/data/notes";
+import { listTasks } from "@/lib/data/tasks";
 import { listTransactions } from "@/lib/data/transactions";
 import { currentMonthKey, summariseMonth } from "@/lib/finance";
 import { displayName, formatEuro, greetingForTimeZone } from "@/lib/format";
@@ -27,6 +29,7 @@ import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 const MODULE_BESCHRIJVING: Record<string, string> = {
+  "/taken": "Je to-do's met deadlines.",
   "/notities": "Markdown-notities met tags en zoeken.",
   "/financien": "Inkomsten, uitgaven en maandoverzicht.",
   "/agenda": "Je afspraken en komende activiteiten.",
@@ -42,15 +45,18 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [notes, transactions, events] = await Promise.all([
+  const [notes, transactions, events, tasks] = await Promise.all([
     listNotes(),
     listTransactions(),
     listEvents(),
+    listTasks(),
   ]);
 
   const name = displayName(user?.email);
+  const todayKey = currentDayKey();
   const summary = summariseMonth(transactions, currentMonthKey());
   const upcoming = upcomingEvents(events, new Date(), 5);
+  const openTasks = tasks.filter((task) => !task.done);
 
   return (
     <div className="space-y-8">
@@ -70,15 +76,16 @@ export default async function DashboardPage() {
           value={formatEuro(summary.uitgaven)}
           icon={TrendingDown}
         />
+        <StatCard label="Open taken" value={openTasks.length} icon={ListTodo} />
         <StatCard
           label="Komende afspraken"
           value={upcoming.length}
           icon={CalendarDays}
         />
-        <StatCard label="Notities" value={notes.length} icon={NotebookPen} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <DashboardTasks tasks={openTasks.slice(0, 5)} todayKey={todayKey} />
         <RecentNotes notes={notes.slice(0, 4)} />
         <DashboardUpcoming events={upcoming} />
       </div>

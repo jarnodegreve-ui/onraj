@@ -1,0 +1,92 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+import { createClient } from "@/lib/supabase/server";
+import type { ActionResult } from "./result";
+
+const taskInput = z.object({
+  title: z.string().trim().min(1, "Geef een titel.").max(200),
+  dueOn: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Ongeldige datum.")
+    .nullable(),
+  notes: z.string().trim().max(2000),
+});
+
+export type TaskInput = z.infer<typeof taskInput>;
+
+function toRow(input: TaskInput) {
+  return {
+    title: input.title,
+    due_on: input.dueOn,
+    notes: input.notes || null,
+  };
+}
+
+function revalidateTasks() {
+  revalidatePath("/taken");
+  revalidatePath("/dashboard");
+}
+
+export async function createTask(input: TaskInput): Promise<ActionResult> {
+  const parsed = taskInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Ongeldige invoer.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("tasks").insert(toRow(parsed.data));
+  if (error) return { ok: false, error: error.message };
+
+  revalidateTasks();
+  return { ok: true };
+}
+
+export async function updateTask(
+  id: string,
+  input: TaskInput,
+): Promise<ActionResult> {
+  const parsed = taskInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Ongeldige invoer.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tasks")
+    .update(toRow(parsed.data))
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidateTasks();
+  return { ok: true };
+}
+
+export async function setTaskDone(
+  id: string,
+  done: boolean,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("tasks").update({ done }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidateTasks();
+  return { ok: true };
+}
+
+export async function deleteTask(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("tasks").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidateTasks();
+  return { ok: true };
+}

@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   LayoutDashboard,
+  ListTodo,
   NotebookPen,
   Wallet,
   type LucideIcon,
@@ -15,6 +16,7 @@ export type NavItem = {
 /** De vier modules van het portaal — gedeeld door de sidebar en de topbar. */
 export const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Taken", href: "/taken", icon: ListTodo },
   { title: "Notities", href: "/notities", icon: NotebookPen },
   { title: "Financiën", href: "/financien", icon: Wallet },
   { title: "Agenda", href: "/agenda", icon: CalendarDays },

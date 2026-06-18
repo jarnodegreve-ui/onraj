@@ -77,3 +77,78 @@ export interface EventRow {
   created_at: string;
   updated_at: string;
 }
+
+// ─── Taken ──────────────────────────────────────────────────────────────────
+
+export interface Task {
+  id: string;
+  title: string;
+  done: boolean;
+  dueOn: string | null; // ISO-datum (YYYY-MM-DD)
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskRow {
+  id: string;
+  user_id: string;
+  title: string;
+  done: boolean;
+  due_on: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ─── Budgetten ──────────────────────────────────────────────────────────────
+
+export interface Budget {
+  id: string;
+  category: string;
+  amount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BudgetRow {
+  id: string;
+  user_id: string;
+  category: string;
+  amount: number | string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ─── Terugkerende transacties ────────────────────────────────────────────────
+
+export interface RecurringTransaction {
+  id: string;
+  amount: number;
+  direction: TransactieRichting;
+  category: string;
+  description: string;
+  account: string | null;
+  dayOfMonth: number;
+  active: boolean;
+  startMonth: string; // 'YYYY-MM'
+  lastGeneratedMonth: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecurringTransactionRow {
+  id: string;
+  user_id: string;
+  amount: number | string;
+  direction: TransactieRichting;
+  category: string;
+  description: string;
+  account: string | null;
+  day_of_month: number;
+  active: boolean;
+  start_month: string;
+  last_generated_month: string | null;
+  created_at: string;
+  updated_at: string;
+}
