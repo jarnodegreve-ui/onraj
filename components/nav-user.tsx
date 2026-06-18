@@ -51,7 +51,7 @@ export function NavUser({ email }: { email: string | null }) {
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
                 <Avatar className="size-8">
-                  <AvatarFallback className="bg-primary/10 font-medium text-primary">
+                  <AvatarFallback className="bg-primary font-medium text-primary-foreground">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -59,7 +59,7 @@ export function NavUser({ email }: { email: string | null }) {
                   <span className="truncate font-medium">
                     {email ?? "Niet aangemeld"}
                   </span>
-                  <span className="truncate text-xs text-muted-foreground">
+                  <span className="truncate text-xs text-sidebar-foreground/60">
                     {supabaseConfigured ? "Aangemeld" : "Preview-modus"}
                   </span>
                 </div>

@@ -72,18 +72,24 @@
   --input: oklch(0.929 0.009 247.86);
   --ring: oklch(0.546 0.215 262.88); /* blauwe focus-ring */
   --chart-1: oklch(0.546 0.215 262.88); /* blauw */
-  --chart-2: oklch(0.696 0.17 162.48); /* groen */
-  --chart-3: oklch(0.769 0.16 70.08); /* amber */
-  --chart-4: oklch(0.627 0.227 303.9); /* violet */
+  --chart-2: oklch(0.704 0.123 184); /* teal */
+  --chart-3: oklch(0.627 0.227 303.9); /* paars */
+  --chart-4: oklch(0.769 0.16 70.08); /* amber */
   --chart-5: oklch(0.637 0.208 25.33); /* rood */
   --radius: 0.625rem;
-  --sidebar: oklch(1 0 0); /* witte sidebar */
-  --sidebar-foreground: oklch(0.21 0.03 256.85);
-  --sidebar-primary: oklch(0.546 0.215 262.88);
+  /* ONRAJ-huisstijl brand-kleuren */
+  --brand-blue: #2563eb;
+  --brand-teal: #14b8a6;
+  --brand-purple: #a855f7;
+  --brand-navy: #0d132b;
+  /* Donkere navy sidebar (huisstijl) — ook in lichte modus. */
+  --sidebar: oklch(0.19 0.045 266); /* navy #0D132B */
+  --sidebar-foreground: oklch(0.92 0.012 250); /* lichte tekst */
+  --sidebar-primary: oklch(0.546 0.215 262.88); /* blauw */
   --sidebar-primary-foreground: oklch(0.985 0.01 247.86);
-  --sidebar-accent: oklch(0.968 0.013 253); /* faint blauw, actief/hover */
-  --sidebar-accent-foreground: oklch(0.424 0.135 262.88); /* blauwe nav-tekst */
-  --sidebar-border: oklch(0.929 0.009 247.86);
+  --sidebar-accent: oklch(0.28 0.05 264); /* lichter navy, actief/hover */
+  --sidebar-accent-foreground: oklch(0.985 0.005 247.86); /* wit */
+  --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.546 0.215 262.88);
 }
 
@@ -107,9 +113,9 @@
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.623 0.19 259.8);
   --chart-1: oklch(0.623 0.19 259.8);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.16 70.08);
-  --chart-4: oklch(0.627 0.227 303.9);
+  --chart-2: oklch(0.704 0.123 184);
+  --chart-3: oklch(0.627 0.227 303.9);
+  --chart-4: oklch(0.769 0.16 70.08);
   --chart-5: oklch(0.637 0.208 25.33);
   --sidebar: oklch(0.208 0.04 265.75);
   --sidebar-foreground: oklch(0.984 0.003 247.86);

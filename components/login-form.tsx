@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2, Loader2, Mail } from "lucide-react";
 
+import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -60,10 +61,11 @@ export function LoginForm({ error }: { error?: string }) {
   return (
     <Card className="w-full max-w-sm shadow-xl">
       <CardHeader className="items-center text-center">
-        <div className="mx-auto mb-1 flex size-12 items-center justify-center rounded-xl bg-primary text-xl font-semibold text-primary-foreground shadow-sm">
-          O
-        </div>
+        <BrandMark className="mx-auto mb-1 size-12" />
         <CardTitle className="text-xl">ONRAJ</CardTitle>
+        <p className="text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase">
+          Overzicht · Focus · Groei
+        </p>
         <CardDescription>
           Meld je aan met je e-mailadres — je ontvangt een magische link.
         </CardDescription>

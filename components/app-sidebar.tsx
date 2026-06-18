@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { BrandMark } from "@/components/brand-mark";
 import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
@@ -25,13 +26,11 @@ export function AppSidebar({ email }: { email: string | null }) {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-1 py-1.5">
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground">
-            O
-          </div>
+          <BrandMark className="size-8 shrink-0" />
           <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
             <span className="truncate font-semibold tracking-tight">ONRAJ</span>
-            <span className="truncate text-xs text-muted-foreground">
-              Persoonlijk portaal
+            <span className="truncate text-[11px] tracking-wide text-sidebar-foreground/55">
+              Overzicht · Focus · Groei
             </span>
           </div>
         </div>

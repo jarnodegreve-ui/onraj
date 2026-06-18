@@ -2,33 +2,30 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarDays,
+  ChevronRight,
   ListTodo,
-  TrendingDown,
+  NotebookPen,
   Wallet,
+  type LucideIcon,
 } from "lucide-react";
 
 import { RecentNotes } from "@/components/dashboard/recent-notes";
 import { DashboardTasks } from "@/components/dashboard/tasks-list";
 import { DashboardUpcoming } from "@/components/dashboard/upcoming-list";
-import { StatCard } from "@/components/stat-card";
+import { WeekStrip } from "@/components/dashboard/week-strip";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { currentDayKey, upcomingEvents } from "@/lib/agenda";
+import { currentDayKey, eventDayKey, upcomingEvents } from "@/lib/agenda";
 import { listEvents } from "@/lib/data/events";
 import { listNotes } from "@/lib/data/notes";
 import { listTasks } from "@/lib/data/tasks";
 import { listTransactions } from "@/lib/data/transactions";
 import { currentMonthKey, summariseMonth } from "@/lib/finance";
-import {
-  displayName,
-  formatDate,
-  formatEuro,
-  greetingForTimeZone,
-} from "@/lib/format";
+import { displayName, formatDate, formatEuro } from "@/lib/format";
 import { navItems } from "@/lib/nav";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -62,32 +59,56 @@ export default async function DashboardPage() {
   const summary = summariseMonth(transactions, currentMonthKey());
   const upcoming = upcomingEvents(events, new Date(), 5);
   const openTasks = tasks.filter((task) => !task.done);
+  const eventsToday = events.filter(
+    (event) => eventDayKey(event) === todayKey,
+  ).length;
+
+  const cards = [
+    {
+      href: "/taken",
+      icon: ListTodo,
+      title: "Taken",
+      value: openTasks.length,
+      sublabel: "openstaand",
+      accent: "#14b8a6",
+    },
+    {
+      href: "/notities",
+      icon: NotebookPen,
+      title: "Notities",
+      value: notes.length,
+      sublabel: "actieve notities",
+      accent: "#2563eb",
+    },
+    {
+      href: "/agenda",
+      icon: CalendarDays,
+      title: "Agenda",
+      value: eventsToday,
+      sublabel: "afspraken vandaag",
+      accent: "#a855f7",
+    },
+    {
+      href: "/financien",
+      icon: Wallet,
+      title: "Financiën",
+      value: formatEuro(summary.saldo),
+      sublabel: "saldo deze maand",
+      accent: "#14b8a6",
+    },
+  ];
 
   return (
     <div className="space-y-8">
       <Greeting name={name} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Saldo deze maand"
-          value={formatEuro(summary.saldo)}
-          icon={Wallet}
-          valueClassName={
-            summary.saldo < 0 ? "text-rose-600 dark:text-rose-400" : undefined
-          }
-        />
-        <StatCard
-          label="Uitgaven deze maand"
-          value={formatEuro(summary.uitgaven)}
-          icon={TrendingDown}
-        />
-        <StatCard label="Open taken" value={openTasks.length} icon={ListTodo} />
-        <StatCard
-          label="Komende afspraken"
-          value={upcoming.length}
-          icon={CalendarDays}
-        />
+        {cards.map((card) => (
+          <ModuleCard key={card.href} {...card} />
+        ))}
       </div>
+
+      <WeekStrip events={events} todayKey={todayKey} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <DashboardTasks tasks={openTasks.slice(0, 5)} todayKey={todayKey} />
@@ -101,13 +122,53 @@ export default async function DashboardPage() {
 function Greeting({ name }: { name: string }) {
   return (
     <div className="space-y-1">
-      <h2 className="text-2xl font-semibold tracking-tight">
-        {greetingForTimeZone()}, {name}
+      <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+        Welkom terug, {name}! <span aria-hidden>👋</span>
       </h2>
       <p className="text-sm text-muted-foreground first-letter:uppercase">
         {formatDate(currentDayKey(), "EEEE d MMMM")}
       </p>
     </div>
+  );
+}
+
+function ModuleCard({
+  href,
+  icon: Icon,
+  title,
+  value,
+  sublabel,
+  accent,
+}: {
+  href: string;
+  icon: LucideIcon;
+  title: string;
+  value: React.ReactNode;
+  sublabel: string;
+  accent: string;
+}) {
+  return (
+    <Link href={href} className="group">
+      <div
+        data-slot="card"
+        className="flex items-center gap-4 rounded-xl border bg-card p-5 transition-colors group-hover:border-primary/30"
+      >
+        <div
+          className="flex size-11 shrink-0 items-center justify-center rounded-xl"
+          style={{ backgroundColor: `${accent}1a`, color: accent }}
+        >
+          <Icon className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="text-2xl font-semibold tracking-tight tabular-nums">
+            {value}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">{sublabel}</p>
+        </div>
+        <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+      </div>
+    </Link>
   );
 }
 
@@ -121,7 +182,13 @@ function PreviewDashboard() {
           <Link key={item.href} href={item.href} className="group">
             <Card className="h-full transition-colors hover:border-primary/40 hover:bg-accent/40">
               <CardHeader>
-                <div className="mb-2 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div
+                  className="mb-2 flex size-10 items-center justify-center rounded-lg"
+                  style={{
+                    backgroundColor: `${item.accent}1a`,
+                    color: item.accent,
+                  }}
+                >
                   <item.icon className="size-5" />
                 </div>
                 <CardTitle className="flex items-center justify-between">
