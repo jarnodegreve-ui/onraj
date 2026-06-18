@@ -6,6 +6,7 @@ import { Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { BudgetsCard } from "@/components/finance/budgets-card";
 import { FinanceCharts } from "@/components/finance/finance-charts";
+import { RecurringCard } from "@/components/finance/recurring-card";
 import { TransactionEditor } from "@/components/finance/transaction-editor";
 import { TransactionList } from "@/components/finance/transaction-list";
 import { MonthSelector } from "@/components/month-selector";
@@ -27,7 +28,7 @@ import {
   summariseMonth,
 } from "@/lib/finance";
 import { formatEuro } from "@/lib/format";
-import type { Budget, Transaction } from "@/lib/types";
+import type { Budget, RecurringTransaction, Transaction } from "@/lib/types";
 
 function todayIso() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -40,11 +41,13 @@ function todayIso() {
 export function FinanceView({
   transactions,
   budgets,
+  recurring,
   initialMonth,
   preview,
 }: {
   transactions: Transaction[];
   budgets: Budget[];
+  recurring: RecurringTransaction[];
   initialMonth: string;
   preview: boolean;
 }) {
@@ -150,6 +153,8 @@ export function FinanceView({
         spentByCategory={categories}
         categories={allCategories}
       />
+
+      <RecurringCard recurring={recurring} categories={allCategories} />
 
       <Card>
         <CardHeader>
