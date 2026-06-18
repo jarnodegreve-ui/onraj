@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
+import { BudgetsCard } from "@/components/finance/budgets-card";
 import { FinanceCharts } from "@/components/finance/finance-charts";
 import { TransactionEditor } from "@/components/finance/transaction-editor";
 import { TransactionList } from "@/components/finance/transaction-list";
@@ -26,7 +27,7 @@ import {
   summariseMonth,
 } from "@/lib/finance";
 import { formatEuro } from "@/lib/format";
-import type { Transaction } from "@/lib/types";
+import type { Budget, Transaction } from "@/lib/types";
 
 function todayIso() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -38,10 +39,12 @@ function todayIso() {
 
 export function FinanceView({
   transactions,
+  budgets,
   initialMonth,
   preview,
 }: {
   transactions: Transaction[];
+  budgets: Budget[];
   initialMonth: string;
   preview: boolean;
 }) {
@@ -141,6 +144,12 @@ export function FinanceView({
       </div>
 
       <FinanceCharts categories={categories} trend={trend} />
+
+      <BudgetsCard
+        budgets={budgets}
+        spentByCategory={categories}
+        categories={allCategories}
+      />
 
       <Card>
         <CardHeader>
