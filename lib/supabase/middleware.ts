@@ -20,6 +20,19 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // Een auth-/reset-code die niet op de callback binnenkomt (bv. wanneer
+  // Supabase terugvalt op de Site-URL en de code op "/" plakt) → doorsturen
+  // naar de callback die 'm inwisselt voor een sessie.
+  const incomingCode = request.nextUrl.searchParams.get("code");
+  if (incomingCode && !request.nextUrl.pathname.startsWith("/auth/callback")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    if (!url.searchParams.get("next")) {
+      url.searchParams.set("next", "/wachtwoord");
+    }
+    return NextResponse.redirect(url);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
