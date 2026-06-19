@@ -59,6 +59,7 @@ export function UpcomingEvents({
                       {event.allDay
                         ? " · Hele dag"
                         : ` · ${formatTime(event.startsAt)}`}
+                      {event.source === "google" && " · Google"}
                     </p>
                     {event.location && (
                       <p className="truncate text-xs text-muted-foreground">

@@ -36,6 +36,8 @@ export interface CalendarEvent {
   color: string | null;
   createdAt: string;
   updatedAt: string;
+  source: "local" | "google";
+  htmlLink: string | null; // alleen voor Google-events
 }
 
 // ─── Database-rijen, zoals Supabase ze teruggeeft ───────────────────────────

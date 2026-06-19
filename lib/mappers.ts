@@ -60,6 +60,8 @@ export function toCalendarEvent(row: EventRow): CalendarEvent {
     color: row.color,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    source: "local",
+    htmlLink: null,
   };
 }
 

@@ -24,7 +24,11 @@ export async function updateSession(request: NextRequest) {
   // Supabase terugvalt op de Site-URL en de code op "/" plakt) → doorsturen
   // naar de callback die 'm inwisselt voor een sessie.
   const incomingCode = request.nextUrl.searchParams.get("code");
-  if (incomingCode && !request.nextUrl.pathname.startsWith("/auth/callback")) {
+  if (
+    incomingCode &&
+    !request.nextUrl.pathname.startsWith("/auth/callback") &&
+    !request.nextUrl.pathname.startsWith("/api/")
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/callback";
     if (!url.searchParams.get("next")) {
