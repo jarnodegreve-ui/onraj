@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { Attachments } from "@/components/attachments";
 import { Markdown } from "@/components/markdown";
 import { TagInput } from "@/components/tag-input";
 import { Button } from "@/components/ui/button";
@@ -130,6 +131,8 @@ function NoteEditorForm({
             placeholder="Tag toevoegen en op Enter drukken"
           />
         </div>
+
+        {note && <Attachments entityType="note" entityId={note.id} />}
       </div>
 
       <DialogFooter>

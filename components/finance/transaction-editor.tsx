@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { Attachments } from "@/components/attachments";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -190,6 +191,10 @@ function TransactionForm({
             onChange={(event) => setAccount(event.target.value)}
           />
         </div>
+
+        {transaction && (
+          <Attachments entityType="transaction" entityId={transaction.id} />
+        )}
       </div>
 
       <DialogFooter>

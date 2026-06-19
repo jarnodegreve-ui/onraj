@@ -179,3 +179,16 @@ export interface SavingsGoalRow {
   created_at: string;
   updated_at: string;
 }
+
+// ─── Bijlagen ────────────────────────────────────────────────────────────────
+
+export type AttachmentEntity = "note" | "transaction";
+
+/** Bijlage zoals getoond in de client — met een tijdelijke (signed) URL. */
+export interface AttachmentView {
+  id: string;
+  name: string;
+  mime: string | null;
+  size: number | null;
+  url: string;
+}
