@@ -1,7 +1,9 @@
 "use client";
 
 import { useTransition } from "react";
-import { Check, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Check, GripVertical, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -21,11 +23,21 @@ export function TaskItem({
   task,
   todayKey,
   onEdit,
+  draggable,
 }: {
   task: Task;
   todayKey: string;
   onEdit: (task: Task) => void;
+  draggable: boolean;
 }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id, disabled: !draggable });
   const [pending, startTransition] = useTransition();
   const overdue = !task.done && !!task.dueOn && task.dueOn < todayKey;
   const meta = priorityMeta(task.priority);
@@ -47,7 +59,25 @@ export function TaskItem({
   }
 
   return (
-    <li className="flex items-center gap-3 py-2.5">
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(
+        "flex items-center gap-2.5 py-2.5",
+        isDragging && "relative z-10 opacity-80",
+      )}
+    >
+      {draggable && (
+        <button
+          type="button"
+          className="-ml-1 cursor-grab touch-none text-muted-foreground/60 hover:text-foreground"
+          aria-label="Versleep taak"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="size-4" />
+        </button>
+      )}
       <button
         type="button"
         onClick={toggle}

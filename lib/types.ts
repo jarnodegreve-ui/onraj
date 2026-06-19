@@ -9,6 +9,7 @@ export interface Note {
   body: string; // markdown
   tags: string[];
   pinned: boolean;
+  position: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -49,6 +50,7 @@ export interface NoteRow {
   body: string;
   tags: string[] | null;
   pinned: boolean;
+  position: number;
   created_at: string;
   updated_at: string;
 }
@@ -91,6 +93,7 @@ export interface Task {
   dueOn: string | null; // ISO-datum (YYYY-MM-DD)
   notes: string | null;
   priority: TaskPriority;
+  position: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -103,6 +106,7 @@ export interface TaskRow {
   due_on: string | null;
   notes: string | null;
   priority: TaskPriority;
+  position: number;
   created_at: string;
   updated_at: string;
 }

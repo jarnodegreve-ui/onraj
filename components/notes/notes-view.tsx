@@ -1,7 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  rectSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import { Download, NotebookPen, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
 import { NoteCard } from "@/components/notes/note-card";
@@ -9,6 +25,7 @@ import { NoteEditor } from "@/components/notes/note-editor";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { reorderNotes } from "@/lib/actions/reorder";
 import type { Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -21,8 +38,16 @@ export function NotesView({
 }) {
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [localOrder, setLocalOrder] = useState<string[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const allTags = useMemo(
     () =>
@@ -32,9 +57,13 @@ export function NotesView({
     [notes],
   );
 
-  const filtered = useMemo(() => {
+  // Verslepen kan enkel op de volledige lijst (geen zoek-/tagfilter actief),
+  // anders is de volgorde van een subset dubbelzinnig.
+  const dragEnabled = query.trim() === "" && activeTag === null;
+
+  const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return notes.filter((note) => {
+    const filtered = notes.filter((note) => {
       const matchesQuery =
         !q ||
         note.title.toLowerCase().includes(q) ||
@@ -43,7 +72,14 @@ export function NotesView({
       const matchesTag = !activeTag || note.tags.includes(activeTag);
       return matchesQuery && matchesTag;
     });
-  }, [notes, query, activeTag]);
+    const idx = new Map(localOrder.map((id, index) => [id, index]));
+    return filtered.sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1; // vastgepind eerst
+      const ai = idx.get(a.id) ?? 1e6 + a.position;
+      const bi = idx.get(b.id) ?? 1e6 + b.position;
+      return ai - bi;
+    });
+  }, [notes, query, activeTag, localOrder]);
 
   function openNew() {
     setEditing(null);
@@ -58,6 +94,22 @@ export function NotesView({
   function exportNotes() {
     // De route stuurt een ZIP met één .md-bestand per notitie (Obsidian-klaar).
     window.location.href = "/api/notes/export";
+  }
+
+  function onDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const ids = visible.map((note) => note.id);
+    const oldIndex = ids.indexOf(active.id as string);
+    const newIndex = ids.indexOf(over.id as string);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const newIds = arrayMove(ids, oldIndex, newIndex);
+    setLocalOrder(newIds);
+    void reorderNotes(newIds).then((result) => {
+      if (!result.ok) {
+        toast.error("Volgorde opslaan mislukt", { description: result.error });
+      }
+    });
   }
 
   return (
@@ -114,7 +166,7 @@ export function NotesView({
             </div>
           )}
 
-          {filtered.length === 0 ? (
+          {visible.length === 0 ? (
             <EmptyState
               icon={NotebookPen}
               title={notes.length === 0 ? "Nog geen notities" : "Niets gevonden"}
@@ -131,11 +183,27 @@ export function NotesView({
               )}
             </EmptyState>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((note) => (
-                <NoteCard key={note.id} note={note} onEdit={openEdit} />
-              ))}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onDragEnd}
+            >
+              <SortableContext
+                items={visible.map((note) => note.id)}
+                strategy={rectSortingStrategy}
+              >
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {visible.map((note) => (
+                    <NoteCard
+                      key={note.id}
+                      note={note}
+                      onEdit={openEdit}
+                      draggable={dragEnabled}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       )}

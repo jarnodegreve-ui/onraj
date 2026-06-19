@@ -1,7 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Download, ListTodo, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -9,12 +25,13 @@ import { TaskEditor } from "@/components/tasks/task-editor";
 import { TaskItem } from "@/components/tasks/task-item";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { reorderTasks } from "@/lib/actions/reorder";
 import { priorityMeta } from "@/lib/tasks";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Filter = "open" | "done" | "all";
-type Sort = "prioriteit" | "deadline";
+type Sort = "handmatig" | "prioriteit" | "deadline";
 
 // Sorteert op deadline: vroegste eerst, taken zonder deadline achteraan.
 function dueCompare(a: Task, b: Task) {
@@ -34,9 +51,17 @@ export function TasksView({
   preview: boolean;
 }) {
   const [filter, setFilter] = useState<Filter>("open");
-  const [sort, setSort] = useState<Sort>("prioriteit");
+  const [sort, setSort] = useState<Sort>("handmatig");
+  const [localOrder, setLocalOrder] = useState<string[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const openCount = useMemo(
     () => tasks.filter((task) => !task.done).length,
@@ -47,16 +72,24 @@ export function TasksView({
     const filtered = tasks.filter((task) =>
       filter === "all" ? true : filter === "open" ? !task.done : task.done,
     );
+    const idx = new Map(localOrder.map((id, index) => [id, index]));
     return [...filtered].sort((a, b) => {
       if (a.done !== b.done) return a.done ? 1 : -1; // open eerst
       if (sort === "prioriteit") {
         const diff =
           priorityMeta(a.priority).order - priorityMeta(b.priority).order;
         if (diff !== 0) return diff;
+        return dueCompare(a, b);
       }
-      return dueCompare(a, b);
+      if (sort === "deadline") {
+        return dueCompare(a, b);
+      }
+      // handmatig: optimistische volgorde, anders de bewaarde position.
+      const ai = idx.get(a.id) ?? 1e6 + a.position;
+      const bi = idx.get(b.id) ?? 1e6 + b.position;
+      return ai - bi;
     });
-  }, [tasks, filter, sort]);
+  }, [tasks, filter, sort, localOrder]);
 
   function openNew() {
     setEditing(null);
@@ -70,6 +103,22 @@ export function TasksView({
 
   function exportTasks() {
     window.location.href = "/api/tasks/export";
+  }
+
+  function onDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const ids = visible.map((task) => task.id);
+    const oldIndex = ids.indexOf(active.id as string);
+    const newIndex = ids.indexOf(over.id as string);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const newIds = arrayMove(ids, oldIndex, newIndex);
+    setLocalOrder(newIds);
+    void reorderTasks(newIds).then((result) => {
+      if (!result.ok) {
+        toast.error("Volgorde opslaan mislukt", { description: result.error });
+      }
+    });
   }
 
   if (preview) {
@@ -96,7 +145,7 @@ export function TasksView({
     <div>
       <PageHeader
         title="Taken"
-        description="Je to-do's met prioriteit en deadlines."
+        description="Sleep aan het handvat om de volgorde aan te passen."
       >
         {tasks.length > 0 && (
           <Button variant="outline" onClick={exportTasks}>
@@ -122,16 +171,16 @@ export function TasksView({
         </div>
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-muted-foreground">Sorteer:</span>
+          <Chip active={sort === "handmatig"} onClick={() => setSort("handmatig")}>
+            Handmatig
+          </Chip>
           <Chip
             active={sort === "prioriteit"}
             onClick={() => setSort("prioriteit")}
           >
             Prioriteit
           </Chip>
-          <Chip
-            active={sort === "deadline"}
-            onClick={() => setSort("deadline")}
-          >
+          <Chip active={sort === "deadline"} onClick={() => setSort("deadline")}>
             Deadline
           </Chip>
         </div>
@@ -162,16 +211,28 @@ export function TasksView({
       ) : (
         <Card>
           <CardContent>
-            <ul className="divide-y">
-              {visible.map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  todayKey={todayKey}
-                  onEdit={openEdit}
-                />
-              ))}
-            </ul>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onDragEnd}
+            >
+              <SortableContext
+                items={visible.map((task) => task.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="divide-y">
+                  {visible.map((task) => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      todayKey={todayKey}
+                      onEdit={openEdit}
+                      draggable={sort === "handmatig"}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
           </CardContent>
         </Card>
       )}

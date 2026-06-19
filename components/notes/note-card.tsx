@@ -1,7 +1,16 @@
 "use client";
 
 import { useTransition } from "react";
-import { MoreVertical, Pencil, Pin, PinOff, Trash2 } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  GripVertical,
+  MoreVertical,
+  Pencil,
+  Pin,
+  PinOff,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -36,10 +45,20 @@ function toSnippet(markdown: string) {
 export function NoteCard({
   note,
   onEdit,
+  draggable,
 }: {
   note: Note;
   onEdit: (note: Note) => void;
+  draggable: boolean;
 }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: note.id, disabled: !draggable });
   const [pending, startTransition] = useTransition();
   const snippet = toSnippet(note.body);
 
@@ -61,16 +80,32 @@ export function NoteCard({
 
   return (
     <Card
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
         "flex h-full flex-col transition-colors",
         note.pinned && "border-primary/30 bg-primary/[0.02]",
+        isDragging && "z-10 opacity-80",
       )}
     >
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="line-clamp-2 text-base">
-            {note.title || "Naamloos"}
-          </CardTitle>
+          <div className="flex min-w-0 items-start gap-1.5">
+            {draggable && (
+              <button
+                type="button"
+                className="mt-0.5 cursor-grab touch-none text-muted-foreground/60 hover:text-foreground"
+                aria-label="Versleep notitie"
+                {...attributes}
+                {...listeners}
+              >
+                <GripVertical className="size-4" />
+              </button>
+            )}
+            <CardTitle className="line-clamp-2 text-base">
+              {note.title || "Naamloos"}
+            </CardTitle>
+          </div>
           <div className="-mr-1 flex shrink-0 items-center">
             <Button
               variant="ghost"

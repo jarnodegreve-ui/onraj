@@ -26,6 +26,7 @@ export function toNote(row: NoteRow): Note {
     body: row.body,
     tags: row.tags ?? [],
     pinned: row.pinned,
+    position: row.position ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -73,6 +74,7 @@ export function toTask(row: TaskRow): Task {
     dueOn: row.due_on,
     notes: row.notes,
     priority: row.priority ?? "middel",
+    position: row.position ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
