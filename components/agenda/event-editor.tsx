@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createEvent, deleteEvent, updateEvent } from "@/lib/actions/events";
+import { createGoogleCalendarEvent } from "@/lib/actions/google";
 import { DEFAULT_EVENT_COLOR, EVENT_COLORS } from "@/lib/agenda";
 import type { CalendarEvent } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -27,11 +28,13 @@ export function EventEditor({
   onOpenChange,
   event,
   defaultDate,
+  googleConnected,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event: CalendarEvent | null;
   defaultDate: string;
+  googleConnected: boolean;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -46,6 +49,7 @@ export function EventEditor({
           key={event?.id ?? `nieuw-${defaultDate}`}
           event={event}
           defaultDate={defaultDate}
+          googleConnected={googleConnected}
           onClose={() => onOpenChange(false)}
         />
       </DialogContent>
@@ -56,10 +60,12 @@ export function EventEditor({
 function EventForm({
   event,
   defaultDate,
+  googleConnected,
   onClose,
 }: {
   event: CalendarEvent | null;
   defaultDate: string;
+  googleConnected: boolean;
   onClose: () => void;
 }) {
   const [title, setTitle] = useState(event?.title ?? "");
@@ -76,6 +82,7 @@ function EventForm({
   const [location, setLocation] = useState(event?.location ?? "");
   const [notes, setNotes] = useState(event?.notes ?? "");
   const [color, setColor] = useState(event?.color ?? DEFAULT_EVENT_COLOR);
+  const [destination, setDestination] = useState<"local" | "google">("local");
   const [saving, startSave] = useTransition();
   const [deleting, startDelete] = useTransition();
   const busy = saving || deleting;
@@ -106,13 +113,44 @@ function EventForm({
     }
 
     startSave(async () => {
-      const input = { title, startsAt, endsAt, allDay, location, notes, color };
-      const result = event
-        ? await updateEvent(event.id, input)
-        : await createEvent(input);
+      let result;
+      let successMessage;
+      if (!event && destination === "google") {
+        result = await createGoogleCalendarEvent({
+          title,
+          startsAt,
+          endsAt,
+          allDay,
+          location,
+          notes,
+        });
+        successMessage = "Toegevoegd aan Google Agenda";
+      } else if (event) {
+        result = await updateEvent(event.id, {
+          title,
+          startsAt,
+          endsAt,
+          allDay,
+          location,
+          notes,
+          color,
+        });
+        successMessage = "Afspraak bijgewerkt";
+      } else {
+        result = await createEvent({
+          title,
+          startsAt,
+          endsAt,
+          allDay,
+          location,
+          notes,
+          color,
+        });
+        successMessage = "Afspraak toegevoegd";
+      }
 
       if (result.ok) {
-        toast.success(event ? "Afspraak bijgewerkt" : "Afspraak toegevoegd");
+        toast.success(successMessage);
         onClose();
       } else {
         toast.error("Opslaan mislukt", { description: result.error });
@@ -136,6 +174,23 @@ function EventForm({
   return (
     <>
       <div className="grid gap-4">
+        {!event && googleConnected && (
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+            <SegButton
+              active={destination === "local"}
+              onClick={() => setDestination("local")}
+            >
+              ONRAJ
+            </SegButton>
+            <SegButton
+              active={destination === "google"}
+              onClick={() => setDestination("google")}
+            >
+              Google
+            </SegButton>
+          </div>
+        )}
+
         <div className="grid gap-2">
           <Label htmlFor="ev-title">Titel</Label>
           <Input

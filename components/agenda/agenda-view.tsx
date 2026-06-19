@@ -117,6 +117,7 @@ export function AgendaView({
         onOpenChange={setEditorOpen}
         event={editing}
         defaultDate={selectedDate}
+        googleConnected={googleConnected}
       />
     </div>
   );

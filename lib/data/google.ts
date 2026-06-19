@@ -1,4 +1,5 @@
 import {
+  fetchCalendarList,
   fetchGoogleEvents,
   googleConfigured,
   refreshAccessToken,
@@ -21,21 +22,17 @@ export async function isGoogleConnected(): Promise<boolean> {
 }
 
 /**
- * Haalt Google Calendar-events op binnen een tijdvenster en levert ze als
- * read-only CalendarEvent (source "google"). Ververst het access-token indien
- * nodig. Faalt nooit hard — bij problemen geeft het een lege lijst terug.
+ * Geeft een geldig access-token terug (ververst indien nodig) of null wanneer
+ * er geen (werkende) koppeling is.
  */
-export async function getGoogleEvents(
-  timeMin: string,
-  timeMax: string,
-): Promise<CalendarEvent[]> {
-  if (!googleConfigured) return [];
+export async function getValidGoogleAccessToken(): Promise<string | null> {
+  if (!googleConfigured) return null;
   const supabase = await createClient();
   const { data: row, error } = await supabase
     .from("google_tokens")
     .select("*")
     .maybeSingle();
-  if (error || !row) return [];
+  if (error || !row) return null;
 
   let accessToken = row.access_token as string;
   const expiryMs = row.expiry ? new Date(row.expiry).getTime() : 0;
@@ -51,26 +48,66 @@ export async function getGoogleEvents(
         .update({ access_token: accessToken, expiry: newExpiry })
         .eq("user_id", row.user_id);
     } catch {
-      return [];
+      return null;
     }
   }
+  return accessToken;
+}
+
+/**
+ * Haalt Google Calendar-events op binnen een tijdvenster en levert ze als
+ * read-only CalendarEvent (source "google"). Faalt nooit hard.
+ */
+export async function getGoogleEvents(
+  timeMin: string,
+  timeMax: string,
+): Promise<CalendarEvent[]> {
+  const accessToken = await getValidGoogleAccessToken();
+  if (!accessToken) return [];
 
   try {
-    const events = await fetchGoogleEvents(accessToken, timeMin, timeMax);
-    return events.map((event) => ({
-      id: event.id,
-      title: event.title,
-      startsAt: event.startsAt,
-      endsAt: event.endsAt,
-      allDay: event.allDay,
-      location: event.location,
-      notes: null,
-      color: GOOGLE_EVENT_COLOR,
-      createdAt: "",
-      updatedAt: "",
-      source: "google" as const,
-      htmlLink: event.htmlLink,
-    }));
+    const calendars = await fetchCalendarList(accessToken);
+    // Eigen + beschrijfbare agenda's (incl. sub-agenda's), plus de primaire.
+    // Read-only abonnementen (feestdagen e.d.) slaan we over.
+    const ids = calendars
+      .filter(
+        (calendar) =>
+          calendar.primary ||
+          calendar.accessRole === "owner" ||
+          calendar.accessRole === "writer",
+      )
+      .map((calendar) => calendar.id);
+    const targets = ids.length > 0 ? ids : ["primary"];
+
+    const lists = await Promise.all(
+      targets.map((id) =>
+        fetchGoogleEvents(accessToken, id, timeMin, timeMax).catch(() => []),
+      ),
+    );
+
+    const seen = new Set<string>();
+    const events: CalendarEvent[] = [];
+    for (const list of lists) {
+      for (const event of list) {
+        if (seen.has(event.id)) continue;
+        seen.add(event.id);
+        events.push({
+          id: event.id,
+          title: event.title,
+          startsAt: event.startsAt,
+          endsAt: event.endsAt,
+          allDay: event.allDay,
+          location: event.location,
+          notes: null,
+          color: GOOGLE_EVENT_COLOR,
+          createdAt: "",
+          updatedAt: "",
+          source: "google" as const,
+          htmlLink: event.htmlLink,
+        });
+      }
+    }
+    return events;
   } catch {
     return [];
   }
