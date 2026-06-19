@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { deleteTask, setTaskDone } from "@/lib/actions/tasks";
 import { formatDate } from "@/lib/format";
+import { priorityMeta } from "@/lib/tasks";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ export function TaskItem({
 }) {
   const [pending, startTransition] = useTransition();
   const overdue = !task.done && !!task.dueOn && task.dueOn < todayKey;
+  const meta = priorityMeta(task.priority);
 
   function toggle() {
     startTransition(async () => {
@@ -70,19 +72,27 @@ export function TaskItem({
         >
           {task.title}
         </p>
-        {task.dueOn && (
-          <span
-            className={cn(
-              "text-xs",
-              overdue
-                ? "text-rose-600 dark:text-rose-400"
-                : "text-muted-foreground",
-            )}
-          >
-            {overdue ? "Te laat · " : ""}
-            {formatDate(task.dueOn)}
+        <div className="flex flex-wrap items-center gap-x-2 text-xs">
+          {task.dueOn && (
+            <span
+              className={cn(
+                overdue
+                  ? "text-rose-600 dark:text-rose-400"
+                  : "text-muted-foreground",
+              )}
+            >
+              {overdue ? "Te laat · " : ""}
+              {formatDate(task.dueOn)}
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1 text-muted-foreground">
+            <span
+              className="size-1.5 rounded-full"
+              style={{ backgroundColor: meta.color }}
+            />
+            {meta.label}
           </span>
-        )}
+        </div>
       </div>
 
       <DropdownMenu>

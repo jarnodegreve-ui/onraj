@@ -70,6 +70,7 @@ export function toTask(row: TaskRow): Task {
     done: row.done,
     dueOn: row.due_on,
     notes: row.notes,
+    priority: row.priority ?? "middel",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

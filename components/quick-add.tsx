@@ -124,7 +124,12 @@ function QuickForm({
       const result =
         mode === "note"
           ? await createNote({ title, body, tags: [], pinned: false })
-          : await createTask({ title, dueOn: dueOn || null, notes: "" });
+          : await createTask({
+              title,
+              dueOn: dueOn || null,
+              notes: "",
+              priority: "middel",
+            });
 
       if (result.ok) {
         toast.success(mode === "note" ? "Notitie toegevoegd" : "Taak toegevoegd");

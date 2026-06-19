@@ -80,12 +80,15 @@ export interface EventRow {
 
 // ─── Taken ──────────────────────────────────────────────────────────────────
 
+export type TaskPriority = "laag" | "middel" | "hoog";
+
 export interface Task {
   id: string;
   title: string;
   done: boolean;
   dueOn: string | null; // ISO-datum (YYYY-MM-DD)
   notes: string | null;
+  priority: TaskPriority;
   createdAt: string;
   updatedAt: string;
 }
@@ -97,6 +100,7 @@ export interface TaskRow {
   done: boolean;
   due_on: string | null;
   notes: string | null;
+  priority: TaskPriority;
   created_at: string;
   updated_at: string;
 }

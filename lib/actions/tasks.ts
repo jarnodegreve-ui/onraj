@@ -13,6 +13,7 @@ const taskInput = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Ongeldige datum.")
     .nullable(),
   notes: z.string().trim().max(2000),
+  priority: z.enum(["laag", "middel", "hoog"]),
 });
 
 export type TaskInput = z.infer<typeof taskInput>;
@@ -22,6 +23,7 @@ function toRow(input: TaskInput) {
     title: input.title,
     due_on: input.dueOn,
     notes: input.notes || null,
+    priority: input.priority,
   };
 }
 
