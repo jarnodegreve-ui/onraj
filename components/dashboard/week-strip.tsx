@@ -49,7 +49,7 @@ export function WeekStrip({
                 </span>
                 <div
                   className={cn(
-                    "flex size-9 items-center justify-center rounded-full text-sm font-medium tabular-nums",
+                    "flex size-8 items-center justify-center rounded-full text-sm font-medium tabular-nums sm:size-9",
                     isToday
                       ? "bg-primary text-primary-foreground"
                       : count > 0

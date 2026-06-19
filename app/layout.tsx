@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins, Geist_Mono } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
@@ -20,8 +20,19 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "ONRAJ — Persoonlijk portaal",
-  description:
-    "Persoonlijk portaal: notities, financiën, agenda en overzichten.",
+  description: "Persoonlijk portaal: taken, notities, financiën en agenda.",
+  appleWebApp: {
+    capable: true,
+    title: "ONRAJ",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

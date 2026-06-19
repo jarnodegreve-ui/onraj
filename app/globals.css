@@ -135,9 +135,16 @@
     @apply bg-background text-foreground;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
   html {
     @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Dialogen mogen op kleine schermen meescrollen i.p.v. afgekapt te worden. */
+  [data-slot="dialog-content"] {
+    max-height: calc(100svh - 2rem);
+    overflow-y: auto;
   }
   /* Zachte diepte op kaarten — premium SaaS-gevoel (ClickUp/Plane). */
   [data-slot="card"] {

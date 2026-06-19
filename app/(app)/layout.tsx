@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
+import { MobileNav } from "@/components/mobile-nav";
 import { PreviewBanner } from "@/components/preview-banner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,10 +35,11 @@ export default async function AppLayout({
         <SidebarInset>
           <AppTopbar />
           {!supabaseConfigured && <PreviewBanner />}
-          <main className="flex-1 p-4 md:p-6">
+          <main className="flex-1 p-4 pb-24 md:p-6">
             <div className="mx-auto w-full max-w-7xl">{children}</div>
           </main>
         </SidebarInset>
+        <MobileNav />
       </SidebarProvider>
     </TooltipProvider>
   );
