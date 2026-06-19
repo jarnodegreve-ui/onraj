@@ -59,19 +59,19 @@
   --card-foreground: oklch(0.21 0.03 256.85);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.03 256.85);
-  --primary: oklch(0.546 0.215 262.88); /* blauw ~#2563eb */
+  --primary: #002fa7; /* blauw ~#2563eb */
   --primary-foreground: oklch(0.985 0.01 247.86);
   --secondary: oklch(0.968 0.005 247.86); /* slate-100 */
   --secondary-foreground: oklch(0.279 0.03 256.85); /* slate-800 */
   --muted: oklch(0.968 0.005 247.86);
   --muted-foreground: oklch(0.554 0.026 256.85); /* slate-500 */
-  --accent: oklch(0.968 0.013 253); /* faint blauw hover */
-  --accent-foreground: oklch(0.424 0.135 262.88);
+  --accent: oklch(0.965 0.022 264); /* faint IKB-blauw hover */
+  --accent-foreground: #002fa7;
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.929 0.009 247.86); /* slate-200 */
   --input: oklch(0.929 0.009 247.86);
-  --ring: oklch(0.546 0.215 262.88); /* blauwe focus-ring */
-  --chart-1: oklch(0.546 0.215 262.88); /* blauw */
+  --ring: #002fa7; /* blauwe focus-ring */
+  --chart-1: #002fa7; /* blauw */
   --chart-2: oklch(0.704 0.123 184); /* teal */
   --chart-3: oklch(0.627 0.227 303.9); /* paars */
   --chart-4: oklch(0.769 0.16 70.08); /* amber */
@@ -85,12 +85,12 @@
   /* Donkere navy sidebar (huisstijl) — ook in lichte modus. */
   --sidebar: oklch(0.19 0.045 266); /* navy #0D132B */
   --sidebar-foreground: oklch(0.92 0.012 250); /* lichte tekst */
-  --sidebar-primary: oklch(0.546 0.215 262.88); /* blauw */
+  --sidebar-primary: #002fa7; /* blauw */
   --sidebar-primary-foreground: oklch(0.985 0.01 247.86);
   --sidebar-accent: oklch(0.28 0.05 264); /* lichter navy, actief/hover */
   --sidebar-accent-foreground: oklch(0.985 0.005 247.86); /* wit */
   --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.546 0.215 262.88);
+  --sidebar-ring: #002fa7;
 }
 
 .dark {

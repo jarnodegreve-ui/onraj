@@ -30,7 +30,7 @@ export function AppSidebar({ email }: { email: string | null }) {
           <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
             <span className="truncate font-semibold tracking-tight">ONRAJ</span>
             <span className="truncate text-[11px] tracking-wide text-sidebar-foreground/55">
-              Overzicht · Focus · Groei
+              Overzicht
             </span>
           </div>
         </div>
