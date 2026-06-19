@@ -4,7 +4,9 @@
  * tot de bijbehorende migratie gedraaid is.
  */
 export function isMissingTable(error: { code?: string } | null): boolean {
-  return error?.code === "42P01";
+  // 42P01 = Postgres undefined_table; PGRST205 = PostgREST "table niet in
+  // schema-cache" (dit geeft supabase-js terug voor een ontbrekende tabel).
+  return error?.code === "42P01" || error?.code === "PGRST205";
 }
 
 /**
