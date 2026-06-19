@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
   closestCenter,
   DndContext,
@@ -16,7 +16,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Download, NotebookPen, Plus, Search } from "lucide-react";
+import { Download, NotebookPen, Plus, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
@@ -26,21 +26,25 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { reorderNotes } from "@/lib/actions/reorder";
+import { resyncVault } from "@/lib/actions/vault";
 import type { Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function NotesView({
   notes,
   preview,
+  vaultConnected,
 }: {
   notes: Note[];
   preview: boolean;
+  vaultConnected: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [localOrder, setLocalOrder] = useState<string[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
+  const [syncing, startSync] = useTransition();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -96,6 +100,19 @@ export function NotesView({
     window.location.href = "/api/notes/export";
   }
 
+  function syncToVault() {
+    startSync(async () => {
+      const result = await resyncVault();
+      if (result.ok) {
+        toast.success(
+          `${result.count} notitie${result.count === 1 ? "" : "s"} naar Obsidian gesynct`,
+        );
+      } else {
+        toast.error("Sync mislukt", { description: result.error });
+      }
+    });
+  }
+
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -118,6 +135,12 @@ export function NotesView({
         title="Notities"
         description="Je markdown-notities met tags en zoeken."
       >
+        {vaultConnected && !preview && notes.length > 0 && (
+          <Button variant="outline" onClick={syncToVault} disabled={syncing}>
+            <RefreshCw className={cn("size-4", syncing && "animate-spin")} /> Sync
+            Obsidian
+          </Button>
+        )}
         {!preview && notes.length > 0 && (
           <Button variant="outline" onClick={exportNotes}>
             <Download className="size-4" /> Exporteer
