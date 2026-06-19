@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { BudgetsCard } from "@/components/finance/budgets-card";
 import { FinanceCharts } from "@/components/finance/finance-charts";
 import { RecurringCard } from "@/components/finance/recurring-card";
+import { SavingsCard } from "@/components/finance/savings-card";
 import { TransactionEditor } from "@/components/finance/transaction-editor";
 import { TransactionList } from "@/components/finance/transaction-list";
 import { MonthSelector } from "@/components/month-selector";
@@ -28,7 +29,12 @@ import {
   summariseMonth,
 } from "@/lib/finance";
 import { formatEuro } from "@/lib/format";
-import type { Budget, RecurringTransaction, Transaction } from "@/lib/types";
+import type {
+  Budget,
+  RecurringTransaction,
+  SavingsGoal,
+  Transaction,
+} from "@/lib/types";
 
 function todayIso() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -42,12 +48,14 @@ export function FinanceView({
   transactions,
   budgets,
   recurring,
+  savings,
   initialMonth,
   preview,
 }: {
   transactions: Transaction[];
   budgets: Budget[];
   recurring: RecurringTransaction[];
+  savings: SavingsGoal[];
   initialMonth: string;
   preview: boolean;
 }) {
@@ -155,6 +163,8 @@ export function FinanceView({
       />
 
       <RecurringCard recurring={recurring} categories={allCategories} />
+
+      <SavingsCard goals={savings} />
 
       <Card>
         <CardHeader>

@@ -7,6 +7,8 @@ import type {
   NoteRow,
   RecurringTransaction,
   RecurringTransactionRow,
+  SavingsGoal,
+  SavingsGoalRow,
   Task,
   TaskRow,
   Transaction,
@@ -97,6 +99,18 @@ export function toRecurringTransaction(
     active: row.active,
     startMonth: row.start_month,
     lastGeneratedMonth: row.last_generated_month,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function toSavingsGoal(row: SavingsGoalRow): SavingsGoal {
+  return {
+    id: row.id,
+    name: row.name,
+    targetAmount: toNumber(row.target_amount),
+    savedAmount: toNumber(row.saved_amount),
+    color: row.color,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

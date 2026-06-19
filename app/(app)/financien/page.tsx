@@ -4,10 +4,16 @@ import {
   ensureRecurringTransactions,
   listRecurring,
 } from "@/lib/data/recurring";
+import { listSavingsGoals } from "@/lib/data/savings";
 import { listTransactions } from "@/lib/data/transactions";
 import { currentMonthKey } from "@/lib/finance";
 import { supabaseConfigured } from "@/lib/supabase/env";
-import type { Budget, RecurringTransaction, Transaction } from "@/lib/types";
+import type {
+  Budget,
+  RecurringTransaction,
+  SavingsGoal,
+  Transaction,
+} from "@/lib/types";
 
 export default async function FinancienPage() {
   if (supabaseConfigured) {
@@ -19,15 +25,26 @@ export default async function FinancienPage() {
     }
   }
 
-  const [transactions, budgets, recurring] = supabaseConfigured
-    ? await Promise.all([listTransactions(), listBudgets(), listRecurring()])
-    : [[] as Transaction[], [] as Budget[], [] as RecurringTransaction[]];
+  const [transactions, budgets, recurring, savings] = supabaseConfigured
+    ? await Promise.all([
+        listTransactions(),
+        listBudgets(),
+        listRecurring(),
+        listSavingsGoals(),
+      ])
+    : [
+        [] as Transaction[],
+        [] as Budget[],
+        [] as RecurringTransaction[],
+        [] as SavingsGoal[],
+      ];
 
   return (
     <FinanceView
       transactions={transactions}
       budgets={budgets}
       recurring={recurring}
+      savings={savings}
       initialMonth={currentMonthKey()}
       preview={!supabaseConfigured}
     />

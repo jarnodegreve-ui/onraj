@@ -152,3 +152,26 @@ export interface RecurringTransactionRow {
   created_at: string;
   updated_at: string;
 }
+
+// ─── Spaardoelen ─────────────────────────────────────────────────────────────
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  savedAmount: number;
+  color: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavingsGoalRow {
+  id: string;
+  user_id: string;
+  name: string;
+  target_amount: number | string;
+  saved_amount: number | string;
+  color: string | null;
+  created_at: string;
+  updated_at: string;
+}
