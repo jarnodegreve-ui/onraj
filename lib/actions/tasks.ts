@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { isMissingColumn } from "@/lib/data/safe";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "./result";
 
@@ -42,7 +43,14 @@ export async function createTask(input: TaskInput): Promise<ActionResult> {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("tasks").insert(toRow(parsed.data));
+  const row = toRow(parsed.data);
+  let { error } = await supabase.from("tasks").insert(row);
+  if (error && isMissingColumn(error)) {
+    // priority-kolom bestaat nog niet (migratie 0004) → zonder opslaan.
+    ({ error } = await supabase
+      .from("tasks")
+      .insert({ title: row.title, due_on: row.due_on, notes: row.notes }));
+  }
   if (error) return { ok: false, error: error.message };
 
   revalidateTasks();
@@ -62,10 +70,14 @@ export async function updateTask(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("tasks")
-    .update(toRow(parsed.data))
-    .eq("id", id);
+  const row = toRow(parsed.data);
+  let { error } = await supabase.from("tasks").update(row).eq("id", id);
+  if (error && isMissingColumn(error)) {
+    ({ error } = await supabase
+      .from("tasks")
+      .update({ title: row.title, due_on: row.due_on, notes: row.notes })
+      .eq("id", id));
+  }
   if (error) return { ok: false, error: error.message };
 
   revalidateTasks();
