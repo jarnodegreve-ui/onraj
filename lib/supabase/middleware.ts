@@ -6,7 +6,13 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseConfigured } from "./env";
 // Routes die zonder sessie bereikbaar moeten blijven. De Telegram-webhook wordt
 // extern (zonder sessie) aangeroepen en beveiligt zichzelf via secret-token +
 // eigenaar-user-ID, dus die mag publiek zijn.
-const PUBLIC_PREFIXES = ["/login", "/auth", "/api/telegram", "/api/cron"];
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/auth",
+  "/api/telegram",
+  "/api/cron",
+  "/api/share",
+];
 
 // Single-user allowlist: enkel dit e-mailadres krijgt toegang.
 const ALLOWED_EMAIL = process.env.ALLOWED_EMAIL?.toLowerCase();
