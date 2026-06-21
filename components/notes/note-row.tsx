@@ -84,12 +84,12 @@ export function NoteRow({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "rounded-lg border bg-card transition-colors",
-        note.pinned && "border-primary/30",
-        isDragging && "z-10 opacity-80",
+        "bg-card transition-colors",
+        note.pinned && "bg-primary/[0.03]",
+        isDragging && "z-10 rounded-lg opacity-90 shadow-sm",
       )}
     >
-      <div className="flex items-center gap-2 px-3 py-2.5">
+      <div className="flex items-center gap-2 px-3 py-2">
         {draggable && (
           <button
             type="button"

@@ -329,7 +329,7 @@ export function NotesView({
                 }
               >
                 {view === "lijst" ? (
-                  <ul className="space-y-2">
+                  <ul className="max-w-4xl divide-y rounded-lg border bg-card">
                     {visible.map((note) => (
                       <NoteRow
                         key={note.id}
