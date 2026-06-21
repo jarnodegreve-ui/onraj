@@ -1,4 +1,6 @@
+import { AccountsPanel } from "@/components/finance/accounts-panel";
 import { FinanceView } from "@/components/finance/finance-view";
+import { listAccountBalances } from "@/lib/data/accounts";
 import { listBudgets } from "@/lib/data/budgets";
 import {
   ensureRecurringTransactions,
@@ -9,6 +11,7 @@ import { listTransactions } from "@/lib/data/transactions";
 import { currentMonthKey } from "@/lib/finance";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import type {
+  AccountBalance,
   Budget,
   RecurringTransaction,
   SavingsGoal,
@@ -25,28 +28,34 @@ export default async function FinancienPage() {
     }
   }
 
-  const [transactions, budgets, recurring, savings] = supabaseConfigured
-    ? await Promise.all([
-        listTransactions(),
-        listBudgets(),
-        listRecurring(),
-        listSavingsGoals(),
-      ])
-    : [
-        [] as Transaction[],
-        [] as Budget[],
-        [] as RecurringTransaction[],
-        [] as SavingsGoal[],
-      ];
+  const [transactions, budgets, recurring, savings, accountBalances] =
+    supabaseConfigured
+      ? await Promise.all([
+          listTransactions(),
+          listBudgets(),
+          listRecurring(),
+          listSavingsGoals(),
+          listAccountBalances(),
+        ])
+      : [
+          [] as Transaction[],
+          [] as Budget[],
+          [] as RecurringTransaction[],
+          [] as SavingsGoal[],
+          [] as AccountBalance[],
+        ];
 
   return (
-    <FinanceView
-      transactions={transactions}
-      budgets={budgets}
-      recurring={recurring}
-      savings={savings}
-      initialMonth={currentMonthKey()}
-      preview={!supabaseConfigured}
-    />
+    <div className="space-y-6">
+      <FinanceView
+        transactions={transactions}
+        budgets={budgets}
+        recurring={recurring}
+        savings={savings}
+        initialMonth={currentMonthKey()}
+        preview={!supabaseConfigured}
+      />
+      {supabaseConfigured && <AccountsPanel balances={accountBalances} />}
+    </div>
   );
 }

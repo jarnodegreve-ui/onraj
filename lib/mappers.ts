@@ -1,4 +1,6 @@
 import type {
+  AccountBalance,
+  AccountBalanceRow,
   Budget,
   BudgetRow,
   CalendarEvent,
@@ -119,6 +121,17 @@ export function toSavingsGoal(row: SavingsGoalRow): SavingsGoal {
     targetAmount: toNumber(row.target_amount),
     savedAmount: toNumber(row.saved_amount),
     color: row.color,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function toAccountBalance(row: AccountBalanceRow): AccountBalance {
+  return {
+    id: row.id,
+    account: row.account,
+    month: row.month,
+    amount: toNumber(row.amount),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

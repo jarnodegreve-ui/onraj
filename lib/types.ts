@@ -192,6 +192,27 @@ export interface SavingsGoalRow {
   updated_at: string;
 }
 
+// ─── Rekeningstanden ─────────────────────────────────────────────────────────
+
+export interface AccountBalance {
+  id: string;
+  account: string;
+  month: string; // 'YYYY-MM-DD' (eerste van de maand)
+  amount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AccountBalanceRow {
+  id: string;
+  user_id: string;
+  account: string;
+  month: string;
+  amount: number | string;
+  created_at: string;
+  updated_at: string;
+}
+
 // ─── Bijlagen ────────────────────────────────────────────────────────────────
 
 export type AttachmentEntity = "note" | "transaction";

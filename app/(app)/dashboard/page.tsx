@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { AccountsChart } from "@/components/dashboard/accounts-chart";
 import { RecentNotes } from "@/components/dashboard/recent-notes";
 import { DashboardTasks } from "@/components/dashboard/tasks-list";
 import { DashboardUpcoming } from "@/components/dashboard/upcoming-list";
@@ -16,11 +17,13 @@ import { WeekStrip } from "@/components/dashboard/week-strip";
 import { PushToggle } from "@/components/push/push-toggle";
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { currentDayKey, eventDayKey, upcomingEvents } from "@/lib/agenda";
+import { latestPerAccount, listAccountBalances } from "@/lib/data/accounts";
 import { listEvents } from "@/lib/data/events";
 import { listNotes } from "@/lib/data/notes";
 import { listTasks } from "@/lib/data/tasks";
@@ -48,12 +51,14 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [notes, transactions, events, tasks] = await Promise.all([
-    listNotes(),
-    listTransactions(),
-    listEvents(),
-    listTasks(),
-  ]);
+  const [notes, transactions, events, tasks, accountBalances] =
+    await Promise.all([
+      listNotes(),
+      listTransactions(),
+      listEvents(),
+      listTasks(),
+      listAccountBalances(),
+    ]);
 
   const name = displayName(user?.email);
   const todayKey = currentDayKey();
@@ -63,6 +68,11 @@ export default async function DashboardPage() {
   const eventsToday = events.filter(
     (event) => eventDayKey(event) === todayKey,
   ).length;
+
+  const accountChart = latestPerAccount(accountBalances).map((balance) => ({
+    account: balance.account,
+    amount: balance.amount,
+  }));
 
   const cards = [
     {
@@ -113,6 +123,17 @@ export default async function DashboardPage() {
       </div>
 
       <WeekStrip events={events} todayKey={todayKey} />
+
+      {accountChart.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Rekeningen</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AccountsChart data={accountChart} />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <DashboardTasks tasks={openTasks.slice(0, 5)} todayKey={todayKey} />
