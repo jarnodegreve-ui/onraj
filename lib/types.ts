@@ -97,6 +97,7 @@ export interface Task {
   dueOn: string | null; // ISO-datum (YYYY-MM-DD)
   notes: string | null;
   priority: TaskPriority;
+  category: string | null;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -110,6 +111,7 @@ export interface TaskRow {
   due_on: string | null;
   notes: string | null;
   priority: TaskPriority;
+  category: string | null;
   position: number;
   created_at: string;
   updated_at: string;

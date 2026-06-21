@@ -52,6 +52,7 @@ export function TasksView({
 }) {
   const [filter, setFilter] = useState<Filter>("open");
   const [sort, setSort] = useState<Sort>("handmatig");
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [localOrder, setLocalOrder] = useState<string[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
@@ -68,10 +69,21 @@ export function TasksView({
     [tasks],
   );
 
+  const allCategories = useMemo(
+    () =>
+      Array.from(
+        new Set(tasks.map((task) => task.category).filter((c): c is string => !!c)),
+      ).sort((a, b) => a.localeCompare(b, "nl")),
+    [tasks],
+  );
+
   const visible = useMemo(() => {
-    const filtered = tasks.filter((task) =>
-      filter === "all" ? true : filter === "open" ? !task.done : task.done,
-    );
+    const filtered = tasks.filter((task) => {
+      const byStatus =
+        filter === "all" ? true : filter === "open" ? !task.done : task.done;
+      const byCategory = !activeCategory || task.category === activeCategory;
+      return byStatus && byCategory;
+    });
     const idx = new Map(localOrder.map((id, index) => [id, index]));
     return [...filtered].sort((a, b) => {
       if (a.done !== b.done) return a.done ? 1 : -1; // open eerst
@@ -89,7 +101,7 @@ export function TasksView({
       const bi = idx.get(b.id) ?? 1e6 + b.position;
       return ai - bi;
     });
-  }, [tasks, filter, sort, localOrder]);
+  }, [tasks, filter, sort, activeCategory, localOrder]);
 
   function openNew() {
     setEditing(null);
@@ -186,6 +198,33 @@ export function TasksView({
         </div>
       </div>
 
+      {allCategories.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-xs font-medium text-muted-foreground">
+            Categorie:
+          </span>
+          <Chip
+            active={activeCategory === null}
+            onClick={() => setActiveCategory(null)}
+          >
+            Alle
+          </Chip>
+          {allCategories.map((category) => (
+            <Chip
+              key={category}
+              active={activeCategory === category}
+              onClick={() =>
+                setActiveCategory((current) =>
+                  current === category ? null : category,
+                )
+              }
+            >
+              {category}
+            </Chip>
+          ))}
+        </div>
+      )}
+
       {visible.length === 0 ? (
         <EmptyState
           icon={ListTodo}
@@ -227,7 +266,7 @@ export function TasksView({
                       task={task}
                       todayKey={todayKey}
                       onEdit={openEdit}
-                      draggable={sort === "handmatig"}
+                      draggable={sort === "handmatig" && activeCategory === null}
                     />
                   ))}
                 </ul>
@@ -237,7 +276,12 @@ export function TasksView({
         </Card>
       )}
 
-      <TaskEditor open={editorOpen} onOpenChange={setEditorOpen} task={editing} />
+      <TaskEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        task={editing}
+        categories={allCategories}
+      />
     </div>
   );
 }

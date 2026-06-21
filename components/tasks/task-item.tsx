@@ -122,6 +122,11 @@ export function TaskItem({
             />
             {meta.label}
           </span>
+          {task.category && (
+            <span className="rounded-full bg-primary/15 px-1.5 py-px text-[11px] font-medium text-primary">
+              {task.category}
+            </span>
+          )}
         </div>
       </div>
 

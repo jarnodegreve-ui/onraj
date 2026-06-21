@@ -76,6 +76,7 @@ export function toTask(row: TaskRow): Task {
     dueOn: row.due_on,
     notes: row.notes,
     priority: row.priority ?? "middel",
+    category: row.category ?? null,
     position: row.position ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

@@ -24,10 +24,12 @@ export function TaskEditor({
   open,
   onOpenChange,
   task,
+  categories = [],
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task: Task | null;
+  categories?: string[];
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -39,6 +41,7 @@ export function TaskEditor({
         <TaskForm
           key={task?.id ?? "nieuw"}
           task={task}
+          categories={categories}
           onClose={() => onOpenChange(false)}
         />
       </DialogContent>
@@ -48,9 +51,11 @@ export function TaskEditor({
 
 function TaskForm({
   task,
+  categories,
   onClose,
 }: {
   task: Task | null;
+  categories: string[];
   onClose: () => void;
 }) {
   const [title, setTitle] = useState(task?.title ?? "");
@@ -59,6 +64,7 @@ function TaskForm({
   const [priority, setPriority] = useState<TaskPriority>(
     task?.priority ?? "middel",
   );
+  const [category, setCategory] = useState(task?.category ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
@@ -67,7 +73,13 @@ function TaskForm({
       return;
     }
     startTransition(async () => {
-      const input = { title, dueOn: dueOn || null, notes, priority };
+      const input = {
+        title,
+        dueOn: dueOn || null,
+        notes,
+        priority,
+        category: category.trim() || null,
+      };
       const result = task
         ? await updateTask(task.id, input)
         : await createTask(input);
@@ -127,6 +139,21 @@ function TaskForm({
                 </button>
               ))}
           </div>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="task-category">Categorie (optioneel)</Label>
+          <Input
+            id="task-category"
+            list="task-categories"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="Bv. Werk, Privé…"
+          />
+          <datalist id="task-categories">
+            {categories.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
         </div>
         <div className="grid gap-2">
           <Label htmlFor="task-notes">Notities (optioneel)</Label>

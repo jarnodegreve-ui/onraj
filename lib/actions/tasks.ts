@@ -15,6 +15,7 @@ const taskInput = z.object({
     .nullable(),
   notes: z.string().trim().max(2000),
   priority: z.enum(["laag", "middel", "hoog"]),
+  category: z.string().trim().max(60).nullable().optional(),
 });
 
 export type TaskInput = z.infer<typeof taskInput>;
@@ -25,7 +26,24 @@ function toRow(input: TaskInput) {
     due_on: input.dueOn,
     notes: input.notes || null,
     priority: input.priority,
+    category: input.category || null,
   };
+}
+
+type TaskRowInsert = ReturnType<typeof toRow>;
+
+// Progressief vangnet: eerst zonder category (migratie 0011), dan zonder
+// priority (migratie 0004), zodat opslaan altijd lukt vóór een migratie draait.
+function withoutCategory(row: TaskRowInsert) {
+  return {
+    title: row.title,
+    due_on: row.due_on,
+    notes: row.notes,
+    priority: row.priority,
+  };
+}
+function minimalRow(row: TaskRowInsert) {
+  return { title: row.title, due_on: row.due_on, notes: row.notes };
 }
 
 function revalidateTasks() {
@@ -46,10 +64,10 @@ export async function createTask(input: TaskInput): Promise<ActionResult> {
   const row = toRow(parsed.data);
   let { error } = await supabase.from("tasks").insert(row);
   if (error && isMissingColumn(error)) {
-    // priority-kolom bestaat nog niet (migratie 0004) → zonder opslaan.
-    ({ error } = await supabase
-      .from("tasks")
-      .insert({ title: row.title, due_on: row.due_on, notes: row.notes }));
+    ({ error } = await supabase.from("tasks").insert(withoutCategory(row)));
+    if (error && isMissingColumn(error)) {
+      ({ error } = await supabase.from("tasks").insert(minimalRow(row)));
+    }
   }
   if (error) return { ok: false, error: error.message };
 
@@ -75,8 +93,14 @@ export async function updateTask(
   if (error && isMissingColumn(error)) {
     ({ error } = await supabase
       .from("tasks")
-      .update({ title: row.title, due_on: row.due_on, notes: row.notes })
+      .update(withoutCategory(row))
       .eq("id", id));
+    if (error && isMissingColumn(error)) {
+      ({ error } = await supabase
+        .from("tasks")
+        .update(minimalRow(row))
+        .eq("id", id));
+    }
   }
   if (error) return { ok: false, error: error.message };
 
