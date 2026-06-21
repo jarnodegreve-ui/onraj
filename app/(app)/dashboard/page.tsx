@@ -71,7 +71,7 @@ export default async function DashboardPage() {
       title: "Taken",
       value: openTasks.length,
       sublabel: "openstaand",
-      accent: "#14b8a6",
+      accent: "#f59e0b",
     },
     {
       href: "/notities",
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
       title: "Agenda",
       value: eventsToday,
       sublabel: "afspraken vandaag",
-      accent: "#a855f7",
+      accent: "#7c3aed",
     },
     {
       href: "/financien",
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
       title: "Financiën",
       value: formatEuro(summary.saldo),
       sublabel: "saldo deze maand",
-      accent: "#14b8a6",
+      accent: "#22c55e",
     },
   ];
 
