@@ -16,7 +16,14 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Download, NotebookPen, Plus, RefreshCw, Search } from "lucide-react";
+import {
+  Archive,
+  Download,
+  NotebookPen,
+  Plus,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
@@ -42,6 +49,7 @@ export function NotesView({
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const [localOrder, setLocalOrder] = useState<string[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
@@ -70,10 +78,18 @@ export function NotesView({
     [notes],
   );
 
-  // Verslepen kan enkel op de volledige lijst (geen zoek-/tag-/categoriefilter),
+  const archivedCount = useMemo(
+    () => notes.filter((note) => note.archived).length,
+    [notes],
+  );
+
+  // Verslepen kan enkel op de volledige actieve lijst (geen filter/archief),
   // anders is de volgorde van een subset dubbelzinnig.
   const dragEnabled =
-    query.trim() === "" && activeTag === null && activeCategory === null;
+    query.trim() === "" &&
+    activeTag === null &&
+    activeCategory === null &&
+    !showArchived;
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -86,7 +102,12 @@ export function NotesView({
       const matchesTag = !activeTag || note.tags.includes(activeTag);
       const matchesCategory =
         !activeCategory || note.category === activeCategory;
-      return matchesQuery && matchesTag && matchesCategory;
+      return (
+        note.archived === showArchived &&
+        matchesQuery &&
+        matchesTag &&
+        matchesCategory
+      );
     });
     const idx = new Map(localOrder.map((id, index) => [id, index]));
     return filtered.sort((a, b) => {
@@ -95,7 +116,7 @@ export function NotesView({
       const bi = idx.get(b.id) ?? 1e6 + b.position;
       return ai - bi;
     });
-  }, [notes, query, activeTag, activeCategory, localOrder]);
+  }, [notes, query, activeTag, activeCategory, showArchived, localOrder]);
 
   function openNew() {
     setEditing(null);
@@ -171,14 +192,24 @@ export function NotesView({
         />
       ) : (
         <div className="space-y-4">
-          <div className="relative max-w-sm">
-            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Zoeken in notities…"
-              className="pl-8"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative max-w-sm flex-1">
+              <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Zoeken in notities…"
+                className="pl-8"
+              />
+            </div>
+            <Button
+              variant={showArchived ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowArchived((value) => !value)}
+            >
+              <Archive className="size-4" />
+              Archief{archivedCount > 0 ? ` (${archivedCount})` : ""}
+            </Button>
           </div>
 
           {allCategories.length > 0 && (
@@ -228,15 +259,23 @@ export function NotesView({
 
           {visible.length === 0 ? (
             <EmptyState
-              icon={NotebookPen}
-              title={notes.length === 0 ? "Nog geen notities" : "Niets gevonden"}
+              icon={showArchived ? Archive : NotebookPen}
+              title={
+                showArchived
+                  ? "Geen gearchiveerde notities"
+                  : notes.length === 0
+                    ? "Nog geen notities"
+                    : "Niets gevonden"
+              }
               description={
-                notes.length === 0
-                  ? "Maak je eerste notitie aan."
-                  : "Pas je zoekopdracht of filter aan."
+                showArchived
+                  ? "Gearchiveerde notities verschijnen hier."
+                  : notes.length === 0
+                    ? "Maak je eerste notitie aan."
+                    : "Pas je zoekopdracht of filter aan."
               }
             >
-              {notes.length === 0 && (
+              {!showArchived && notes.length === 0 && (
                 <Button onClick={openNew}>
                   <Plus className="size-4" /> Nieuwe notitie
                 </Button>

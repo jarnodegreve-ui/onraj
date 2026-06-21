@@ -27,6 +27,7 @@ export function toNote(row: NoteRow): Note {
     tags: row.tags ?? [],
     pinned: row.pinned,
     category: row.category ?? null,
+    archived: row.archived ?? false,
     position: row.position ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

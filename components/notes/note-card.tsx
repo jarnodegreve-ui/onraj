@@ -4,6 +4,8 @@ import { useTransition } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  Archive,
+  ArchiveRestore,
   GripVertical,
   MoreVertical,
   Pencil,
@@ -28,7 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deleteNote, setNotePinned } from "@/lib/actions/notes";
+import { archiveNote, deleteNote, setNotePinned } from "@/lib/actions/notes";
 import { fromNow } from "@/lib/format";
 import type { Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -69,11 +71,24 @@ export function NoteCard({
     });
   }
 
+  function archive(archived: boolean) {
+    startTransition(async () => {
+      const result = await archiveNote(note.id, archived);
+      if (result.ok) toast.success(archived ? "Gearchiveerd" : "Hersteld");
+      else toast.error("Mislukt", { description: result.error });
+    });
+  }
+
   function remove() {
-    if (!window.confirm("Deze notitie verwijderen?")) return;
+    if (
+      !window.confirm(
+        "Deze notitie definitief verwijderen? Ook het bestand in je vault wordt verwijderd. Dit kan niet ongedaan gemaakt worden.",
+      )
+    )
+      return;
     startTransition(async () => {
       const result = await deleteNote(note.id);
-      if (result.ok) toast.success("Notitie verwijderd");
+      if (result.ok) toast.success("Definitief verwijderd");
       else toast.error("Verwijderen mislukt", { description: result.error });
     });
   }
@@ -107,20 +122,22 @@ export function NoteCard({
             </CardTitle>
           </div>
           <div className="-mr-1 flex shrink-0 items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              onClick={togglePin}
-              disabled={pending}
-              aria-label={note.pinned ? "Losmaken" : "Vastpinnen"}
-            >
-              {note.pinned ? (
-                <Pin className="size-4 text-primary" />
-              ) : (
-                <PinOff className="size-4 text-muted-foreground" />
-              )}
-            </Button>
+            {!note.archived && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={togglePin}
+                disabled={pending}
+                aria-label={note.pinned ? "Losmaken" : "Vastpinnen"}
+              >
+                {note.pinned ? (
+                  <Pin className="size-4 text-primary" />
+                ) : (
+                  <PinOff className="size-4 text-muted-foreground" />
+                )}
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -135,14 +152,29 @@ export function NoteCard({
                 }
               />
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(note)}>
-                  <Pencil />
-                  Bewerken
-                </DropdownMenuItem>
-                <DropdownMenuItem variant="destructive" onClick={remove}>
-                  <Trash2 />
-                  Verwijderen
-                </DropdownMenuItem>
+                {note.archived ? (
+                  <>
+                    <DropdownMenuItem onClick={() => archive(false)}>
+                      <ArchiveRestore />
+                      Herstellen
+                    </DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" onClick={remove}>
+                      <Trash2 />
+                      Definitief verwijderen
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem onClick={() => onEdit(note)}>
+                      <Pencil />
+                      Bewerken
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => archive(true)}>
+                      <Archive />
+                      Archiveren
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

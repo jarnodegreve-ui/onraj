@@ -23,7 +23,8 @@ export async function resyncVault(): Promise<VaultSyncResult> {
 
   let notes;
   try {
-    notes = await listNotes();
+    // Ook gearchiveerde notities meenemen: hun vault-bestand blijft bewaard.
+    notes = await listNotes(true);
   } catch {
     return { ok: false, error: "Kon notities niet ophalen." };
   }

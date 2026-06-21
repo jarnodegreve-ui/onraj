@@ -10,6 +10,7 @@ export interface Note {
   tags: string[];
   pinned: boolean;
   category: string | null;
+  archived: boolean;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -52,6 +53,7 @@ export interface NoteRow {
   tags: string[] | null;
   pinned: boolean;
   category: string | null;
+  archived: boolean;
   position: number;
   created_at: string;
   updated_at: string;

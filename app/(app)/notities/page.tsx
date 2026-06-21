@@ -4,7 +4,7 @@ import { githubConfigured } from "@/lib/github";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
 export default async function NotitiesPage() {
-  const notes = supabaseConfigured ? await listNotes() : [];
+  const notes = supabaseConfigured ? await listNotes(true) : [];
   return (
     <NotesView
       notes={notes}

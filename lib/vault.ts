@@ -43,6 +43,7 @@ export function noteToMarkdown(note: Note): string {
     lines.push(`tags: [${note.tags.map(yaml).join(", ")}]`);
   }
   lines.push(`pinned: ${note.pinned}`);
+  if (note.archived) lines.push("archived: true");
   lines.push(`created: ${note.createdAt}`);
   lines.push(`updated: ${note.updatedAt}`);
   lines.push("---", "");

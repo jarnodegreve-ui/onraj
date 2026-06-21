@@ -128,6 +128,34 @@ export async function setNotePinned(
   return { ok: true };
 }
 
+// Zachte verwijdering: verbergt de notitie in het portaal maar bewaart het
+// vault-bestand (met archived: true in de frontmatter). archived=false herstelt.
+export async function archiveNote(
+  id: string,
+  archived: boolean,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("notes")
+    .update({ archived })
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) {
+    if (isMissingColumn(error)) {
+      return {
+        ok: false,
+        error: "Draai eerst migratie 0010 om te kunnen archiveren.",
+      };
+    }
+    return { ok: false, error: error.message };
+  }
+
+  await syncNoteFile(toNote(data), null);
+  revalidateNotes();
+  return { ok: true };
+}
+
 export async function deleteNote(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { data, error } = await supabase
