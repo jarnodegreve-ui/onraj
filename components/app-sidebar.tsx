@@ -25,10 +25,12 @@ export function AppSidebar({ email }: { email: string | null }) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2.5 px-1 py-1.5">
-          <BrandMark className="size-10 shrink-0" />
+        <div className="flex items-center gap-2.5 px-1 py-2">
+          <BrandMark className="size-12 shrink-0" />
           <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-            <span className="truncate font-semibold tracking-tight">ONRAJ</span>
+            <span className="truncate text-base font-semibold tracking-tight">
+              ONRAJ
+            </span>
             <span className="truncate text-[11px] tracking-wide text-sidebar-foreground/55">
               Overzicht
             </span>
@@ -39,7 +41,7 @@ export function AppSidebar({ email }: { email: string | null }) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {navItems.map((item) => {
                 const active =
                   pathname === item.href ||
@@ -49,6 +51,8 @@ export function AppSidebar({ email }: { email: string | null }) {
                     <SidebarMenuButton
                       isActive={active}
                       tooltip={item.title}
+                      size="lg"
+                      className="gap-3 text-[15px] [&_svg]:size-5"
                       render={
                         <Link href={item.href}>
                           <item.icon />
