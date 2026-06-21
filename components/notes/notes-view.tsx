@@ -15,10 +15,13 @@ import {
   rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import {
   Archive,
   Download,
+  LayoutGrid,
+  List,
   NotebookPen,
   Plus,
   RefreshCw,
@@ -29,6 +32,7 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { NoteCard } from "@/components/notes/note-card";
 import { NoteEditor } from "@/components/notes/note-editor";
+import { NoteRow } from "@/components/notes/note-row";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +54,7 @@ export function NotesView({
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [view, setView] = useState<"lijst" | "rooster">("lijst");
   const [localOrder, setLocalOrder] = useState<string[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
@@ -202,6 +207,34 @@ export function NotesView({
                 className="pl-8"
               />
             </div>
+            <div className="flex items-center rounded-lg border p-0.5">
+              <button
+                type="button"
+                onClick={() => setView("lijst")}
+                aria-label="Lijstweergave"
+                className={cn(
+                  "rounded-md p-1.5 transition-colors",
+                  view === "lijst"
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <List className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("rooster")}
+                aria-label="Roosterweergave"
+                className={cn(
+                  "rounded-md p-1.5 transition-colors",
+                  view === "rooster"
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <LayoutGrid className="size-4" />
+              </button>
+            </div>
             <Button
               variant={showArchived ? "default" : "outline"}
               size="sm"
@@ -289,18 +322,35 @@ export function NotesView({
             >
               <SortableContext
                 items={visible.map((note) => note.id)}
-                strategy={rectSortingStrategy}
+                strategy={
+                  view === "lijst"
+                    ? verticalListSortingStrategy
+                    : rectSortingStrategy
+                }
               >
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {visible.map((note) => (
-                    <NoteCard
-                      key={note.id}
-                      note={note}
-                      onEdit={openEdit}
-                      draggable={dragEnabled}
-                    />
-                  ))}
-                </div>
+                {view === "lijst" ? (
+                  <ul className="space-y-2">
+                    {visible.map((note) => (
+                      <NoteRow
+                        key={note.id}
+                        note={note}
+                        onEdit={openEdit}
+                        draggable={dragEnabled}
+                      />
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {visible.map((note) => (
+                      <NoteCard
+                        key={note.id}
+                        note={note}
+                        onEdit={openEdit}
+                        draggable={dragEnabled}
+                      />
+                    ))}
+                  </div>
+                )}
               </SortableContext>
             </DndContext>
           )}
