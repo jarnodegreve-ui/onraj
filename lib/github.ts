@@ -69,6 +69,21 @@ export async function putFile(
   }
 }
 
+// Lijst van bestandspaden in een map (voor opruimen van weesbestanden, bv. na
+// het hernoemen van notities). Lege array als de map nog niet bestaat.
+export async function listDir(path: string): Promise<string[]> {
+  const res = await fetch(
+    `${API_BASE}/repos/${repo}/contents/${encodePath(path)}?ref=${encodeURIComponent(branch)}`,
+    { headers: ghHeaders(), cache: "no-store" },
+  );
+  if (res.status === 404) return [];
+  if (!res.ok) {
+    throw new Error(`GitHub-status ${res.status} bij lijst ${path}`);
+  }
+  const data = (await res.json()) as Array<{ path: string; type: string }>;
+  return data.filter((entry) => entry.type === "file").map((entry) => entry.path);
+}
+
 export async function deleteFile(path: string, message: string): Promise<void> {
   const sha = await getSha(path);
   if (!sha) return; // bestaat al niet meer

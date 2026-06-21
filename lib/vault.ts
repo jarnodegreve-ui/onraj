@@ -1,20 +1,20 @@
 import { vaultDir } from "./github";
 import type { Note } from "./types";
 
-// Titel → veilige, Obsidian-vriendelijke bestandsnaam (diacritics weg, spaties
-// naar streepjes). Lege/symbool-titels vallen terug op een id-suffix.
-function slugify(input: string): string {
-  return input
-    .normalize("NFKD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
+// Titel → veilige, leesbare bestandsnaam. Obsidian ondersteunt spaties én
+// hoofdletters prima in bestandsnamen, dus die behouden we; enkel tekens die
+// problemen geven in bestandspaden/git halen we weg.
+function safeFileName(title: string): string {
+  return title
+    .replace(/[/\\:*?"<>|]/g, " ") // verboden/risicovolle padtekens → spatie
+    .replace(/\s+/g, " ") // witruimte normaliseren
+    .replace(/^[.\s]+|[.\s]+$/g, "") // leidende/sluitende punten en spaties weg
+    .slice(0, 100)
+    .trim();
 }
 
 export function noteFilePath(title: string, id: string): string {
-  const base = slugify(title) || `notitie-${id.slice(0, 6)}`;
+  const base = safeFileName(title) || `Notitie ${id.slice(0, 6)}`;
   return `${vaultDir}/${base}.md`;
 }
 

@@ -13,6 +13,7 @@ import { RecentNotes } from "@/components/dashboard/recent-notes";
 import { DashboardTasks } from "@/components/dashboard/tasks-list";
 import { DashboardUpcoming } from "@/components/dashboard/upcoming-list";
 import { WeekStrip } from "@/components/dashboard/week-strip";
+import { PushToggle } from "@/components/push/push-toggle";
 import {
   Card,
   CardDescription,
@@ -100,7 +101,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <Greeting name={name} />
+      <div className="flex items-start justify-between gap-4">
+        <Greeting name={name} />
+        <PushToggle />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
