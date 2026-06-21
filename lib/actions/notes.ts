@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { isMissingColumn } from "@/lib/data/safe";
 import { toNote } from "@/lib/mappers";
 import { createClient } from "@/lib/supabase/server";
 import { noteFilePath } from "@/lib/vault";
@@ -14,9 +15,12 @@ const noteInput = z.object({
   body: z.string().max(50000),
   tags: z.array(z.string().trim().min(1).max(40)).max(20),
   pinned: z.boolean(),
+  category: z.string().trim().max(60).nullable().optional(),
 });
 
 export type NoteInput = z.infer<typeof noteInput>;
+
+type DbClient = Awaited<ReturnType<typeof createClient>>;
 
 function revalidateNotes() {
   revalidatePath("/notities");
@@ -32,16 +36,43 @@ function validate(input: NoteInput): ActionResult & { data?: NoteInput } {
   return { ok: true, data: parsed.data };
 }
 
+// Schrijft een notitie-rij (insert of update). Valt terug zonder category als
+// migratie 0009 nog niet gedraaid is, zodat notitie-CRUD blijft werken.
+async function writeNote(
+  supabase: DbClient,
+  payload: Record<string, unknown>,
+  id?: string,
+) {
+  const run = (data: Record<string, unknown>) =>
+    id
+      ? supabase.from("notes").update(data).eq("id", id).select("*").single()
+      : supabase.from("notes").insert(data).select("*").single();
+
+  let result = await run(payload);
+  if (result.error && isMissingColumn(result.error) && "category" in payload) {
+    const fallback = { ...payload };
+    delete fallback.category;
+    result = await run(fallback);
+  }
+  return result;
+}
+
+function toPayload(data: NoteInput) {
+  return {
+    title: data.title,
+    body: data.body,
+    tags: data.tags,
+    pinned: data.pinned,
+    category: data.category || null,
+  };
+}
+
 export async function createNote(input: NoteInput): Promise<ActionResult> {
   const check = validate(input);
   if (!check.ok || !check.data) return check;
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("notes")
-    .insert(check.data)
-    .select("*")
-    .single();
+  const { data, error } = await writeNote(supabase, toPayload(check.data));
   if (error) return { ok: false, error: error.message };
 
   await syncNoteFile(toNote(data), null);
@@ -57,21 +88,21 @@ export async function updateNote(
   if (!check.ok || !check.data) return check;
 
   const supabase = await createClient();
+  // select("*") is veilig ook als de category-kolom nog niet bestaat.
   const { data: existing } = await supabase
     .from("notes")
-    .select("id, title")
+    .select("*")
     .eq("id", id)
     .single();
   const oldPath = existing
-    ? noteFilePath(existing.title as string, existing.id as string)
+    ? noteFilePath(
+        existing.title as string,
+        existing.id as string,
+        (existing.category as string | null) ?? null,
+      )
     : null;
 
-  const { data, error } = await supabase
-    .from("notes")
-    .update(check.data)
-    .eq("id", id)
-    .select("*")
-    .single();
+  const { data, error } = await writeNote(supabase, toPayload(check.data), id);
   if (error) return { ok: false, error: error.message };
 
   await syncNoteFile(toNote(data), oldPath);
@@ -103,12 +134,18 @@ export async function deleteNote(id: string): Promise<ActionResult> {
     .from("notes")
     .delete()
     .eq("id", id)
-    .select("id, title")
+    .select("*")
     .single();
   if (error) return { ok: false, error: error.message };
 
   if (data) {
-    await removeNoteFile(noteFilePath(data.title as string, data.id as string));
+    await removeNoteFile(
+      noteFilePath(
+        data.title as string,
+        data.id as string,
+        (data.category as string | null) ?? null,
+      ),
+    );
   }
   revalidateNotes();
   return { ok: true };

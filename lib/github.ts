@@ -84,6 +84,26 @@ export async function listDir(path: string): Promise<string[]> {
   return data.filter((entry) => entry.type === "file").map((entry) => entry.path);
 }
 
+// Alle bestandspaden onder een prefix, recursief (incl. submappen per categorie)
+// via de Git Trees-API. Lege array bij een lege repo / ontbrekende branch.
+export async function listTreeFiles(prefix: string): Promise<string[]> {
+  const res = await fetch(
+    `${API_BASE}/repos/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`,
+    { headers: ghHeaders(), cache: "no-store" },
+  );
+  if (res.status === 404 || res.status === 409) return [];
+  if (!res.ok) {
+    throw new Error(`GitHub-status ${res.status} bij boom-listing`);
+  }
+  const data = (await res.json()) as {
+    tree?: Array<{ path: string; type: string }>;
+  };
+  const pre = prefix.endsWith("/") ? prefix : `${prefix}/`;
+  return (data.tree ?? [])
+    .filter((entry) => entry.type === "blob" && entry.path.startsWith(pre))
+    .map((entry) => entry.path);
+}
+
 export async function deleteFile(path: string, message: string): Promise<void> {
   const sha = await getSha(path);
   if (!sha) return; // bestaat al niet meer

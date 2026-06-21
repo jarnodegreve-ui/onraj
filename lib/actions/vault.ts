@@ -4,7 +4,7 @@ import { listNotes } from "@/lib/data/notes";
 import {
   deleteFile,
   githubConfigured,
-  listDir,
+  listTreeFiles,
   putFile,
   vaultDir,
 } from "@/lib/github";
@@ -30,12 +30,16 @@ export async function resyncVault(): Promise<VaultSyncResult> {
 
   // Doelbestanden per notitie.
   const targets = new Map(
-    notes.map((note) => [noteFilePath(note.title, note.id), note]),
+    notes.map((note) => [
+      noteFilePath(note.title, note.id, note.category),
+      note,
+    ]),
   );
 
-  // Weesbestanden opruimen: alles in de ONRAJ-map dat geen huidige notitie is.
+  // Weesbestanden opruimen: alles in de ONRAJ-map (incl. categorie-submappen)
+  // dat geen huidige notitie meer is.
   try {
-    const existing = await listDir(vaultDir);
+    const existing = await listTreeFiles(vaultDir);
     for (const path of existing) {
       if (path.endsWith(".md") && !targets.has(path)) {
         await deleteFile(path, "onraj: oude bestandsnaam opruimen");

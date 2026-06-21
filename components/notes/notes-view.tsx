@@ -41,6 +41,7 @@ export function NotesView({
 }) {
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [localOrder, setLocalOrder] = useState<string[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
@@ -61,9 +62,18 @@ export function NotesView({
     [notes],
   );
 
-  // Verslepen kan enkel op de volledige lijst (geen zoek-/tagfilter actief),
+  const allCategories = useMemo(
+    () =>
+      Array.from(
+        new Set(notes.map((note) => note.category).filter((c): c is string => !!c)),
+      ).sort((a, b) => a.localeCompare(b, "nl")),
+    [notes],
+  );
+
+  // Verslepen kan enkel op de volledige lijst (geen zoek-/tag-/categoriefilter),
   // anders is de volgorde van een subset dubbelzinnig.
-  const dragEnabled = query.trim() === "" && activeTag === null;
+  const dragEnabled =
+    query.trim() === "" && activeTag === null && activeCategory === null;
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -74,7 +84,9 @@ export function NotesView({
         note.body.toLowerCase().includes(q) ||
         note.tags.some((tag) => tag.toLowerCase().includes(q));
       const matchesTag = !activeTag || note.tags.includes(activeTag);
-      return matchesQuery && matchesTag;
+      const matchesCategory =
+        !activeCategory || note.category === activeCategory;
+      return matchesQuery && matchesTag && matchesCategory;
     });
     const idx = new Map(localOrder.map((id, index) => [id, index]));
     return filtered.sort((a, b) => {
@@ -83,7 +95,7 @@ export function NotesView({
       const bi = idx.get(b.id) ?? 1e6 + b.position;
       return ai - bi;
     });
-  }, [notes, query, activeTag, localOrder]);
+  }, [notes, query, activeTag, activeCategory, localOrder]);
 
   function openNew() {
     setEditing(null);
@@ -169,6 +181,31 @@ export function NotesView({
             />
           </div>
 
+          {allCategories.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs font-medium text-muted-foreground">
+                Categorie:
+              </span>
+              <FilterChip
+                label="Alle"
+                active={activeCategory === null}
+                onClick={() => setActiveCategory(null)}
+              />
+              {allCategories.map((category) => (
+                <FilterChip
+                  key={category}
+                  label={category}
+                  active={activeCategory === category}
+                  onClick={() =>
+                    setActiveCategory((current) =>
+                      current === category ? null : category,
+                    )
+                  }
+                />
+              ))}
+            </div>
+          )}
+
           {allTags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               <FilterChip
@@ -231,7 +268,12 @@ export function NotesView({
         </div>
       )}
 
-      <NoteEditor open={editorOpen} onOpenChange={setEditorOpen} note={editing} />
+      <NoteEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        note={editing}
+        categories={allCategories}
+      />
     </div>
   );
 }

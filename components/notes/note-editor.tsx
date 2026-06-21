@@ -26,10 +26,12 @@ export function NoteEditor({
   open,
   onOpenChange,
   note,
+  categories = [],
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   note: Note | null;
+  categories?: string[];
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -45,6 +47,7 @@ export function NoteEditor({
         <NoteEditorForm
           key={note?.id ?? "nieuw"}
           note={note}
+          categories={categories}
           onClose={() => onOpenChange(false)}
         />
       </DialogContent>
@@ -54,19 +57,28 @@ export function NoteEditor({
 
 function NoteEditorForm({
   note,
+  categories,
   onClose,
 }: {
   note: Note | null;
+  categories: string[];
   onClose: () => void;
 }) {
   const [title, setTitle] = useState(note?.title ?? "");
   const [body, setBody] = useState(note?.body ?? "");
   const [tags, setTags] = useState<string[]>(note?.tags ?? []);
+  const [category, setCategory] = useState(note?.category ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
     startTransition(async () => {
-      const input = { title, body, tags, pinned: note?.pinned ?? false };
+      const input = {
+        title,
+        body,
+        tags,
+        pinned: note?.pinned ?? false,
+        category: category.trim() || null,
+      };
       const result = note
         ? await updateNote(note.id, input)
         : await createNote(input);
@@ -120,6 +132,25 @@ function NoteEditorForm({
               </div>
             </TabsContent>
           </Tabs>
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="note-category">Categorie</Label>
+          <Input
+            id="note-category"
+            list="note-categories"
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            placeholder="Bv. Werk, Privé, Ideeën…"
+          />
+          <datalist id="note-categories">
+            {categories.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+          <p className="text-xs text-muted-foreground">
+            Eén categorie per notitie · komt in een eigen map in je vault.
+          </p>
         </div>
 
         <div className="grid gap-2">

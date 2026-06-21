@@ -7,7 +7,7 @@ import { noteFilePath, noteToMarkdown } from "./vault";
 // ook als GitHub niet gekoppeld is of even onbereikbaar is.
 export async function syncNoteFile(note: Note, oldPath: string | null) {
   if (!githubConfigured) return;
-  const path = noteFilePath(note.title, note.id);
+  const path = noteFilePath(note.title, note.id, note.category);
   try {
     if (oldPath && oldPath !== path) {
       await deleteFile(oldPath, `onraj: hernoem notitie → ${path}`);

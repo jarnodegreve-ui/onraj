@@ -158,6 +158,7 @@ export function NoteCard({
         )}
       </CardContent>
       <CardFooter className="flex-wrap items-center gap-1.5">
+        {note.category && <Badge>{note.category}</Badge>}
         {note.tags.map((tag) => (
           <Badge key={tag} variant="secondary">
             {tag}

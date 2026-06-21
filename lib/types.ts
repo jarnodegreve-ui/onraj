@@ -9,6 +9,7 @@ export interface Note {
   body: string; // markdown
   tags: string[];
   pinned: boolean;
+  category: string | null;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -50,6 +51,7 @@ export interface NoteRow {
   body: string;
   tags: string[] | null;
   pinned: boolean;
+  category: string | null;
   position: number;
   created_at: string;
   updated_at: string;
