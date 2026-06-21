@@ -25,8 +25,8 @@ export function AppSidebar({ email }: { email: string | null }) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-1 py-1.5">
-          <BrandMark className="size-8 shrink-0" />
+        <div className="flex items-center gap-2.5 px-1 py-1.5">
+          <BrandMark className="size-10 shrink-0" />
           <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
             <span className="truncate font-semibold tracking-tight">ONRAJ</span>
             <span className="truncate text-[11px] tracking-wide text-sidebar-foreground/55">
