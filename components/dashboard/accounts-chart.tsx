@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
+  YAxis,
 } from "recharts";
 
 import { formatEuro } from "@/lib/format";
@@ -16,7 +17,7 @@ const COLORS = ["#2563eb", "#7c3aed", "#22d3ee", "#22c55e", "#f59e0b", "#f43f5e"
 
 type Datum = { account: string; amount: number };
 
-// Compact bedrag (zonder centen) voor het label boven de balk.
+// Compact bedrag (zonder centen) voor het label naast de balk.
 function shortEuro(value: number) {
   return new Intl.NumberFormat("nl-BE", {
     style: "currency",
@@ -47,23 +48,32 @@ function ChartTooltip({
 }
 
 export function AccountsChart({ data }: { data: Datum[] }) {
+  const height = Math.max(130, data.length * 34);
   return (
-    <ResponsiveContainer width="100%" height={240}>
-      <BarChart data={data} margin={{ top: 24, right: 8, bottom: 0, left: 8 }}>
-        <XAxis
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart
+        layout="vertical"
+        data={data}
+        margin={{ top: 4, right: 64, bottom: 4, left: 4 }}
+        barCategoryGap="30%"
+      >
+        <XAxis type="number" hide />
+        <YAxis
+          type="category"
           dataKey="account"
+          width={100}
           tickLine={false}
           axisLine={false}
-          tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+          tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
         />
         <Tooltip
           cursor={{ fill: "var(--muted)", opacity: 0.35 }}
           content={<ChartTooltip />}
         />
-        <Bar dataKey="amount" radius={[6, 6, 0, 0]} maxBarSize={72}>
+        <Bar dataKey="amount" radius={[0, 6, 6, 0]} barSize={18}>
           <LabelList
             dataKey="amount"
-            position="top"
+            position="right"
             fill="var(--foreground)"
             fontSize={11}
             formatter={(value) => shortEuro(Number(value))}
