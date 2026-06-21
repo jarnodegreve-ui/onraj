@@ -13,7 +13,6 @@ import { AccountsChart } from "@/components/dashboard/accounts-chart";
 import { RecentNotes } from "@/components/dashboard/recent-notes";
 import { DashboardTasks } from "@/components/dashboard/tasks-list";
 import { DashboardUpcoming } from "@/components/dashboard/upcoming-list";
-import { WeekStrip } from "@/components/dashboard/week-strip";
 import { PushToggle } from "@/components/push/push-toggle";
 import {
   Card,
@@ -121,8 +120,6 @@ export default async function DashboardPage() {
           <ModuleCard key={card.href} {...card} />
         ))}
       </div>
-
-      <WeekStrip events={events} todayKey={todayKey} />
 
       {accountChart.length > 0 && (
         <Card>
