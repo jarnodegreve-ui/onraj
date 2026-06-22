@@ -29,3 +29,17 @@ export function latestPerAccount(balances: AccountBalance[]): AccountBalance[] {
   }
   return [...latest.values()].sort((a, b) => b.amount - a.amount);
 }
+
+/** Totaal vermogen per maand (som van alle rekeningen), oudste maand eerst. */
+export function netWorthByMonth(
+  balances: AccountBalance[],
+): { month: string; total: number }[] {
+  const byMonth = new Map<string, number>();
+  for (const balance of balances) {
+    const key = balance.month.slice(0, 7);
+    byMonth.set(key, (byMonth.get(key) ?? 0) + balance.amount);
+  }
+  return [...byMonth.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, total]) => ({ month, total: Math.round(total * 100) / 100 }));
+}
