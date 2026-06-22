@@ -12,6 +12,7 @@ const PUBLIC_PREFIXES = [
   "/api/telegram",
   "/api/cron",
   "/api/share",
+  "/api/github",
 ];
 
 // Single-user allowlist: enkel dit e-mailadres krijgt toegang.

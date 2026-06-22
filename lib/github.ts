@@ -104,6 +104,22 @@ export async function listTreeFiles(prefix: string): Promise<string[]> {
     .map((entry) => entry.path);
 }
 
+// Ruwe inhoud van een bestand (voor twee-weg-sync: Obsidian → ONRAJ).
+export async function getFileContent(path: string): Promise<string | null> {
+  const res = await fetch(
+    `${API_BASE}/repos/${repo}/contents/${encodePath(path)}?ref=${encodeURIComponent(branch)}`,
+    {
+      headers: { ...ghHeaders(), Accept: "application/vnd.github.raw" },
+      cache: "no-store",
+    },
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(`GitHub-status ${res.status} bij lezen ${path}`);
+  }
+  return res.text();
+}
+
 export async function deleteFile(path: string, message: string): Promise<void> {
   const sha = await getSha(path);
   if (!sha) return; // bestaat al niet meer
