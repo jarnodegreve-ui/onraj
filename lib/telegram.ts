@@ -1,3 +1,5 @@
+import "server-only";
+
 // Minimale Telegram Bot-API helper (rauwe fetch, geen SDK).
 
 const API_BASE = "https://api.telegram.org";

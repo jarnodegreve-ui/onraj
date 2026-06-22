@@ -59,25 +59,19 @@ export default async function StatistiekenPage() {
   const todayKey = currentDayKey();
   const monthKey = currentMonthKey();
 
-  const [
-    tasks,
-    allNotes,
-    events,
-    transactions,
-    accountBalances,
-    financeLocked,
-    taskCategories,
-    noteCategories,
-  ] = await Promise.all([
-    listTasks(),
-    listNotes(true),
-    listEvents(),
-    listTransactions(),
-    listAccountBalances(),
-    isFinanceLocked(),
-    listCategories("task"),
-    listCategories("note"),
-  ]);
+  const financeLocked = await isFinanceLocked();
+  const [tasks, allNotes, events, taskCategories, noteCategories] =
+    await Promise.all([
+      listTasks(),
+      listNotes(true),
+      listEvents(),
+      listCategories("task"),
+      listCategories("note"),
+    ]);
+  // Financiële data niet ophalen wanneer het slot dichtstaat.
+  const [transactions, accountBalances] = financeLocked
+    ? [[], []]
+    : await Promise.all([listTransactions(), listAccountBalances()]);
 
   const tStats = taskStats(tasks, todayKey);
   const nStats = noteStats(allNotes);

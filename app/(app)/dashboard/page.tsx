@@ -57,15 +57,16 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [notes, transactions, events, tasks, accountBalances, financeLocked] =
-    await Promise.all([
-      listNotes(),
-      listTransactions(),
-      listEvents(),
-      listTasks(),
-      listAccountBalances(),
-      isFinanceLocked(),
-    ]);
+  const financeLocked = await isFinanceLocked();
+  const [notes, events, tasks] = await Promise.all([
+    listNotes(),
+    listEvents(),
+    listTasks(),
+  ]);
+  // Financiële data niet ophalen wanneer het slot dichtstaat (privacy + minder werk).
+  const [transactions, accountBalances] = financeLocked
+    ? [[], []]
+    : await Promise.all([listTransactions(), listAccountBalances()]);
 
   const name = displayName(user?.email);
   const todayKey = currentDayKey();

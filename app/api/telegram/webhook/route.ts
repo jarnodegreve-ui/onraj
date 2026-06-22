@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { toNote } from "@/lib/mappers";
+import { secureEquals } from "@/lib/secure";
 import {
   adminConfigured,
   createAdminClient,
@@ -176,11 +177,11 @@ async function createNoteFromText(admin: Admin, ownerId: string, text: string) {
 // een notitie; commando's (/vandaag, /saldo, /taak, /notitie) doen het werk via
 // de service-role-client. We antwoorden altijd met 200 (geen retries).
 export async function POST(request: Request) {
-  if (secretToken) {
-    const header = request.headers.get("x-telegram-bot-api-secret-token");
-    if (header !== secretToken) {
-      return NextResponse.json({ ok: false }, { status: 401 });
-    }
+  // Fail-closed: zonder geconfigureerd secret-token wordt de webhook geweigerd
+  // (de afzender-id in het bericht is niet geheim en mag geen poortwachter zijn).
+  const header = request.headers.get("x-telegram-bot-api-secret-token") ?? "";
+  if (!secretToken || !secureEquals(header, secretToken)) {
+    return NextResponse.json({ ok: false }, { status: 401 });
   }
 
   let update: TgUpdate;

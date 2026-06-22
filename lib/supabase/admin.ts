@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -26,10 +28,11 @@ export async function getOwnerUserId(): Promise<string | null> {
   const { data, error } = await admin.auth.admin.listUsers();
   if (error || !data) return null;
 
+  // Als ALLOWED_EMAIL gezet is, MOET de eigenaar exact matchen — geen stille
+  // terugval op "de eerste gebruiker" (zou bij een tweede auth-user fout zijn).
   const email = process.env.ALLOWED_EMAIL?.toLowerCase();
   const user = email
-    ? (data.users.find((u) => u.email?.toLowerCase() === email) ??
-      data.users[0])
+    ? data.users.find((u) => u.email?.toLowerCase() === email)
     : data.users[0];
 
   cachedOwnerId = user?.id ?? null;

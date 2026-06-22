@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { toNote } from "@/lib/mappers";
+import { secureEquals } from "@/lib/secure";
 import {
   adminConfigured,
   createAdminClient,
@@ -25,7 +26,9 @@ async function resolveOwner(request: Request): Promise<string | null> {
   }
   const url = new URL(request.url);
   const key = url.searchParams.get("key") ?? request.headers.get("x-onraj-key");
-  if (shareSecret && key === shareSecret) return getOwnerUserId();
+  if (shareSecret && key && secureEquals(key, shareSecret)) {
+    return getOwnerUserId();
+  }
   return null;
 }
 

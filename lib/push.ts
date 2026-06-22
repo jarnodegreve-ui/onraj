@@ -1,3 +1,5 @@
+import "server-only";
+
 import webpush from "web-push";
 
 const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";

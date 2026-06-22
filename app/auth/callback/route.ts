@@ -6,6 +6,15 @@ import { createClient } from "@/lib/supabase/server";
 // iedereen met een geldige sessie toelaten.
 const ALLOWED_EMAIL = process.env.ALLOWED_EMAIL?.toLowerCase();
 
+// Alleen interne paden toelaten als redirect-doel — voorkomt open redirect
+// (bv. ?next=//evil.com of ?next=/\evil.com stuurt je anders naar buiten).
+function safeNext(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) {
+    return "/dashboard";
+  }
+  return value;
+}
+
 /**
  * Wisselt de magic-link-code in voor een sessie en controleert de allowlist.
  * Bij succes door naar het dashboard, anders terug naar /login met een fout.
@@ -13,7 +22,7 @@ const ALLOWED_EMAIL = process.env.ALLOWED_EMAIL?.toLowerCase();
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = safeNext(searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();

@@ -1,3 +1,5 @@
+import "server-only";
+
 // Minimale GitHub Contents-API helper (rauwe fetch, geen SDK) om notitie-
 // bestanden naar een privé repo te schrijven. Die repo synct Jarno via de
 // Obsidian Git-plugin naar zijn lokale vault.

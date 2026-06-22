@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { secureEquals } from "@/lib/secure";
 import {
   adminConfigured,
   createAdminClient,
@@ -18,12 +19,11 @@ function todayKeyBrussels(now: Date) {
 // Dagelijkse ochtend-digest: telt openstaande taken (vandaag/te laat) en
 // afspraken in de komende 24u, en pusht dat naar alle toestellen.
 export async function GET(request: Request) {
-  // Vercel Cron stuurt Authorization: Bearer <CRON_SECRET>.
-  if (cronSecret) {
-    const auth = request.headers.get("authorization");
-    if (auth !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ ok: false }, { status: 401 });
-    }
+  // Vercel Cron stuurt Authorization: Bearer <CRON_SECRET>. Fail-closed: zonder
+  // geconfigureerd secret wordt de cron geweigerd (geen publiek triggerbare push).
+  const auth = request.headers.get("authorization") ?? "";
+  if (!cronSecret || !secureEquals(auth, `Bearer ${cronSecret}`)) {
+    return NextResponse.json({ ok: false }, { status: 401 });
   }
   if (!adminConfigured || !pushConfigured) {
     return NextResponse.json({ ok: false, reason: "niet-geconfigureerd" });

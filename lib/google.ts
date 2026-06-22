@@ -1,3 +1,5 @@
+import "server-only";
+
 // Server-side helpers voor de Google OAuth- en Calendar-API (raw fetch, geen
 // zware googleapis-dependency).
 

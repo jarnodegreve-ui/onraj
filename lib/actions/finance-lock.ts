@@ -70,6 +70,9 @@ export async function unlockFinance(pin: string): Promise<ActionResult> {
 
   const hash = await getFinancePinHash();
   if (!hash || !pinMatches(pin, user.id, hash)) {
+    // Vertraging op een foute poging: maakt brute-forcen van de pincode traag
+    // (zonder serverstate). Een geldige poging blijft direct.
+    await new Promise((resolve) => setTimeout(resolve, 600));
     return { ok: false, error: "Foute pincode." };
   }
   await setUnlockCookie();

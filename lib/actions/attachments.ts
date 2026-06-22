@@ -34,9 +34,10 @@ export async function listAttachments(
 
   const views: AttachmentView[] = [];
   for (const row of data) {
+    // Korte TTL (5 min): een gemorste link werkt niet uren lang zonder sessie.
     const { data: signed } = await supabase.storage
       .from("attachments")
-      .createSignedUrl(row.path, 3600);
+      .createSignedUrl(row.path, 300);
     views.push({
       id: row.id,
       name: row.name,
