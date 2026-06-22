@@ -4,6 +4,8 @@ import type {
   Budget,
   BudgetRow,
   CalendarEvent,
+  Category,
+  CategoryRow,
   EventRow,
   Note,
   NoteRow,
@@ -121,6 +123,18 @@ export function toSavingsGoal(row: SavingsGoalRow): SavingsGoal {
     targetAmount: toNumber(row.target_amount),
     savedAmount: toNumber(row.saved_amount),
     color: row.color,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function toCategory(row: CategoryRow): Category {
+  return {
+    id: row.id,
+    scope: row.scope,
+    name: row.name,
+    color: row.color,
+    position: row.position ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

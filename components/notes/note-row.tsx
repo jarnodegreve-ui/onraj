@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { CategoryBadge } from "@/components/category-badge";
 import { Markdown } from "@/components/markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,10 +35,12 @@ export function NoteRow({
   note,
   onEdit,
   draggable,
+  categoryColor,
 }: {
   note: Note;
   onEdit: (note: Note) => void;
   draggable: boolean;
+  categoryColor?: string | null;
 }) {
   const {
     attributes,
@@ -119,7 +122,7 @@ export function NoteRow({
             {note.title || "Naamloos"}
           </span>
           {note.category && (
-            <Badge className="shrink-0 text-[10px]">{note.category}</Badge>
+            <CategoryBadge name={note.category} color={categoryColor} />
           )}
         </button>
         <span className="shrink-0 text-xs text-muted-foreground">

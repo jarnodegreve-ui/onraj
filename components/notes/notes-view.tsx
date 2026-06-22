@@ -38,17 +38,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { reorderNotes } from "@/lib/actions/reorder";
 import { resyncVault } from "@/lib/actions/vault";
-import type { Note } from "@/lib/types";
+import { orderByManaged, suggestionList } from "@/lib/categories";
+import type { Category, Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function NotesView({
   notes,
   preview,
   vaultConnected,
+  categories = [],
 }: {
   notes: Note[];
   preview: boolean;
   vaultConnected: boolean;
+  categories?: Category[];
 }) {
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -75,12 +78,31 @@ export function NotesView({
     [notes],
   );
 
-  const allCategories = useMemo(
+  const colorByName = useMemo(
+    () => new Map(categories.map((category) => [category.name, category.color])),
+    [categories],
+  );
+
+  const inUseCategories = useMemo(
     () =>
       Array.from(
-        new Set(notes.map((note) => note.category).filter((c): c is string => !!c)),
-      ).sort((a, b) => a.localeCompare(b, "nl")),
+        new Set(
+          notes.map((note) => note.category).filter((c): c is string => !!c),
+        ),
+      ),
     [notes],
+  );
+
+  // Filterbalk: enkel categorieën in gebruik, in de beheerde volgorde.
+  const filterCategories = useMemo(
+    () => orderByManaged(inUseCategories, categories),
+    [inUseCategories, categories],
+  );
+
+  // Editor-suggesties: alle beheerde categorieën (ook ongebruikte) eerst.
+  const editorCategories = useMemo(
+    () => suggestionList(inUseCategories, categories),
+    [inUseCategories, categories],
   );
 
   const archivedCount = useMemo(
@@ -245,7 +267,7 @@ export function NotesView({
             </Button>
           </div>
 
-          {allCategories.length > 0 && (
+          {filterCategories.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="mr-1 text-xs font-medium text-muted-foreground">
                 Categorie:
@@ -255,11 +277,12 @@ export function NotesView({
                 active={activeCategory === null}
                 onClick={() => setActiveCategory(null)}
               />
-              {allCategories.map((category) => (
+              {filterCategories.map((category) => (
                 <FilterChip
                   key={category}
                   label={category}
                   active={activeCategory === category}
+                  color={colorByName.get(category)}
                   onClick={() =>
                     setActiveCategory((current) =>
                       current === category ? null : category,
@@ -336,6 +359,11 @@ export function NotesView({
                         note={note}
                         onEdit={openEdit}
                         draggable={dragEnabled}
+                        categoryColor={
+                          note.category
+                            ? colorByName.get(note.category)
+                            : undefined
+                        }
                       />
                     ))}
                   </ul>
@@ -347,6 +375,11 @@ export function NotesView({
                         note={note}
                         onEdit={openEdit}
                         draggable={dragEnabled}
+                        categoryColor={
+                          note.category
+                            ? colorByName.get(note.category)
+                            : undefined
+                        }
                       />
                     ))}
                   </div>
@@ -361,7 +394,7 @@ export function NotesView({
         open={editorOpen}
         onOpenChange={setEditorOpen}
         note={editing}
-        categories={allCategories}
+        categories={editorCategories}
       />
     </div>
   );
@@ -371,22 +404,30 @@ function FilterChip({
   label,
   active,
   onClick,
+  color,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
+  color?: string | null;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-full border px-2.5 py-0.5 text-xs transition-colors",
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors",
         active
           ? "border-primary bg-primary text-primary-foreground"
           : "border-border bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground",
       )}
     >
+      {color && (
+        <span
+          className="size-1.5 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+      )}
       {label}
     </button>
   );

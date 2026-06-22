@@ -22,6 +22,7 @@ import {
   listAccountBalances,
   netWorthByMonth,
 } from "@/lib/data/accounts";
+import { listCategories } from "@/lib/data/categories";
 import { listEvents } from "@/lib/data/events";
 import { listNotes } from "@/lib/data/notes";
 import { listTasks } from "@/lib/data/tasks";
@@ -58,19 +59,41 @@ export default async function StatistiekenPage() {
   const todayKey = currentDayKey();
   const monthKey = currentMonthKey();
 
-  const [tasks, allNotes, events, transactions, accountBalances, financeLocked] =
-    await Promise.all([
-      listTasks(),
-      listNotes(true),
-      listEvents(),
-      listTransactions(),
-      listAccountBalances(),
-      isFinanceLocked(),
-    ]);
+  const [
+    tasks,
+    allNotes,
+    events,
+    transactions,
+    accountBalances,
+    financeLocked,
+    taskCategories,
+    noteCategories,
+  ] = await Promise.all([
+    listTasks(),
+    listNotes(true),
+    listEvents(),
+    listTransactions(),
+    listAccountBalances(),
+    isFinanceLocked(),
+    listCategories("task"),
+    listCategories("note"),
+  ]);
 
   const tStats = taskStats(tasks, todayKey);
   const nStats = noteStats(allNotes);
   const eStats = eventStats(events, todayKey, monthKey);
+
+  // Categoriekleuren toepassen op de verdeelstaafjes.
+  const taskColor = new Map(taskCategories.map((c) => [c.name, c.color]));
+  const noteColor = new Map(noteCategories.map((c) => [c.name, c.color]));
+  const taskByCategory = tStats.byCategory.slice(0, 6).map((item) => ({
+    ...item,
+    color: taskColor.get(item.label) ?? undefined,
+  }));
+  const noteByCategory = nStats.byCategory.slice(0, 6).map((item) => ({
+    ...item,
+    color: noteColor.get(item.label) ?? undefined,
+  }));
 
   const totalNetWorth = latestPerAccount(accountBalances).reduce(
     (sum, balance) => sum + balance.amount,
@@ -158,7 +181,7 @@ export default async function StatistiekenPage() {
           </Block>
           <Block title="Openstaand per categorie">
             <Breakdown
-              items={tStats.byCategory.slice(0, 6)}
+              items={taskByCategory}
               emptyLabel="Geen openstaande taken"
             />
           </Block>
@@ -177,7 +200,7 @@ export default async function StatistiekenPage() {
         <div className="grid gap-6 sm:grid-cols-2">
           <Block title="Per categorie">
             <Breakdown
-              items={nStats.byCategory.slice(0, 6)}
+              items={noteByCategory}
               emptyLabel="Nog geen notities"
             />
           </Block>

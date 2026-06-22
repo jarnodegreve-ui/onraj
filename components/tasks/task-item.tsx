@@ -6,6 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Check, GripVertical, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { CategoryBadge } from "@/components/category-badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,11 +25,13 @@ export function TaskItem({
   todayKey,
   onEdit,
   draggable,
+  categoryColor,
 }: {
   task: Task;
   todayKey: string;
   onEdit: (task: Task) => void;
   draggable: boolean;
+  categoryColor?: string | null;
 }) {
   const {
     attributes,
@@ -123,9 +126,7 @@ export function TaskItem({
             {meta.label}
           </span>
           {task.category && (
-            <span className="rounded-full bg-primary/15 px-1.5 py-px text-[11px] font-medium text-primary">
-              {task.category}
-            </span>
+            <CategoryBadge name={task.category} color={categoryColor} />
           )}
         </div>
       </div>

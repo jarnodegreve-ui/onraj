@@ -213,6 +213,31 @@ export interface AccountBalanceRow {
   updated_at: string;
 }
 
+// ─── Categorieën (beheerbaar) ────────────────────────────────────────────────
+
+export type CategoryScope = "task" | "note";
+
+export interface Category {
+  id: string;
+  scope: CategoryScope;
+  name: string;
+  color: string | null; // hex (#RRGGBB) of null
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CategoryRow {
+  id: string;
+  user_id: string;
+  scope: CategoryScope;
+  name: string;
+  color: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // ─── Bijlagen ────────────────────────────────────────────────────────────────
 
 export type AttachmentEntity = "note" | "transaction";

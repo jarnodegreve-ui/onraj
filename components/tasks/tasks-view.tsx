@@ -26,8 +26,9 @@ import { TaskItem } from "@/components/tasks/task-item";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { reorderTasks } from "@/lib/actions/reorder";
+import { orderByManaged, suggestionList } from "@/lib/categories";
 import { priorityMeta } from "@/lib/tasks";
-import type { Task } from "@/lib/types";
+import type { Category, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Filter = "open" | "done" | "all";
@@ -45,10 +46,12 @@ export function TasksView({
   tasks,
   todayKey,
   preview,
+  categories = [],
 }: {
   tasks: Task[];
   todayKey: string;
   preview: boolean;
+  categories?: Category[];
 }) {
   const [filter, setFilter] = useState<Filter>("open");
   const [sort, setSort] = useState<Sort>("handmatig");
@@ -69,12 +72,31 @@ export function TasksView({
     [tasks],
   );
 
-  const allCategories = useMemo(
+  const colorByName = useMemo(
+    () => new Map(categories.map((category) => [category.name, category.color])),
+    [categories],
+  );
+
+  const inUseCategories = useMemo(
     () =>
       Array.from(
-        new Set(tasks.map((task) => task.category).filter((c): c is string => !!c)),
-      ).sort((a, b) => a.localeCompare(b, "nl")),
+        new Set(
+          tasks.map((task) => task.category).filter((c): c is string => !!c),
+        ),
+      ),
     [tasks],
+  );
+
+  // Filterbalk: enkel categorieën in gebruik, in de beheerde volgorde.
+  const filterCategories = useMemo(
+    () => orderByManaged(inUseCategories, categories),
+    [inUseCategories, categories],
+  );
+
+  // Editor-suggesties: alle beheerde categorieën (ook ongebruikte) eerst.
+  const editorCategories = useMemo(
+    () => suggestionList(inUseCategories, categories),
+    [categories, inUseCategories],
   );
 
   const visible = useMemo(() => {
@@ -198,7 +220,7 @@ export function TasksView({
         </div>
       </div>
 
-      {allCategories.length > 0 && (
+      {filterCategories.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-1.5">
           <span className="mr-1 text-xs font-medium text-muted-foreground">
             Categorie:
@@ -209,10 +231,11 @@ export function TasksView({
           >
             Alle
           </Chip>
-          {allCategories.map((category) => (
+          {filterCategories.map((category) => (
             <Chip
               key={category}
               active={activeCategory === category}
+              color={colorByName.get(category)}
               onClick={() =>
                 setActiveCategory((current) =>
                   current === category ? null : category,
@@ -267,6 +290,9 @@ export function TasksView({
                       todayKey={todayKey}
                       onEdit={openEdit}
                       draggable={sort === "handmatig" && activeCategory === null}
+                      categoryColor={
+                        task.category ? colorByName.get(task.category) : undefined
+                      }
                     />
                   ))}
                 </ul>
@@ -280,7 +306,7 @@ export function TasksView({
         open={editorOpen}
         onOpenChange={setEditorOpen}
         task={editing}
-        categories={allCategories}
+        categories={editorCategories}
       />
     </div>
   );
@@ -290,22 +316,30 @@ function Chip({
   active,
   onClick,
   children,
+  color,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  color?: string | null;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-full border px-2.5 py-0.5 text-xs transition-colors",
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors",
         active
           ? "border-primary bg-primary text-primary-foreground"
           : "border-border bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground",
       )}
     >
+      {color && (
+        <span
+          className="size-1.5 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+      )}
       {children}
     </button>
   );

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Settings } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { NavUser } from "@/components/nav-user";
@@ -63,6 +64,27 @@ export function AppSidebar({ email }: { email: string | null }) {
                   </SidebarMenuItem>
                 );
               })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={pathname.startsWith("/instellingen")}
+                  tooltip="Instellingen"
+                  size="lg"
+                  className="gap-3 text-[15px] [&_svg]:size-5"
+                  render={
+                    <Link href="/instellingen">
+                      <Settings />
+                      <span>Instellingen</span>
+                    </Link>
+                  }
+                />
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

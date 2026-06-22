@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { CategoryBadge } from "@/components/category-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,10 +49,12 @@ export function NoteCard({
   note,
   onEdit,
   draggable,
+  categoryColor,
 }: {
   note: Note;
   onEdit: (note: Note) => void;
   draggable: boolean;
+  categoryColor?: string | null;
 }) {
   const {
     attributes,
@@ -190,7 +193,9 @@ export function NoteCard({
         )}
       </CardContent>
       <CardFooter className="flex-wrap items-center gap-1.5">
-        {note.category && <Badge>{note.category}</Badge>}
+        {note.category && (
+          <CategoryBadge name={note.category} color={categoryColor} />
+        )}
         {note.tags.map((tag) => (
           <Badge key={tag} variant="secondary">
             {tag}
