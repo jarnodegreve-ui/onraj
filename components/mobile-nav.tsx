@@ -25,12 +25,12 @@ export function MobileNav() {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
+                "flex min-w-0 flex-col items-center gap-0.5 px-0.5 pt-1.5 pb-1 text-[9px] font-medium leading-none tracking-tight transition-colors",
                 active ? "text-primary" : "text-muted-foreground",
               )}
             >
-              <item.icon className="size-5" />
-              <span className="truncate">{item.title}</span>
+              <item.icon className="size-[18px]" />
+              <span className="max-w-full truncate">{item.title}</span>
             </Link>
           );
         })}
