@@ -14,20 +14,20 @@ import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "./result";
 
 const pinSchema = z.string().regex(/^\d{4,8}$/, "Pincode = 4 tot 8 cijfers.");
-const MAX_AGE = 60 * 60 * 8; // 8 uur ontgrendeld
 
 function revalidate() {
   revalidatePath("/financien");
   revalidatePath("/dashboard");
 }
 
+// Sessie-cookie (geen maxAge): wordt gewist zodra de app/browser volledig sluit,
+// zodat de pincode bij de volgende opstart opnieuw vereist is.
 async function setUnlockCookie() {
   const store = await cookies();
   store.set(FIN_COOKIE, "1", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    maxAge: MAX_AGE,
     path: "/",
   });
 }
