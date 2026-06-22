@@ -19,7 +19,14 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Plus, Trash2, type LucideIcon } from "lucide-react";
+import {
+  GripVertical,
+  ListTodo,
+  NotebookPen,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -59,16 +66,17 @@ const PALETTE = [
 export function CategoryManager({
   scope,
   title,
-  icon: Icon,
   accent,
   categories,
 }: {
   scope: CategoryScope;
   title: string;
-  icon: LucideIcon;
   accent: string;
   categories: Category[];
 }) {
+  // Icoon hoort bij de scope — binnen de client-component gekozen, zodat we geen
+  // (niet-serialiseerbare) component-functie over de server→client-grens geven.
+  const Icon = scope === "task" ? ListTodo : NotebookPen;
   const router = useRouter();
   const [items, setItems] = useState(categories);
   const [dialogOpen, setDialogOpen] = useState(false);

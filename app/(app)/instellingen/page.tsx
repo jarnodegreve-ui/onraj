@@ -1,5 +1,3 @@
-import { ListTodo, NotebookPen } from "lucide-react";
-
 import { PageHeader } from "@/components/page-header";
 import { CategoryManager } from "@/components/settings/category-manager";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,14 +38,12 @@ export default async function InstellingenPage() {
         <CategoryManager
           scope="task"
           title="Taken-categorieën"
-          icon={ListTodo}
           accent="#14b8a6"
           categories={taskCategories}
         />
         <CategoryManager
           scope="note"
           title="Notitie-categorieën"
-          icon={NotebookPen}
           accent="#2563eb"
           categories={noteCategories}
         />
