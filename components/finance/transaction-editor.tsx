@@ -123,12 +123,14 @@ function TransactionForm({
           <SegButton
             active={direction === "uitgave"}
             onClick={() => setDirection("uitgave")}
+            activeClassName="bg-rose-500/15 text-rose-600 ring-1 ring-inset ring-rose-500/30 dark:text-rose-300"
           >
             Uitgave
           </SegButton>
           <SegButton
             active={direction === "inkomst"}
             onClick={() => setDirection("inkomst")}
+            activeClassName="bg-emerald-500/15 text-emerald-600 ring-1 ring-inset ring-emerald-500/30 dark:text-emerald-300"
           >
             Inkomst
           </SegButton>
@@ -212,10 +214,12 @@ function TransactionForm({
 function SegButton({
   active,
   onClick,
+  activeClassName,
   children,
 }: {
   active: boolean;
   onClick: () => void;
+  activeClassName: string;
   children: React.ReactNode;
 }) {
   return (
@@ -225,7 +229,7 @@ function SegButton({
       className={cn(
         "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
         active
-          ? "bg-background shadow-sm"
+          ? cn("shadow-sm", activeClassName)
           : "text-muted-foreground hover:text-foreground",
       )}
     >
