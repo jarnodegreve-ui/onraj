@@ -28,6 +28,7 @@ import { listNotes } from "@/lib/data/notes";
 import { listTasks } from "@/lib/data/tasks";
 import { listTransactions } from "@/lib/data/transactions";
 import { currentMonthKey, summariseMonth } from "@/lib/finance";
+import { isFinanceLocked } from "@/lib/finance-lock";
 import { displayName, formatDate, formatEuro } from "@/lib/format";
 import { navItems } from "@/lib/nav";
 import { supabaseConfigured } from "@/lib/supabase/env";
@@ -50,13 +51,14 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [notes, transactions, events, tasks, accountBalances] =
+  const [notes, transactions, events, tasks, accountBalances, financeLocked] =
     await Promise.all([
       listNotes(),
       listTransactions(),
       listEvents(),
       listTasks(),
       listAccountBalances(),
+      isFinanceLocked(),
     ]);
 
   const name = displayName(user?.email);
@@ -102,8 +104,8 @@ export default async function DashboardPage() {
       href: "/financien",
       icon: Wallet,
       title: "Financiën",
-      value: formatEuro(summary.saldo),
-      sublabel: "saldo deze maand",
+      value: financeLocked ? "•••" : formatEuro(summary.saldo),
+      sublabel: financeLocked ? "vergrendeld" : "saldo deze maand",
       accent: "#22c55e",
     },
   ];
@@ -121,7 +123,7 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {accountChart.length > 0 && (
+      {!financeLocked && accountChart.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Rekeningen</CardTitle>
