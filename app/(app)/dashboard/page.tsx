@@ -44,6 +44,7 @@ const MODULE_BESCHRIJVING: Record<string, string> = {
   "/notities": "Markdown-notities met tags en zoeken.",
   "/financien": "Inkomsten, uitgaven en maandoverzicht.",
   "/agenda": "Je afspraken en komende activiteiten.",
+  "/statistieken": "Cijfers en trends over al je modules.",
 };
 
 export default async function DashboardPage() {
