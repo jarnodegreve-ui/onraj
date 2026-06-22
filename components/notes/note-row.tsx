@@ -36,11 +36,13 @@ export function NoteRow({
   onEdit,
   draggable,
   categoryColor,
+  hideCategory = false,
 }: {
   note: Note;
   onEdit: (note: Note) => void;
   draggable: boolean;
   categoryColor?: string | null;
+  hideCategory?: boolean;
 }) {
   const {
     attributes,
@@ -121,7 +123,7 @@ export function NoteRow({
           <span className="truncate text-sm font-medium">
             {note.title || "Naamloos"}
           </span>
-          {note.category && (
+          {!hideCategory && note.category && (
             <CategoryBadge name={note.category} color={categoryColor} />
           )}
         </button>

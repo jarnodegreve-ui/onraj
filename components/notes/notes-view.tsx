@@ -15,7 +15,6 @@ import {
   rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import {
   Archive,
@@ -144,6 +143,13 @@ export function NotesView({
       return ai - bi;
     });
   }, [notes, query, activeTag, activeCategory, showArchived, localOrder]);
+
+  // Notities gegroepeerd per categorie (in de beheerde volgorde) voor de
+  // lijstweergave — opgemaakt als kaarten naast elkaar, zoals op /instellingen.
+  const grouped = useMemo(
+    () => groupByCategory(visible, categories),
+    [visible, categories],
+  );
 
   function openNew() {
     setEditing(null);
@@ -337,6 +343,46 @@ export function NotesView({
                 </Button>
               )}
             </EmptyState>
+          ) : view === "lijst" ? (
+            <div className="grid items-start gap-4 lg:grid-cols-2">
+              {grouped.map((group) => (
+                <div
+                  key={group.name ?? "__zonder"}
+                  data-slot="card"
+                  className="overflow-hidden rounded-xl border bg-card"
+                >
+                  <div className="flex items-center gap-2 px-4 py-2.5">
+                    {group.name &&
+                      (group.color ? (
+                        <span
+                          className="size-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: group.color }}
+                        />
+                      ) : (
+                        <span className="size-2.5 shrink-0 rounded-full border border-muted-foreground/40" />
+                      ))}
+                    <h3 className="flex-1 truncate text-sm font-semibold">
+                      {group.name ?? "Zonder categorie"}
+                    </h3>
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                      {group.notes.length}
+                    </span>
+                  </div>
+                  <ul className="divide-y border-t">
+                    {group.notes.map((note) => (
+                      <NoteRow
+                        key={note.id}
+                        note={note}
+                        onEdit={openEdit}
+                        draggable={false}
+                        hideCategory
+                        categoryColor={group.color}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           ) : (
             <DndContext
               sensors={sensors}
@@ -345,45 +391,23 @@ export function NotesView({
             >
               <SortableContext
                 items={visible.map((note) => note.id)}
-                strategy={
-                  view === "lijst"
-                    ? verticalListSortingStrategy
-                    : rectSortingStrategy
-                }
+                strategy={rectSortingStrategy}
               >
-                {view === "lijst" ? (
-                  <ul className="max-w-4xl divide-y rounded-lg border bg-card">
-                    {visible.map((note) => (
-                      <NoteRow
-                        key={note.id}
-                        note={note}
-                        onEdit={openEdit}
-                        draggable={dragEnabled}
-                        categoryColor={
-                          note.category
-                            ? colorByName.get(note.category)
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {visible.map((note) => (
-                      <NoteCard
-                        key={note.id}
-                        note={note}
-                        onEdit={openEdit}
-                        draggable={dragEnabled}
-                        categoryColor={
-                          note.category
-                            ? colorByName.get(note.category)
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </div>
-                )}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {visible.map((note) => (
+                    <NoteCard
+                      key={note.id}
+                      note={note}
+                      onEdit={openEdit}
+                      draggable={dragEnabled}
+                      categoryColor={
+                        note.category
+                          ? colorByName.get(note.category)
+                          : undefined
+                      }
+                    />
+                  ))}
+                </div>
               </SortableContext>
             </DndContext>
           )}
@@ -398,6 +422,39 @@ export function NotesView({
       />
     </div>
   );
+}
+
+type NoteGroup = { name: string | null; color: string | null; notes: Note[] };
+
+// Groepeert notities per categorie; volgorde volgt de beheerde categorielijst,
+// "Zonder categorie" komt achteraan.
+function groupByCategory(notes: Note[], categories: Category[]): NoteGroup[] {
+  const order = new Map(
+    categories.map((category, index) => [category.name, index]),
+  );
+  const colorOf = new Map(
+    categories.map((category) => [category.name, category.color]),
+  );
+  const buckets = new Map<string, Note[]>();
+  for (const note of notes) {
+    const key = note.category ?? "";
+    const list = buckets.get(key);
+    if (list) list.push(note);
+    else buckets.set(key, [note]);
+  }
+  const groups: NoteGroup[] = [...buckets.entries()].map(([key, list]) => ({
+    name: key || null,
+    color: key ? (colorOf.get(key) ?? null) : null,
+    notes: list,
+  }));
+  const rank = (name: string) => order.get(name) ?? Number.MAX_SAFE_INTEGER;
+  groups.sort((a, b) => {
+    if (a.name === null) return 1;
+    if (b.name === null) return -1;
+    const diff = rank(a.name) - rank(b.name);
+    return diff !== 0 ? diff : a.name.localeCompare(b.name, "nl");
+  });
+  return groups;
 }
 
 function FilterChip({
