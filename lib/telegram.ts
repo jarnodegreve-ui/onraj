@@ -7,6 +7,39 @@ const token = process.env.TELEGRAM_BOT_TOKEN ?? "";
 
 export const telegramConfigured = Boolean(token);
 
+// Haalt een bestand (foto) op via de Bot-API: getFile + download. Geeft de bytes
+// + afgeleide mime/naam terug, of null bij een fout.
+export async function downloadTelegramFile(
+  fileId: string,
+): Promise<{ bytes: ArrayBuffer; mime: string; ext: string } | null> {
+  if (!telegramConfigured) return null;
+  try {
+    const infoRes = await fetch(
+      `${API_BASE}/bot${token}/getFile?file_id=${encodeURIComponent(fileId)}`,
+    );
+    if (!infoRes.ok) return null;
+    const info = (await infoRes.json()) as { result?: { file_path?: string } };
+    const filePath = info.result?.file_path;
+    if (!filePath) return null;
+
+    const fileRes = await fetch(`${API_BASE}/file/bot${token}/${filePath}`);
+    if (!fileRes.ok) return null;
+    const bytes = await fileRes.arrayBuffer();
+
+    const ext = (filePath.split(".").pop() ?? "jpg").toLowerCase();
+    const mime =
+      ext === "png"
+        ? "image/png"
+        : ext === "webp"
+          ? "image/webp"
+          : "image/jpeg";
+    return { bytes, mime, ext: ext === "jpeg" ? "jpg" : ext };
+  } catch (error) {
+    console.error("[telegram] downloadFile mislukt:", error);
+    return null;
+  }
+}
+
 // Stuurt een bericht terug naar de chat (bevestiging). Best-effort.
 export async function sendTelegramMessage(
   chatId: number | string,

@@ -1,3 +1,5 @@
+import { randomUUID } from "crypto";
+
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
@@ -8,14 +10,20 @@ import {
   createAdminClient,
   getOwnerUserId,
 } from "@/lib/supabase/admin";
-import { sendTelegramMessage } from "@/lib/telegram";
+import { downloadTelegramFile, sendTelegramMessage } from "@/lib/telegram";
 import { syncNoteFile } from "@/lib/vault-sync";
 
 const allowedUserId = process.env.TELEGRAM_ALLOWED_USER_ID ?? "";
 const secretToken = process.env.TELEGRAM_SECRET_TOKEN ?? "";
 
+interface TgPhotoSize {
+  file_id: string;
+  file_size?: number;
+}
 interface TgMessage {
   text?: string;
+  caption?: string;
+  photo?: TgPhotoSize[];
   chat?: { id: number };
   from?: { id: number };
 }
@@ -30,6 +38,7 @@ const HELP = [
   "🤖 ONRAJ-bot",
   "",
   "Stuur gewoon tekst → het wordt een notitie.",
+  "📷 Stuur een foto → het wordt een taak (bijschrift /notitie = notitie).",
   "",
   "Of gebruik een commando:",
   "• /vandaag — taken & afspraken van vandaag",
@@ -208,6 +217,97 @@ async function createNoteFromText(admin: Admin, ownerId: string, text: string) {
   return `Genoteerd ✅\n"${title}"`;
 }
 
+// Foto → taak (standaard) of notitie (bijschrift /notitie), met de foto als
+// bijlage. /taak forceert een taak. Bijschrift = titel/inhoud.
+async function handlePhoto(
+  admin: Admin,
+  ownerId: string,
+  fileId: string,
+  caption: string,
+) {
+  const trimmed = caption.trim();
+  let asNote = false;
+  let body = trimmed;
+  if (trimmed.startsWith("/")) {
+    const space = trimmed.indexOf(" ");
+    const cmd = (space === -1 ? trimmed : trimmed.slice(0, space))
+      .slice(1)
+      .split("@")[0]
+      .toLowerCase();
+    if (cmd === "notitie" || cmd === "note") {
+      asNote = true;
+      body = space === -1 ? "" : trimmed.slice(space + 1);
+    } else if (cmd === "taak") {
+      body = space === -1 ? "" : trimmed.slice(space + 1);
+    }
+    // Onbekend commando → laat het hele bijschrift als titel staan.
+  }
+
+  // 1) Entiteit aanmaken.
+  let entityType: "task" | "note";
+  let entityId: string;
+  let label: string;
+  if (asNote) {
+    entityType = "note";
+    const title = body.trim().split("\n")[0].slice(0, 80) || "Foto van Telegram";
+    const { data, error } = await admin
+      .from("notes")
+      .insert({
+        user_id: ownerId,
+        title,
+        body: body.trim(),
+        tags: ["telegram"],
+        pinned: false,
+      })
+      .select("*")
+      .single();
+    if (error || !data) return "Notitie aanmaken mislukt 😕";
+    entityId = data.id as string;
+    label = `Notitie met foto toegevoegd ✅\n"${title}"`;
+    await syncNoteFile(toNote(data), null);
+    revalidatePath("/notities");
+    revalidatePath("/dashboard");
+  } else {
+    entityType = "task";
+    const title = body.trim().slice(0, 200) || "Foto van Telegram";
+    const { data, error } = await admin
+      .from("tasks")
+      .insert({ user_id: ownerId, title })
+      .select("id")
+      .single();
+    if (error || !data) return "Taak aanmaken mislukt 😕";
+    entityId = data.id as string;
+    label = `Taak met foto toegevoegd ✅\n"${title}"`;
+    revalidatePath("/taken");
+    revalidatePath("/dashboard");
+  }
+
+  // 2) Foto downloaden en als bijlage opslaan.
+  const file = await downloadTelegramFile(fileId);
+  if (!file) return `${label}\n(De foto kon niet worden opgehaald.)`;
+
+  const path = `${ownerId}/${entityType}/${randomUUID()}-telegram.${file.ext}`;
+  const { error: uploadError } = await admin.storage
+    .from("attachments")
+    .upload(path, file.bytes, { contentType: file.mime, upsert: false });
+  if (uploadError) return `${label}\n(De foto kon niet worden opgeslagen.)`;
+
+  const { error: recordError } = await admin.from("attachments").insert({
+    user_id: ownerId,
+    entity_type: entityType,
+    entity_id: entityId,
+    path,
+    name: `telegram.${file.ext}`,
+    mime: file.mime,
+    size: file.bytes.byteLength,
+  });
+  if (recordError) {
+    return `${label}\n(De foto kon niet worden gekoppeld${entityType === "task" ? " — draai migratie 0017" : ""}.)`;
+  }
+
+  return label;
+}
+
 // Telegram stuurt elk binnenkomend bericht hierheen. Tekst zonder commando wordt
 // een notitie; commando's (/vandaag, /saldo, /taak, /notitie) doen het werk via
 // de service-role-client. We antwoorden altijd met 200 (geen retries).
@@ -230,13 +330,16 @@ export async function POST(request: Request) {
   const chatId = message?.chat?.id;
   const fromId = message?.from?.id;
   const text = message?.text;
+  const photos = message?.photo ?? [];
 
   if (!message || !chatId || String(fromId) !== String(allowedUserId)) {
     return NextResponse.json({ ok: true });
   }
 
-  if (!text || !text.trim()) {
-    await sendTelegramMessage(chatId, "Ik kan voorlopig enkel tekst verwerken 📝");
+  const hasPhoto = photos.length > 0;
+  const hasText = !!text && !!text.trim();
+  if (!hasPhoto && !hasText) {
+    await sendTelegramMessage(chatId, "Ik kan tekst en foto's verwerken 📝📷");
     return NextResponse.json({ ok: true });
   }
 
@@ -256,27 +359,38 @@ export async function POST(request: Request) {
     }
 
     const admin = createAdminClient();
-    const trimmed = text.trim();
     let reply: string;
 
-    if (trimmed.startsWith("/")) {
-      const space = trimmed.indexOf(" ");
-      const cmd = (space === -1 ? trimmed : trimmed.slice(0, space))
-        .slice(1)
-        .split("@")[0]
-        .toLowerCase();
-      const args = space === -1 ? "" : trimmed.slice(space + 1);
-
-      if (cmd === "start" || cmd === "help") reply = HELP;
-      else if (cmd === "vandaag" || cmd === "today")
-        reply = await handleVandaag(admin, ownerId);
-      else if (cmd === "saldo") reply = await handleSaldo(admin, ownerId);
-      else if (cmd === "taak") reply = await createTask(admin, ownerId, args);
-      else if (cmd === "notitie" || cmd === "note")
-        reply = await createNoteFromText(admin, ownerId, args);
-      else reply = "Onbekend commando. Stuur /help voor de opties.";
+    if (hasPhoto) {
+      // Grootste variant = laatste in de array.
+      const largest = photos[photos.length - 1];
+      reply = await handlePhoto(
+        admin,
+        ownerId,
+        largest.file_id,
+        message.caption ?? "",
+      );
     } else {
-      reply = await createNoteFromText(admin, ownerId, trimmed);
+      const trimmed = (text ?? "").trim();
+      if (trimmed.startsWith("/")) {
+        const space = trimmed.indexOf(" ");
+        const cmd = (space === -1 ? trimmed : trimmed.slice(0, space))
+          .slice(1)
+          .split("@")[0]
+          .toLowerCase();
+        const args = space === -1 ? "" : trimmed.slice(space + 1);
+
+        if (cmd === "start" || cmd === "help") reply = HELP;
+        else if (cmd === "vandaag" || cmd === "today")
+          reply = await handleVandaag(admin, ownerId);
+        else if (cmd === "saldo") reply = await handleSaldo(admin, ownerId);
+        else if (cmd === "taak") reply = await createTask(admin, ownerId, args);
+        else if (cmd === "notitie" || cmd === "note")
+          reply = await createNoteFromText(admin, ownerId, args);
+        else reply = "Onbekend commando. Stuur /help voor de opties.";
+      } else {
+        reply = await createNoteFromText(admin, ownerId, trimmed);
+      }
     }
 
     await sendTelegramMessage(chatId, reply);
