@@ -15,10 +15,13 @@ import {
   rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
+  useSortable,
 } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Archive,
   Download,
+  GripVertical,
   LayoutGrid,
   List,
   NotebookPen,
@@ -35,6 +38,7 @@ import { NoteRow } from "@/components/notes/note-row";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { reorderCategories } from "@/lib/actions/categories";
 import { reorderNotes } from "@/lib/actions/reorder";
 import { resyncVault } from "@/lib/actions/vault";
 import { orderByManaged, suggestionList } from "@/lib/categories";
@@ -151,6 +155,23 @@ export function NotesView({
     [visible, categories],
   );
 
+  // Optimistische volgorde van de categoriekaarten (tot de server-revalidatie de
+  // beheerde volgorde bijwerkt). "Zonder categorie" blijft altijd achteraan.
+  const [cardOrder, setCardOrder] = useState<string[] | null>(null);
+  const orderedGroups = useMemo(() => {
+    if (!cardOrder) return grouped;
+    const idx = new Map(cardOrder.map((id, index) => [id, index]));
+    return [...grouped].sort((a, b) => {
+      if (a.name === null) return 1;
+      if (b.name === null) return -1;
+      return (idx.get(a.name) ?? 1e6) - (idx.get(b.name) ?? 1e6);
+    });
+  }, [grouped, cardOrder]);
+
+  // Kaarten verslepen heeft enkel zin bij ≥2 echte categorieën.
+  const cardsReorderable =
+    grouped.filter((group) => group.name !== null).length >= 2;
+
   function openNew() {
     setEditing(null);
     setEditorOpen(true);
@@ -191,6 +212,34 @@ export function NotesView({
     void reorderNotes(newIds).then((result) => {
       if (!result.ok) {
         toast.error("Volgorde opslaan mislukt", { description: result.error });
+      }
+    });
+  }
+
+  // Verslepen van een categoriekaart → past de beheerde categorievolgorde aan.
+  function onCardSortEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const currentOrder = orderedGroups.map((group) => group.name ?? "__zonder");
+    const oldIndex = currentOrder.indexOf(active.id as string);
+    const newIndex = currentOrder.indexOf(over.id as string);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const newOrder = arrayMove(currentOrder, oldIndex, newIndex);
+    setCardOrder(newOrder); // optimistisch
+
+    const idByName = new Map(categories.map((c) => [c.name, c.id]));
+    const newVisibleIds = newOrder
+      .filter((name) => name !== "__zonder" && idByName.has(name))
+      .map((name) => idByName.get(name) as string);
+    if (newVisibleIds.length === 0) return;
+    const visibleIdSet = new Set(newVisibleIds);
+    let k = 0;
+    const result = categories
+      .map((c) => c.id)
+      .map((id) => (visibleIdSet.has(id) ? newVisibleIds[k++] : id));
+    void reorderCategories("note", result).then((res) => {
+      if (!res.ok) {
+        toast.error("Volgorde opslaan mislukt", { description: res.error });
       }
     });
   }
@@ -344,45 +393,28 @@ export function NotesView({
               )}
             </EmptyState>
           ) : view === "lijst" ? (
-            <div className="grid items-start gap-4 lg:grid-cols-2">
-              {grouped.map((group) => (
-                <div
-                  key={group.name ?? "__zonder"}
-                  data-slot="card"
-                  className="overflow-hidden rounded-xl border bg-card"
-                >
-                  <div className="flex items-center gap-2 px-4 py-2.5">
-                    {group.name &&
-                      (group.color ? (
-                        <span
-                          className="size-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: group.color }}
-                        />
-                      ) : (
-                        <span className="size-2.5 shrink-0 rounded-full border border-muted-foreground/40" />
-                      ))}
-                    <h3 className="flex-1 truncate text-sm font-semibold">
-                      {group.name ?? "Zonder categorie"}
-                    </h3>
-                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                      {group.notes.length}
-                    </span>
-                  </div>
-                  <ul className="divide-y border-t">
-                    {group.notes.map((note) => (
-                      <NoteRow
-                        key={note.id}
-                        note={note}
-                        onEdit={openEdit}
-                        draggable={false}
-                        hideCategory
-                        categoryColor={group.color}
-                      />
-                    ))}
-                  </ul>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onCardSortEnd}
+            >
+              <SortableContext
+                items={orderedGroups.map((group) => group.name ?? "__zonder")}
+                strategy={rectSortingStrategy}
+              >
+                <div className="grid items-start gap-4 lg:grid-cols-2">
+                  {orderedGroups.map((group) => (
+                    <NoteCategoryCard
+                      key={group.name ?? "__zonder"}
+                      group={group}
+                      cardId={group.name ?? "__zonder"}
+                      reorderable={cardsReorderable && group.name !== null}
+                      onEdit={openEdit}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           ) : (
             <DndContext
               sensors={sensors}
@@ -420,6 +452,81 @@ export function NotesView({
         note={editing}
         categories={editorCategories}
       />
+    </div>
+  );
+}
+
+// Eén categoriekaart, zelf versleepbaar via het kop-handvat (→ categorievolgorde).
+function NoteCategoryCard({
+  group,
+  cardId,
+  reorderable,
+  onEdit,
+}: {
+  group: NoteGroup;
+  cardId: string;
+  reorderable: boolean;
+  onEdit: (note: Note) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: cardId, disabled: !reorderable });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      data-slot="card"
+      className={cn(
+        "overflow-hidden rounded-xl border bg-card",
+        isDragging && "z-10 opacity-80 shadow-lg",
+      )}
+    >
+      <div className="flex items-center gap-2 px-4 py-2.5">
+        {reorderable && (
+          <button
+            type="button"
+            className="-ml-1 cursor-grab touch-none text-muted-foreground/60 hover:text-foreground"
+            aria-label="Versleep categorie"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="size-4" />
+          </button>
+        )}
+        {group.name &&
+          (group.color ? (
+            <span
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: group.color }}
+            />
+          ) : (
+            <span className="size-2.5 shrink-0 rounded-full border border-muted-foreground/40" />
+          ))}
+        <h3 className="flex-1 truncate text-sm font-semibold">
+          {group.name ?? "Zonder categorie"}
+        </h3>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          {group.notes.length}
+        </span>
+      </div>
+      <ul className="divide-y border-t">
+        {group.notes.map((note) => (
+          <NoteRow
+            key={note.id}
+            note={note}
+            onEdit={onEdit}
+            draggable={false}
+            hideCategory
+            categoryColor={group.color}
+          />
+        ))}
+      </ul>
     </div>
   );
 }
