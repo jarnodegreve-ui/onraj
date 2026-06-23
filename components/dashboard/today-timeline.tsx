@@ -1,0 +1,116 @@
+import Link from "next/link";
+import { CalendarClock, MapPin } from "lucide-react";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { formatDate, formatTime } from "@/lib/format";
+import { priorityMeta } from "@/lib/tasks";
+import type { CalendarEvent, Task } from "@/lib/types";
+
+/**
+ * Eén blik op vandaag: afspraken (op tijd) als tijdlijn + de taken die vandaag
+ * (of te laat) op de planning staan. Bovenaan het dashboard.
+ */
+export function TodayTimeline({
+  events,
+  tasks,
+  todayKey,
+}: {
+  events: CalendarEvent[];
+  tasks: Task[];
+  todayKey: string;
+}) {
+  const leeg = events.length === 0 && tasks.length === 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <CalendarClock className="size-4 text-primary" />
+          Vandaag
+        </CardTitle>
+        <CardDescription className="first-letter:uppercase">
+          {formatDate(todayKey, "EEEE d MMMM")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {leeg ? (
+          <p className="py-2 text-sm text-muted-foreground">
+            Niets op de planning vandaag — geniet ervan! 🎉
+          </p>
+        ) : (
+          <>
+            {events.length > 0 && (
+              <ol className="relative ml-1 space-y-3 border-l border-border pl-4">
+                {events.map((event) => (
+                  <li key={event.id} className="relative">
+                    <span
+                      className="absolute top-1 -left-[1.32rem] size-2.5 rounded-full ring-2 ring-card"
+                      style={{ backgroundColor: event.color ?? "#2563eb" }}
+                    />
+                    <div className="flex items-baseline gap-2">
+                      <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
+                        {event.allDay ? "Hele dag" : formatTime(event.startsAt)}
+                      </span>
+                      <span className="text-sm font-medium">{event.title}</span>
+                    </div>
+                    {event.location && (
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="size-3 shrink-0" />
+                        <span className="truncate">{event.location}</span>
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            {tasks.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                  Te doen
+                </p>
+                <ul className="space-y-1.5">
+                  {tasks.map((task) => {
+                    const overdue = !!task.dueOn && task.dueOn < todayKey;
+                    return (
+                      <li
+                        key={task.id}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <span
+                          className="size-1.5 shrink-0 rounded-full"
+                          style={{
+                            backgroundColor: priorityMeta(task.priority).color,
+                          }}
+                        />
+                        <span className="truncate">{task.title}</span>
+                        {overdue && (
+                          <span className="shrink-0 text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                            te laat
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+            <Link
+              href="/agenda"
+              className="inline-block text-xs font-medium text-primary hover:underline"
+            >
+              Naar agenda →
+            </Link>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

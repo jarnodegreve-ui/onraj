@@ -13,6 +13,7 @@ import { AccountsChart } from "@/components/dashboard/accounts-chart";
 import { NetWorthChart } from "@/components/dashboard/networth-chart";
 import { RecentNotes } from "@/components/dashboard/recent-notes";
 import { DashboardTasks } from "@/components/dashboard/tasks-list";
+import { TodayTimeline } from "@/components/dashboard/today-timeline";
 import { DashboardUpcoming } from "@/components/dashboard/upcoming-list";
 import { PushToggle } from "@/components/push/push-toggle";
 import {
@@ -73,9 +74,16 @@ export default async function DashboardPage() {
   const summary = summariseMonth(transactions, currentMonthKey());
   const upcoming = upcomingEvents(events, new Date(), 5);
   const openTasks = tasks.filter((task) => !task.done);
-  const eventsToday = events.filter(
-    (event) => eventDayKey(event) === todayKey,
-  ).length;
+  const eventsToday = events
+    .filter((event) => eventDayKey(event) === todayKey)
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  // Taken voor vandaag: vandaag te doen of al te laat, hoogste prioriteit eerst.
+  const tasksToday = openTasks
+    .filter((task) => task.dueOn !== null && task.dueOn <= todayKey)
+    .sort((a, b) => {
+      const due = (a.dueOn ?? "").localeCompare(b.dueOn ?? "");
+      return due !== 0 ? due : a.title.localeCompare(b.title, "nl");
+    });
 
   const accountChart = latestPerAccount(accountBalances).map((balance) => ({
     account: balance.account,
@@ -104,7 +112,7 @@ export default async function DashboardPage() {
       href: "/agenda",
       icon: CalendarDays,
       title: "Agenda",
-      value: eventsToday,
+      value: eventsToday.length,
       sublabel: "afspraken vandaag",
       accent: "#7c3aed",
     },
@@ -124,6 +132,14 @@ export default async function DashboardPage() {
         <Greeting name={name} />
         <PushToggle />
       </div>
+
+      {(eventsToday.length > 0 || tasksToday.length > 0) && (
+        <TodayTimeline
+          events={eventsToday}
+          tasks={tasksToday}
+          todayKey={todayKey}
+        />
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
