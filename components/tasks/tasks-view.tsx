@@ -12,11 +12,14 @@ import {
 } from "@dnd-kit/core";
 import {
   arrayMove,
+  rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
+  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Download, ListTodo, Plus } from "lucide-react";
+import { CSS } from "@dnd-kit/utilities";
+import { Download, GripVertical, ListTodo, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
@@ -24,6 +27,7 @@ import { PageHeader } from "@/components/page-header";
 import { TaskEditor } from "@/components/tasks/task-editor";
 import { TaskItem } from "@/components/tasks/task-item";
 import { Button } from "@/components/ui/button";
+import { reorderCategories } from "@/lib/actions/categories";
 import { reorderTasks } from "@/lib/actions/reorder";
 import { orderByManaged, suggestionList } from "@/lib/categories";
 import { priorityMeta } from "@/lib/tasks";
@@ -131,6 +135,23 @@ export function TasksView({
     [visible, categories],
   );
 
+  // Optimistische volgorde van de categoriekaarten (tot de server-revalidatie de
+  // beheerde volgorde bijwerkt). "Zonder categorie" blijft altijd achteraan.
+  const [cardOrder, setCardOrder] = useState<string[] | null>(null);
+  const orderedGroups = useMemo(() => {
+    if (!cardOrder) return grouped;
+    const idx = new Map(cardOrder.map((id, index) => [id, index]));
+    return [...grouped].sort((a, b) => {
+      if (a.name === null) return 1;
+      if (b.name === null) return -1;
+      return (idx.get(a.name) ?? 1e6) - (idx.get(b.name) ?? 1e6);
+    });
+  }, [grouped, cardOrder]);
+
+  // Kaarten verslepen heeft enkel zin bij ≥2 echte categorieën.
+  const cardsReorderable =
+    grouped.filter((group) => group.name !== null).length >= 2;
+
   function openNew() {
     setEditing(null);
     setEditorOpen(true);
@@ -161,6 +182,36 @@ export function TasksView({
     );
     setLocalOrder(result);
     void reorderTasks(result).then((res) => {
+      if (!res.ok) {
+        toast.error("Volgorde opslaan mislukt", { description: res.error });
+      }
+    });
+  }
+
+  // Verslepen van een categoriekaart → past de beheerde categorievolgorde aan.
+  function onCardSortEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const currentOrder = orderedGroups.map((group) => group.name ?? "__zonder");
+    const oldIndex = currentOrder.indexOf(active.id as string);
+    const newIndex = currentOrder.indexOf(over.id as string);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const newOrder = arrayMove(currentOrder, oldIndex, newIndex);
+    setCardOrder(newOrder); // optimistisch
+
+    // Persisteer enkel de echte categorieën; ongebruikte categorieën (niet als
+    // kaart zichtbaar) houden hun plek in de beheerde lijst.
+    const idByName = new Map(categories.map((c) => [c.name, c.id]));
+    const newVisibleIds = newOrder
+      .filter((name) => name !== "__zonder" && idByName.has(name))
+      .map((name) => idByName.get(name) as string);
+    if (newVisibleIds.length === 0) return;
+    const visibleIdSet = new Set(newVisibleIds);
+    let k = 0;
+    const result = categories
+      .map((c) => c.id)
+      .map((id) => (visibleIdSet.has(id) ? newVisibleIds[k++] : id));
+    void reorderCategories("task", result).then((res) => {
       if (!res.ok) {
         toast.error("Volgorde opslaan mislukt", { description: res.error });
       }
@@ -283,60 +334,32 @@ export function TasksView({
           )}
         </EmptyState>
       ) : (
-        <div className="grid items-start gap-4 lg:grid-cols-2">
-          {grouped.map((group) => {
-            const ids = group.tasks.map((task) => task.id);
-            return (
-              <div
-                key={group.name ?? "__zonder"}
-                data-slot="card"
-                className="overflow-hidden rounded-xl border bg-card"
-              >
-                <div className="flex items-center gap-2 px-4 py-2.5">
-                  {group.name &&
-                    (group.color ? (
-                      <span
-                        className="size-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: group.color }}
-                      />
-                    ) : (
-                      <span className="size-2.5 shrink-0 rounded-full border border-muted-foreground/40" />
-                    ))}
-                  <h3 className="flex-1 truncate text-sm font-semibold">
-                    {group.name ?? "Zonder categorie"}
-                  </h3>
-                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                    {group.tasks.length}
-                  </span>
-                </div>
-                <DndContext
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={onCardSortEnd}
+        >
+          <SortableContext
+            items={orderedGroups.map((group) => group.name ?? "__zonder")}
+            strategy={rectSortingStrategy}
+          >
+            <div className="grid items-start gap-4 lg:grid-cols-2">
+              {orderedGroups.map((group) => (
+                <TaskCategoryCard
+                  key={group.name ?? "__zonder"}
+                  group={group}
+                  cardId={group.name ?? "__zonder"}
+                  reorderable={cardsReorderable && group.name !== null}
                   sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={(event) => onCardDragEnd(event, ids)}
-                >
-                  <SortableContext
-                    items={ids}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <ul className="divide-y border-t px-3">
-                      {group.tasks.map((task) => (
-                        <TaskItem
-                          key={task.id}
-                          task={task}
-                          todayKey={todayKey}
-                          onEdit={openEdit}
-                          draggable={sort === "handmatig"}
-                          hideCategory
-                          categoryColor={group.color}
-                        />
-                      ))}
-                    </ul>
-                  </SortableContext>
-                </DndContext>
-              </div>
-            );
-          })}
-        </div>
+                  sort={sort}
+                  todayKey={todayKey}
+                  onEdit={openEdit}
+                  onTaskDragEnd={onCardDragEnd}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       <TaskEditor
@@ -345,6 +368,100 @@ export function TasksView({
         task={editing}
         categories={editorCategories}
       />
+    </div>
+  );
+}
+
+// Eén categoriekaart: zelf versleepbaar (kop-handvat → categorievolgorde) met
+// daarbinnen de versleepbare takenlijst (binnen de categorie).
+function TaskCategoryCard({
+  group,
+  cardId,
+  reorderable,
+  sensors,
+  sort,
+  todayKey,
+  onEdit,
+  onTaskDragEnd,
+}: {
+  group: TaskGroup;
+  cardId: string;
+  reorderable: boolean;
+  sensors: ReturnType<typeof useSensors>;
+  sort: Sort;
+  todayKey: string;
+  onEdit: (task: Task) => void;
+  onTaskDragEnd: (event: DragEndEvent, cardIds: string[]) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: cardId, disabled: !reorderable });
+  const ids = group.tasks.map((task) => task.id);
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      data-slot="card"
+      className={cn(
+        "overflow-hidden rounded-xl border bg-card",
+        isDragging && "z-10 opacity-80 shadow-lg",
+      )}
+    >
+      <div className="flex items-center gap-2 px-4 py-2.5">
+        {reorderable && (
+          <button
+            type="button"
+            className="-ml-1 cursor-grab touch-none text-muted-foreground/60 hover:text-foreground"
+            aria-label="Versleep categorie"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="size-4" />
+          </button>
+        )}
+        {group.name &&
+          (group.color ? (
+            <span
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: group.color }}
+            />
+          ) : (
+            <span className="size-2.5 shrink-0 rounded-full border border-muted-foreground/40" />
+          ))}
+        <h3 className="flex-1 truncate text-sm font-semibold">
+          {group.name ?? "Zonder categorie"}
+        </h3>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          {group.tasks.length}
+        </span>
+      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={(event) => onTaskDragEnd(event, ids)}
+      >
+        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+          <ul className="divide-y border-t px-3">
+            {group.tasks.map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                todayKey={todayKey}
+                onEdit={onEdit}
+                draggable={sort === "handmatig"}
+                hideCategory
+                categoryColor={group.color}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
     </div>
   );
 }
