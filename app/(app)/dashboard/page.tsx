@@ -112,8 +112,9 @@ export default async function DashboardPage() {
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
+          {/* Mobiel: tegels boven het saldo (duidelijker); desktop: saldo bovenaan de rail. */}
           <SaldoCard
-            className="col-span-2"
+            className="order-2 col-span-2 lg:order-1"
             locked={financeLocked}
             inkomsten={summary.inkomsten}
             uitgaven={summary.uitgaven}
@@ -125,6 +126,7 @@ export default async function DashboardPage() {
             label="Open taken"
             value={openTasks.length}
             accent="#f59e0b"
+            className="order-1 lg:order-2"
           />
           <StatTile
             href="/notities"
@@ -132,6 +134,7 @@ export default async function DashboardPage() {
             label="Notities"
             value={notes.length}
             accent="#2563eb"
+            className="order-1 lg:order-2"
           />
         </div>
       </div>
@@ -249,15 +252,17 @@ function StatTile({
   label,
   value,
   accent,
+  className,
 }: {
   href: string;
   icon: LucideIcon;
   label: string;
   value: number;
   accent: string;
+  className?: string;
 }) {
   return (
-    <Link href={href} className="group block">
+    <Link href={href} className={cn("group block", className)}>
       <div
         data-slot="card"
         className="flex h-full flex-col gap-2 rounded-xl border bg-card p-4 transition-colors group-hover:border-primary/30"
