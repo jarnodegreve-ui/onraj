@@ -11,5 +11,6 @@ export async function listEvents(): Promise<CalendarEvent[]> {
     .order("starts_at", { ascending: true });
 
   if (error) throw new Error(error.message);
-  return (data ?? []).map(toCalendarEvent);
+  // Soft-deleted (prullenbak) wegfilteren — client-side, robuust vóór migr. 0018.
+  return (data ?? []).filter((row) => !row.deleted_at).map(toCalendarEvent);
 }

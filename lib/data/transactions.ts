@@ -12,5 +12,7 @@ export async function listTransactions(): Promise<Transaction[]> {
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return (data ?? []).map(toTransaction);
+  // Soft-deleted (prullenbak) wegfilteren — client-side zodat dit ook werkt
+  // vóór migratie 0018 (deleted_at-kolom dan afwezig → undefined → behouden).
+  return (data ?? []).filter((row) => !row.deleted_at).map(toTransaction);
 }

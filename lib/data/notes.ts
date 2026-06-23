@@ -16,6 +16,7 @@ export async function listNotes(includeArchived = false): Promise<Note[]> {
     .order("updated_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  const notes = (data ?? []).map(toNote);
+  // Soft-deleted (prullenbak) wegfilteren — client-side, robuust vóór migr. 0018.
+  const notes = (data ?? []).filter((row) => !row.deleted_at).map(toNote);
   return includeArchived ? notes : notes.filter((note) => !note.archived);
 }

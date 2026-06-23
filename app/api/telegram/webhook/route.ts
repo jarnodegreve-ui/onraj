@@ -92,6 +92,7 @@ async function handleVandaag(admin: Admin, ownerId: string) {
     .from("tasks")
     .select("title, due_on")
     .eq("user_id", ownerId)
+    .is("deleted_at", null)
     .eq("done", false)
     .not("due_on", "is", null)
     .lte("due_on", today)
@@ -101,6 +102,7 @@ async function handleVandaag(admin: Admin, ownerId: string) {
     .from("events")
     .select("title, starts_at, all_day")
     .eq("user_id", ownerId)
+    .is("deleted_at", null)
     .gte("starts_at", now.toISOString())
     .lte("starts_at", in24h)
     .order("starts_at");
@@ -171,6 +173,7 @@ async function handleSaldo(admin: Admin, ownerId: string) {
     .from("transactions")
     .select("amount, direction")
     .eq("user_id", ownerId)
+    .is("deleted_at", null)
     .gte("occurred_on", start)
     .lt("occurred_on", next);
 
@@ -242,6 +245,7 @@ async function handleKomende(admin: Admin, ownerId: string) {
     .from("events")
     .select("title, starts_at, all_day, location")
     .eq("user_id", ownerId)
+    .is("deleted_at", null)
     .gte("starts_at", now.toISOString())
     .lte("starts_at", in7d)
     .order("starts_at");
@@ -291,6 +295,7 @@ async function handleBudget(admin: Admin, ownerId: string) {
     .from("transactions")
     .select("category, amount")
     .eq("user_id", ownerId)
+    .is("deleted_at", null)
     .eq("direction", "uitgave")
     .gte("occurred_on", start)
     .lt("occurred_on", next);

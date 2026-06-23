@@ -17,7 +17,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createEvent, deleteEvent, updateEvent } from "@/lib/actions/events";
+import {
+  createEvent,
+  deleteEvent,
+  restoreEvent,
+  updateEvent,
+} from "@/lib/actions/events";
 import { createGoogleCalendarEvent } from "@/lib/actions/google";
 import { DEFAULT_EVENT_COLOR, EVENT_COLORS } from "@/lib/agenda";
 import type { CalendarEvent } from "@/lib/types";
@@ -160,10 +165,20 @@ function EventForm({
 
   function remove() {
     if (!event || !window.confirm("Deze afspraak verwijderen?")) return;
+    const id = event.id;
     startDelete(async () => {
-      const result = await deleteEvent(event.id);
+      const result = await deleteEvent(id);
       if (result.ok) {
-        toast.success("Afspraak verwijderd");
+        toast.success("Afspraak naar prullenbak", {
+          action: {
+            label: "Ongedaan maken",
+            onClick: async () => {
+              const r = await restoreEvent(id);
+              if (!r.ok)
+                toast.error("Terugzetten mislukt", { description: r.error });
+            },
+          },
+        });
         onClose();
       } else {
         toast.error("Verwijderen mislukt", { description: result.error });

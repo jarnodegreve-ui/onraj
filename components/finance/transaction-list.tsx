@@ -18,7 +18,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deleteTransaction } from "@/lib/actions/transactions";
+import {
+  deleteTransaction,
+  restoreTransaction,
+} from "@/lib/actions/transactions";
 import { formatDate, formatEuro } from "@/lib/format";
 import type { Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -65,7 +68,18 @@ function TransactionRow({
     if (!window.confirm("Deze transactie verwijderen?")) return;
     startTransition(async () => {
       const result = await deleteTransaction(transaction.id);
-      if (result.ok) toast.success("Transactie verwijderd");
+      if (result.ok)
+        toast.success("Transactie naar prullenbak", {
+          action: {
+            label: "Ongedaan maken",
+            onClick: () =>
+              startTransition(async () => {
+                const r = await restoreTransaction(transaction.id);
+                if (!r.ok)
+                  toast.error("Terugzetten mislukt", { description: r.error });
+              }),
+          },
+        });
       else toast.error("Verwijderen mislukt", { description: result.error });
     });
   }

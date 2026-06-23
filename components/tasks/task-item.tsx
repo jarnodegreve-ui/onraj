@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deleteTask, setTaskDone } from "@/lib/actions/tasks";
+import { deleteTask, restoreTask, setTaskDone } from "@/lib/actions/tasks";
 import { formatDate } from "@/lib/format";
 import { priorityMeta } from "@/lib/tasks";
 import type { Task } from "@/lib/types";
@@ -90,7 +90,18 @@ export function TaskItem({
     if (!window.confirm("Deze taak verwijderen?")) return;
     startTransition(async () => {
       const result = await deleteTask(task.id);
-      if (result.ok) toast.success("Taak verwijderd");
+      if (result.ok)
+        toast.success("Taak naar prullenbak", {
+          action: {
+            label: "Ongedaan maken",
+            onClick: () =>
+              startTransition(async () => {
+                const r = await restoreTask(task.id);
+                if (!r.ok)
+                  toast.error("Terugzetten mislukt", { description: r.error });
+              }),
+          },
+        });
       else toast.error("Verwijderen mislukt", { description: result.error });
     });
   }

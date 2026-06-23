@@ -195,13 +195,37 @@ export async function archiveNote(
 
 export async function deleteNote(id: string): Promise<ActionResult> {
   const supabase = await createClient();
+  // Soft delete: naar de prullenbak én het vault-bestand weghalen (zodat
+  // Obsidian het ook niet meer toont). Bij restore wordt het opnieuw aangemaakt.
   const { data, error } = await supabase
     .from("notes")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
     .select("*")
     .single();
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    if (isMissingColumn(error)) {
+      // Vóór migratie 0018: hard delete (oud gedrag).
+      const { data: del } = await supabase
+        .from("notes")
+        .delete()
+        .eq("id", id)
+        .select("*")
+        .single();
+      if (del) {
+        await removeNoteFile(
+          noteFilePath(
+            del.title as string,
+            del.id as string,
+            (del.category as string | null) ?? null,
+          ),
+        );
+      }
+      revalidateNotes();
+      return { ok: true };
+    }
+    return { ok: false, error: error.message };
+  }
 
   if (data) {
     await removeNoteFile(
@@ -212,6 +236,29 @@ export async function deleteNote(id: string): Promise<ActionResult> {
       ),
     );
   }
+  revalidateNotes();
+  return { ok: true };
+}
+
+export async function restoreNote(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("notes")
+    .update({ deleted_at: null })
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: error.message };
+  if (data) await syncNoteFile(toNote(data), null);
+  revalidateNotes();
+  return { ok: true };
+}
+
+// Definitief verwijderen (vanuit de prullenbak). Het vault-bestand is al weg.
+export async function purgeNote(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("notes").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
   revalidateNotes();
   return { ok: true };
 }

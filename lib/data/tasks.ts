@@ -17,5 +17,6 @@ export async function listTasks(): Promise<Task[]> {
     if (isMissingTable(error)) return [];
     throw new Error(error.message);
   }
-  return (data ?? []).map(toTask);
+  // Soft-deleted (prullenbak) wegfilteren — client-side, robuust vóór migr. 0018.
+  return (data ?? []).filter((row) => !row.deleted_at).map(toTask);
 }

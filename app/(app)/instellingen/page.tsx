@@ -1,7 +1,9 @@
 import { PageHeader } from "@/components/page-header";
 import { CategoryManager } from "@/components/settings/category-manager";
+import { TrashManager } from "@/components/settings/trash-manager";
 import { Card, CardContent } from "@/components/ui/card";
 import { listCategories } from "@/lib/data/categories";
+import { listTrashed } from "@/lib/data/trash";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
 export const metadata = { title: "Instellingen · ONRAJ" };
@@ -23,9 +25,10 @@ export default async function InstellingenPage() {
     );
   }
 
-  const [taskCategories, noteCategories] = await Promise.all([
+  const [taskCategories, noteCategories, trashed] = await Promise.all([
     listCategories("task"),
     listCategories("note"),
+    listTrashed(),
   ]);
 
   return (
@@ -48,6 +51,7 @@ export default async function InstellingenPage() {
           categories={noteCategories}
         />
       </div>
+      <TrashManager items={trashed} />
     </div>
   );
 }

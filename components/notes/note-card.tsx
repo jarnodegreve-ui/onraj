@@ -31,7 +31,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { archiveNote, deleteNote, setNotePinned } from "@/lib/actions/notes";
+import {
+  archiveNote,
+  deleteNote,
+  restoreNote,
+  setNotePinned,
+} from "@/lib/actions/notes";
 import { fromNow } from "@/lib/format";
 import type { Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -85,13 +90,24 @@ export function NoteCard({
   function remove() {
     if (
       !window.confirm(
-        "Deze notitie definitief verwijderen? Ook het bestand in je vault wordt verwijderd. Dit kan niet ongedaan gemaakt worden.",
+        "Deze notitie naar de prullenbak verplaatsen? Het vault-bestand wordt verwijderd; je kunt dit ongedaan maken.",
       )
     )
       return;
     startTransition(async () => {
       const result = await deleteNote(note.id);
-      if (result.ok) toast.success("Definitief verwijderd");
+      if (result.ok)
+        toast.success("Notitie naar prullenbak", {
+          action: {
+            label: "Ongedaan maken",
+            onClick: () =>
+              startTransition(async () => {
+                const r = await restoreNote(note.id);
+                if (!r.ok)
+                  toast.error("Terugzetten mislukt", { description: r.error });
+              }),
+          },
+        });
       else toast.error("Verwijderen mislukt", { description: result.error });
     });
   }

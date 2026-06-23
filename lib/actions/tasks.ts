@@ -142,6 +142,41 @@ export async function setTaskCategory(
 
 export async function deleteTask(id: string): Promise<ActionResult> {
   const supabase = await createClient();
+  // Soft delete: naar de prullenbak. Vóór migratie 0018 → hard delete.
+  const { error } = await supabase
+    .from("tasks")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) {
+    if (isMissingColumn(error)) {
+      const { error: delErr } = await supabase
+        .from("tasks")
+        .delete()
+        .eq("id", id);
+      if (delErr) return { ok: false, error: delErr.message };
+    } else {
+      return { ok: false, error: error.message };
+    }
+  }
+  revalidateTasks();
+  return { ok: true };
+}
+
+export async function restoreTask(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tasks")
+    .update({ deleted_at: null })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidateTasks();
+  return { ok: true };
+}
+
+// Definitief verwijderen (vanuit de prullenbak).
+export async function purgeTask(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
   const { error } = await supabase.from("tasks").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
 

@@ -26,21 +26,25 @@ export async function loadSearchIndex(): Promise<SearchItem[]> {
     supabase
       .from("notes")
       .select("id,title,tags")
+      .is("deleted_at", null)
       .order("updated_at", { ascending: false })
       .limit(100),
     supabase
       .from("transactions")
       .select("id,description,category,amount,direction")
+      .is("deleted_at", null)
       .order("occurred_on", { ascending: false })
       .limit(100),
     supabase
       .from("events")
       .select("id,title,location,starts_at")
+      .is("deleted_at", null)
       .order("starts_at", { ascending: false })
       .limit(100),
     supabase
       .from("tasks")
       .select("id,title,due_on,done")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(100),
   ]);

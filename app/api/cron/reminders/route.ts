@@ -62,6 +62,7 @@ export async function GET(request: Request) {
       .from("tasks")
       .select("id")
       .eq("user_id", ownerId)
+      .is("deleted_at", null)
       .eq("done", false)
       .not("due_on", "is", null)
       .lte("due_on", todayKey);
@@ -70,6 +71,7 @@ export async function GET(request: Request) {
       .from("events")
       .select("id")
       .eq("user_id", ownerId)
+      .is("deleted_at", null)
       .gte("starts_at", now.toISOString())
       .lte("starts_at", in24h);
 
@@ -126,5 +128,26 @@ export async function GET(request: Request) {
     backup = ok ? "verstuurd" : "mislukt";
   }
 
-  return NextResponse.json({ ok: true, taskCount, eventCount, sent, backup });
+  // 3) Prullenbak opschonen: rijen die langer dan 30 dagen in de prullenbak
+  // zitten, definitief weggooien (vault-bestanden van notities zijn al weg).
+  const cutoff = new Date(now.getTime() - 30 * 24 * 3600 * 1000).toISOString();
+  let purged = 0;
+  for (const table of ["tasks", "notes", "transactions", "events"] as const) {
+    const { data: gone } = await admin
+      .from(table)
+      .delete()
+      .eq("user_id", ownerId)
+      .lt("deleted_at", cutoff)
+      .select("id");
+    purged += gone?.length ?? 0;
+  }
+
+  return NextResponse.json({
+    ok: true,
+    taskCount,
+    eventCount,
+    sent,
+    backup,
+    purged,
+  });
 }

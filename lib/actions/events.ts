@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { isMissingColumn } from "@/lib/data/safe";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "./result";
 
@@ -88,6 +89,41 @@ export async function updateEvent(
 }
 
 export async function deleteEvent(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  // Soft delete: naar de prullenbak. Vóór migratie 0018 → hard delete.
+  const { error } = await supabase
+    .from("events")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) {
+    if (isMissingColumn(error)) {
+      const { error: delErr } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", id);
+      if (delErr) return { ok: false, error: delErr.message };
+    } else {
+      return { ok: false, error: error.message };
+    }
+  }
+  revalidateAgenda();
+  return { ok: true };
+}
+
+export async function restoreEvent(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("events")
+    .update({ deleted_at: null })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidateAgenda();
+  return { ok: true };
+}
+
+// Definitief verwijderen (vanuit de prullenbak).
+export async function purgeEvent(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("events").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
