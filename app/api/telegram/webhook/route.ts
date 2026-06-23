@@ -284,13 +284,24 @@ async function handlePhoto(
 
   // 2) Foto downloaden en als bijlage opslaan.
   const file = await downloadTelegramFile(fileId);
-  if (!file) return `${label}\n(De foto kon niet worden opgehaald.)`;
+  if (!file) {
+    console.error("[telegram] foto-download mislukt voor file_id", fileId);
+    return `${label}\n(De foto kon niet worden opgehaald.)`;
+  }
 
   const path = `${ownerId}/${entityType}/${randomUUID()}-telegram.${file.ext}`;
+  // Buffer (niet de rauwe ArrayBuffer): supabase-js schrijft die server-side
+  // betrouwbaar weg met de juiste grootte.
   const { error: uploadError } = await admin.storage
     .from("attachments")
-    .upload(path, file.bytes, { contentType: file.mime, upsert: false });
-  if (uploadError) return `${label}\n(De foto kon niet worden opgeslagen.)`;
+    .upload(path, Buffer.from(file.bytes), {
+      contentType: file.mime,
+      upsert: false,
+    });
+  if (uploadError) {
+    console.error("[telegram] foto-upload mislukt:", uploadError);
+    return `${label}\n(De foto kon niet worden opgeslagen.)`;
+  }
 
   const { error: recordError } = await admin.from("attachments").insert({
     user_id: ownerId,
@@ -302,6 +313,7 @@ async function handlePhoto(
     size: file.bytes.byteLength,
   });
   if (recordError) {
+    console.error("[telegram] bijlage-record mislukt:", recordError);
     return `${label}\n(De foto kon niet worden gekoppeld${entityType === "task" ? " — draai migratie 0017" : ""}.)`;
   }
 
