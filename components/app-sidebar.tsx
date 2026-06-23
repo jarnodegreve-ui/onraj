@@ -17,11 +17,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { navItems } from "@/lib/nav";
 
 export function AppSidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
   return (
     <Sidebar collapsible="icon">
@@ -55,7 +57,10 @@ export function AppSidebar({ email }: { email: string | null }) {
                       size="lg"
                       className="gap-3 text-[15px] [&_svg]:size-5"
                       render={
-                        <Link href={item.href}>
+                        <Link
+                          href={item.href}
+                          onClick={() => setOpenMobile(false)}
+                        >
                           <item.icon />
                           <span>{item.title}</span>
                         </Link>
@@ -78,7 +83,10 @@ export function AppSidebar({ email }: { email: string | null }) {
                   size="lg"
                   className="gap-3 text-[15px] [&_svg]:size-5"
                   render={
-                    <Link href="/instellingen">
+                    <Link
+                      href="/instellingen"
+                      onClick={() => setOpenMobile(false)}
+                    >
                       <Settings />
                       <span>Instellingen</span>
                     </Link>

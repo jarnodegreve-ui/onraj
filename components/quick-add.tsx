@@ -161,7 +161,7 @@ function QuickForm({
           : await createTask({
               title,
               dueOn: dueOn || null,
-              notes: "",
+              notes: body,
               priority: "middel",
             });
 
@@ -212,15 +212,27 @@ function QuickForm({
             />
           </div>
         ) : (
-          <div className="grid gap-2">
-            <Label htmlFor="qa-due">Deadline (optioneel)</Label>
-            <Input
-              id="qa-due"
-              type="date"
-              value={dueOn}
-              onChange={(event) => setDueOn(event.target.value)}
-            />
-          </div>
+          <>
+            <div className="grid gap-2">
+              <Label htmlFor="qa-due">Deadline (optioneel)</Label>
+              <Input
+                id="qa-due"
+                type="date"
+                value={dueOn}
+                onChange={(event) => setDueOn(event.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="qa-notes">Omschrijving (optioneel)</Label>
+              <Textarea
+                id="qa-notes"
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+                placeholder="Optioneel"
+                className="min-h-20"
+              />
+            </div>
+          </>
         )}
       </div>
 
