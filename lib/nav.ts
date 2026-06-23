@@ -22,7 +22,13 @@ export const navItems: NavItem[] = [
   { title: "Taken", href: "/taken", icon: ListTodo, accent: "#14b8a6" },
   { title: "Notities", href: "/notities", icon: NotebookPen, accent: "#002fa7" },
   { title: "Financiën", href: "/financien", icon: Wallet, accent: "#14b8a6" },
-  { title: "Agenda", href: "/agenda", icon: CalendarDays, accent: "#a855f7" },
+  {
+    title: "Agenda",
+    href: "/agenda",
+    icon: CalendarDays,
+    accent: "#a855f7",
+    bottomBar: false,
+  },
   {
     title: "Statistieken",
     href: "/statistieken",

@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 import { navItems } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
-// Statistieken zit bewust niet in de onderbalk (te krap met 6 items) — wel in
-// de zijbalk via het ☰-menu. Tailwind heeft de grid-cols-klassen letterlijk
-// nodig, vandaar de expliciete map.
+// Statistieken en Agenda zitten bewust niet in de onderbalk (rustiger met 4
+// iconen) — wel in de zijbalk via het ☰-menu. Tailwind heeft de grid-cols-
+// klassen letterlijk nodig, vandaar de expliciete map.
 const COLS: Record<number, string> = {
   4: "grid-cols-4",
   5: "grid-cols-5",
