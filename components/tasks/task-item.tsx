@@ -92,7 +92,7 @@ export function TaskItem({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
         "flex max-h-20 items-center gap-2.5 py-2.5 transition-all duration-300 ease-out",
-        isDragging && "relative z-10 opacity-80",
+        isDragging && "opacity-0",
         leaving &&
           "pointer-events-none max-h-0 translate-x-12 scale-95 overflow-hidden !py-0 opacity-0",
       )}

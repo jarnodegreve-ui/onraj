@@ -91,7 +91,7 @@ export function NoteRow({
       className={cn(
         "bg-card transition-colors",
         note.pinned && "bg-primary/[0.03]",
-        isDragging && "z-10 rounded-lg opacity-90 shadow-sm",
+        isDragging && "opacity-0",
       )}
     >
       <div className="flex items-center gap-2 px-3 py-2">

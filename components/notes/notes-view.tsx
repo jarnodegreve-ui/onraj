@@ -3,10 +3,15 @@
 import { useMemo, useState, useTransition } from "react";
 import {
   closestCenter,
+  closestCorners,
+  type CollisionDetection,
   DndContext,
   type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
+  useDroppable,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -16,6 +21,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -39,11 +45,28 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { reorderCategories } from "@/lib/actions/categories";
+import { setNoteCategory } from "@/lib/actions/notes";
 import { reorderNotes } from "@/lib/actions/reorder";
 import { resyncVault } from "@/lib/actions/vault";
 import { orderByManaged, suggestionList } from "@/lib/categories";
 import type { Category, Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+const ZONDER = "__zonder";
+function columnKey(name: string | null) {
+  return name ?? ZONDER;
+}
+
+// Sleep een kaart → kolomdroppables; sleep een notitie → containers + notities.
+const collision: CollisionDetection = (args) => {
+  const activeId = String(args.active.id);
+  const isCard = activeId.startsWith("card:");
+  const containers = args.droppableContainers.filter((c) => {
+    const id = String(c.id);
+    return isCard ? id.startsWith("card:") : !id.startsWith("card:");
+  });
+  return closestCorners({ ...args, droppableContainers: containers });
+};
 
 export function NotesView({
   notes,
@@ -62,9 +85,21 @@ export function NotesView({
   const [showArchived, setShowArchived] = useState(false);
   const [view, setView] = useState<"lijst" | "rooster">("lijst");
   const [localOrder, setLocalOrder] = useState<string[]>([]);
+  const [cardOrder, setCardOrder] = useState<string[] | null>(null);
+  const [catOverride, setCatOverride] = useState<Record<string, string | null>>(
+    {},
+  );
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
   const [syncing, startSync] = useTransition();
+
+  // Wis de optimistische hercategorisatie zodra de server nieuwe data levert.
+  const [prevNotes, setPrevNotes] = useState(notes);
+  if (prevNotes !== notes) {
+    setPrevNotes(notes);
+    setCatOverride({});
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -113,8 +148,8 @@ export function NotesView({
     [notes],
   );
 
-  // Verslepen kan enkel op de volledige actieve lijst (geen filter/archief),
-  // anders is de volgorde van een subset dubbelzinnig.
+  // Herorden binnen een kaart kan enkel op de volledige actieve lijst (geen
+  // filter/archief), anders is de volgorde van een subset dubbelzinnig.
   const dragEnabled =
     query.trim() === "" &&
     activeTag === null &&
@@ -148,16 +183,22 @@ export function NotesView({
     });
   }, [notes, query, activeTag, activeCategory, showArchived, localOrder]);
 
-  // Notities gegroepeerd per categorie (in de beheerde volgorde) voor de
-  // lijstweergave — opgemaakt als kaarten naast elkaar, zoals op /instellingen.
-  const grouped = useMemo(
-    () => groupByCategory(visible, categories),
-    [visible, categories],
+  // Optimistische hercategorisatie toepassen vóór het groeperen.
+  const visibleWithOverride = useMemo(
+    () =>
+      visible.map((note) =>
+        note.id in catOverride
+          ? { ...note, category: catOverride[note.id] }
+          : note,
+      ),
+    [visible, catOverride],
   );
 
-  // Optimistische volgorde van de categoriekaarten (tot de server-revalidatie de
-  // beheerde volgorde bijwerkt). "Zonder categorie" blijft altijd achteraan.
-  const [cardOrder, setCardOrder] = useState<string[] | null>(null);
+  const grouped = useMemo(
+    () => groupByCategory(visibleWithOverride, categories),
+    [visibleWithOverride, categories],
+  );
+
   const orderedGroups = useMemo(() => {
     if (!cardOrder) return grouped;
     const idx = new Map(cardOrder.map((id, index) => [id, index]));
@@ -168,9 +209,20 @@ export function NotesView({
     });
   }, [grouped, cardOrder]);
 
-  // Kaarten verslepen heeft enkel zin bij ≥2 echte categorieën.
+  const colByNote = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const note of visibleWithOverride) {
+      map.set(note.id, columnKey(note.category));
+    }
+    return map;
+  }, [visibleWithOverride]);
+
   const cardsReorderable =
     grouped.filter((group) => group.name !== null).length >= 2;
+
+  const activeNote = activeNoteId
+    ? (visible.find((note) => note.id === activeNoteId) ?? null)
+    : null;
 
   function openNew() {
     setEditing(null);
@@ -200,7 +252,8 @@ export function NotesView({
     });
   }
 
-  function onDragEnd(event: DragEndEvent) {
+  // Roosterweergave: notities herordenen in het raster.
+  function onGridDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const ids = visible.map((note) => note.id);
@@ -216,21 +269,92 @@ export function NotesView({
     });
   }
 
-  // Verslepen van een categoriekaart → past de beheerde categorievolgorde aan.
-  function onCardSortEnd(event: DragEndEvent) {
+  function onListDragStart(event: DragStartEvent) {
+    const id = String(event.active.id);
+    setActiveNoteId(id.startsWith("card:") ? null : id);
+  }
+
+  function onListDragEnd(event: DragEndEvent) {
+    setActiveNoteId(null);
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const currentOrder = orderedGroups.map((group) => group.name ?? "__zonder");
-    const oldIndex = currentOrder.indexOf(active.id as string);
-    const newIndex = currentOrder.indexOf(over.id as string);
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    if (activeId.startsWith("card:")) {
+      if (activeId !== overId) reorderCards(activeId, overId);
+      return;
+    }
+
+    const sourceCol = colByNote.get(activeId);
+    if (!sourceCol) return;
+    let targetCol: string;
+    if (overId.startsWith("col:")) targetCol = overId.slice(4);
+    else if (overId.startsWith("card:")) targetCol = overId.slice(5);
+    else targetCol = colByNote.get(overId) ?? sourceCol;
+
+    if (targetCol === sourceCol) {
+      if (activeId === overId || !dragEnabled) return;
+      reorderWithinColumn(sourceCol, activeId, overId);
+    } else {
+      recategorize(activeId, targetCol);
+    }
+  }
+
+  function reorderWithinColumn(
+    colKey: string,
+    activeId: string,
+    overId: string,
+  ) {
+    const group = orderedGroups.find((g) => columnKey(g.name) === colKey);
+    if (!group) return;
+    const colIds = group.notes.map((note) => note.id);
+    const oldIndex = colIds.indexOf(activeId);
+    const newIndex = colIds.indexOf(overId);
     if (oldIndex < 0 || newIndex < 0) return;
-    const newOrder = arrayMove(currentOrder, oldIndex, newIndex);
-    setCardOrder(newOrder); // optimistisch
+    const newColIds = arrayMove(colIds, oldIndex, newIndex);
+    const colSet = new Set(colIds);
+    let k = 0;
+    const result = visible.map((note) =>
+      colSet.has(note.id) ? newColIds[k++] : note.id,
+    );
+    setLocalOrder(result);
+    void reorderNotes(result).then((res) => {
+      if (!res.ok) {
+        toast.error("Volgorde opslaan mislukt", { description: res.error });
+      }
+    });
+  }
+
+  function recategorize(noteId: string, targetCol: string) {
+    const newCat = targetCol === ZONDER ? null : targetCol;
+    setCatOverride((prev) => ({ ...prev, [noteId]: newCat }));
+    void setNoteCategory(noteId, newCat).then((res) => {
+      if (!res.ok) {
+        setCatOverride((prev) => {
+          const next = { ...prev };
+          delete next[noteId];
+          return next;
+        });
+        toast.error("Verplaatsen mislukt", { description: res.error });
+      }
+    });
+  }
+
+  function reorderCards(activeId: string, overId: string) {
+    const currentOrder = orderedGroups.map((g) => `card:${columnKey(g.name)}`);
+    const oldIndex = currentOrder.indexOf(activeId);
+    const newIndex = currentOrder.indexOf(overId);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const newOrder = arrayMove(currentOrder, oldIndex, newIndex).map((id) =>
+      id.slice(5),
+    );
+    setCardOrder(newOrder);
 
     const idByName = new Map(categories.map((c) => [c.name, c.id]));
     const newVisibleIds = newOrder
-      .filter((name) => name !== "__zonder" && idByName.has(name))
-      .map((name) => idByName.get(name) as string);
+      .filter((key) => key !== ZONDER && idByName.has(key))
+      .map((key) => idByName.get(key) as string);
     if (newVisibleIds.length === 0) return;
     const visibleIdSet = new Set(newVisibleIds);
     let k = 0;
@@ -395,31 +519,36 @@ export function NotesView({
           ) : view === "lijst" ? (
             <DndContext
               sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={onCardSortEnd}
+              collisionDetection={collision}
+              onDragStart={onListDragStart}
+              onDragEnd={onListDragEnd}
             >
               <SortableContext
-                items={orderedGroups.map((group) => group.name ?? "__zonder")}
+                items={orderedGroups.map(
+                  (group) => `card:${columnKey(group.name)}`,
+                )}
                 strategy={rectSortingStrategy}
               >
                 <div className="grid items-start gap-4 lg:grid-cols-2">
                   {orderedGroups.map((group) => (
-                    <NoteCategoryCard
-                      key={group.name ?? "__zonder"}
+                    <NoteColumn
+                      key={columnKey(group.name)}
                       group={group}
-                      cardId={group.name ?? "__zonder"}
                       reorderable={cardsReorderable && group.name !== null}
                       onEdit={openEdit}
                     />
                   ))}
                 </div>
               </SortableContext>
+              <DragOverlay>
+                {activeNote ? <NoteOverlayRow note={activeNote} /> : null}
+              </DragOverlay>
             </DndContext>
           ) : (
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
-              onDragEnd={onDragEnd}
+              onDragEnd={onGridDragEnd}
             >
               <SortableContext
                 items={visible.map((note) => note.id)}
@@ -456,18 +585,18 @@ export function NotesView({
   );
 }
 
-// Eén categoriekaart, zelf versleepbaar via het kop-handvat (→ categorievolgorde).
-function NoteCategoryCard({
+// Eén categoriekolom: zelf versleepbaar (kop-handvat → categorievolgorde) en een
+// droppable voor notities (slepen erin = hercategoriseren).
+function NoteColumn({
   group,
-  cardId,
   reorderable,
   onEdit,
 }: {
   group: NoteGroup;
-  cardId: string;
   reorderable: boolean;
   onEdit: (note: Note) => void;
 }) {
+  const colKey = columnKey(group.name);
   const {
     attributes,
     listeners,
@@ -475,7 +604,11 @@ function NoteCategoryCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: cardId, disabled: !reorderable });
+  } = useSortable({ id: `card:${colKey}`, disabled: !reorderable });
+  const { setNodeRef: setColRef, isOver } = useDroppable({
+    id: `col:${colKey}`,
+  });
+  const noteIds = group.notes.map((note) => note.id);
 
   return (
     <div
@@ -515,18 +648,42 @@ function NoteCategoryCard({
           {group.notes.length}
         </span>
       </div>
-      <ul className="divide-y border-t">
-        {group.notes.map((note) => (
-          <NoteRow
-            key={note.id}
-            note={note}
-            onEdit={onEdit}
-            draggable={false}
-            hideCategory
-            categoryColor={group.color}
-          />
-        ))}
-      </ul>
+      <SortableContext items={noteIds} strategy={verticalListSortingStrategy}>
+        <ul
+          ref={setColRef}
+          className={cn(
+            "min-h-11 divide-y border-t transition-colors",
+            isOver && "bg-primary/5",
+          )}
+        >
+          {group.notes.map((note) => (
+            <NoteRow
+              key={note.id}
+              note={note}
+              onEdit={onEdit}
+              draggable
+              hideCategory
+              categoryColor={group.color}
+            />
+          ))}
+          {group.notes.length === 0 && (
+            <li className="px-3 py-3 text-center text-xs text-muted-foreground">
+              Sleep een notitie hierheen
+            </li>
+          )}
+        </ul>
+      </SortableContext>
+    </div>
+  );
+}
+
+// Zwevende kopie tijdens het slepen van een notitie.
+function NoteOverlayRow({ note }: { note: Note }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-xl">
+      <span className="truncate text-sm font-medium">
+        {note.title || "Naamloos"}
+      </span>
     </div>
   );
 }

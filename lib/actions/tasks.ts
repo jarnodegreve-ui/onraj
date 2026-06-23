@@ -120,6 +120,26 @@ export async function setTaskDone(
   return { ok: true };
 }
 
+// Enkel de categorie wijzigen — voor slepen naar een andere categoriekaart.
+export async function setTaskCategory(
+  id: string,
+  category: string | null,
+): Promise<ActionResult> {
+  const clean = category?.trim().slice(0, 60) || null;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tasks")
+    .update({ category: clean })
+    .eq("id", id);
+  if (error) {
+    if (isMissingColumn(error)) return { ok: true }; // categorie-kolom nog niet
+    return { ok: false, error: error.message };
+  }
+
+  revalidateTasks();
+  return { ok: true };
+}
+
 export async function deleteTask(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("tasks").delete().eq("id", id);

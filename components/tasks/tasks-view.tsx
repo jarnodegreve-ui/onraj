@@ -2,11 +2,15 @@
 
 import { useMemo, useState } from "react";
 import {
-  closestCenter,
+  closestCorners,
+  type CollisionDetection,
   DndContext,
   type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
+  useDroppable,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -30,6 +34,7 @@ import { TaskItem } from "@/components/tasks/task-item";
 import { Button } from "@/components/ui/button";
 import { reorderCategories } from "@/lib/actions/categories";
 import { reorderTasks } from "@/lib/actions/reorder";
+import { setTaskCategory } from "@/lib/actions/tasks";
 import { orderByManaged, suggestionList } from "@/lib/categories";
 import { priorityMeta } from "@/lib/tasks";
 import type { Category, RecurringTask, Task } from "@/lib/types";
@@ -38,6 +43,11 @@ import { cn } from "@/lib/utils";
 type Filter = "open" | "done" | "all";
 type Sort = "handmatig" | "prioriteit" | "deadline";
 
+const ZONDER = "__zonder";
+function columnKey(name: string | null) {
+  return name ?? ZONDER;
+}
+
 // Sorteert op deadline: vroegste eerst, taken zonder deadline achteraan.
 function dueCompare(a: Task, b: Task) {
   if (a.dueOn && b.dueOn) return a.dueOn.localeCompare(b.dueOn);
@@ -45,6 +55,17 @@ function dueCompare(a: Task, b: Task) {
   if (b.dueOn) return 1;
   return 0;
 }
+
+// Sleep een kaart → kolomdroppables; sleep een taak → kolom-containers + taken.
+const collision: CollisionDetection = (args) => {
+  const activeId = String(args.active.id);
+  const isCard = activeId.startsWith("card:");
+  const containers = args.droppableContainers.filter((c) => {
+    const id = String(c.id);
+    return isCard ? id.startsWith("card:") : !id.startsWith("card:");
+  });
+  return closestCorners({ ...args, droppableContainers: containers });
+};
 
 export function TasksView({
   tasks,
@@ -63,8 +84,20 @@ export function TasksView({
   const [sort, setSort] = useState<Sort>("handmatig");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [localOrder, setLocalOrder] = useState<string[]>([]);
+  const [cardOrder, setCardOrder] = useState<string[] | null>(null);
+  const [catOverride, setCatOverride] = useState<Record<string, string | null>>(
+    {},
+  );
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
+
+  // Wis de optimistische hercategorisatie zodra de server nieuwe data levert.
+  const [prevTasks, setPrevTasks] = useState(tasks);
+  if (prevTasks !== tasks) {
+    setPrevTasks(tasks);
+    setCatOverride({});
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -131,16 +164,24 @@ export function TasksView({
     });
   }, [tasks, filter, sort, activeCategory, localOrder]);
 
-  // Taken gegroepeerd per categorie (beheerde volgorde) voor de kaart-indeling,
-  // zoals het notitietabblad.
-  const grouped = useMemo(
-    () => groupTasksByCategory(visible, categories),
-    [visible, categories],
+  // Optimistische hercategorisatie toepassen vóór het groeperen.
+  const visibleWithOverride = useMemo(
+    () =>
+      visible.map((task) =>
+        task.id in catOverride
+          ? { ...task, category: catOverride[task.id] }
+          : task,
+      ),
+    [visible, catOverride],
   );
 
-  // Optimistische volgorde van de categoriekaarten (tot de server-revalidatie de
-  // beheerde volgorde bijwerkt). "Zonder categorie" blijft altijd achteraan.
-  const [cardOrder, setCardOrder] = useState<string[] | null>(null);
+  const grouped = useMemo(
+    () => groupTasksByCategory(visibleWithOverride, categories),
+    [visibleWithOverride, categories],
+  );
+
+  // "Zonder categorie" blijft achteraan; echte categorieën in de optimistische
+  // kaartvolgorde (tot de server-revalidatie de beheerde volgorde bijwerkt).
   const orderedGroups = useMemo(() => {
     if (!cardOrder) return grouped;
     const idx = new Map(cardOrder.map((id, index) => [id, index]));
@@ -151,9 +192,21 @@ export function TasksView({
     });
   }, [grouped, cardOrder]);
 
-  // Kaarten verslepen heeft enkel zin bij ≥2 echte categorieën.
+  // Welke kolom hoort bij elke taak (incl. optimistische hercategorisatie).
+  const colByTask = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const task of visibleWithOverride) {
+      map.set(task.id, columnKey(task.category));
+    }
+    return map;
+  }, [visibleWithOverride]);
+
   const cardsReorderable =
     grouped.filter((group) => group.name !== null).length >= 2;
+
+  const activeTask = activeTaskId
+    ? (visible.find((task) => task.id === activeTaskId) ?? null)
+    : null;
 
   function openNew() {
     setEditing(null);
@@ -169,19 +222,57 @@ export function TasksView({
     window.location.href = "/api/tasks/export";
   }
 
-  // Verslepen binnen één categoriekaart: herorden enkel die categorie en behoud
-  // de globale volgorde (elke categorie houdt haar eigen plekken in de lijst).
-  function onCardDragEnd(event: DragEndEvent, cardIds: string[]) {
+  function onDragStart(event: DragStartEvent) {
+    const id = String(event.active.id);
+    setActiveTaskId(id.startsWith("card:") ? null : id);
+  }
+
+  function onDragEnd(event: DragEndEvent) {
+    setActiveTaskId(null);
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = cardIds.indexOf(active.id as string);
-    const newIndex = cardIds.indexOf(over.id as string);
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // Kaart verslepen → categorievolgorde.
+    if (activeId.startsWith("card:")) {
+      if (activeId !== overId) reorderCards(activeId, overId);
+      return;
+    }
+
+    // Taak verslepen.
+    const sourceCol = colByTask.get(activeId);
+    if (!sourceCol) return;
+    let targetCol: string;
+    if (overId.startsWith("col:")) targetCol = overId.slice(4);
+    else if (overId.startsWith("card:")) targetCol = overId.slice(5);
+    else targetCol = colByTask.get(overId) ?? sourceCol;
+
+    if (targetCol === sourceCol) {
+      // Herorden binnen de kolom (enkel zinvol bij handmatig sorteren).
+      if (activeId === overId || sort !== "handmatig") return;
+      reorderWithinColumn(sourceCol, activeId, overId);
+    } else {
+      recategorize(activeId, targetCol);
+    }
+  }
+
+  function reorderWithinColumn(
+    colKey: string,
+    activeId: string,
+    overId: string,
+  ) {
+    const group = orderedGroups.find((g) => columnKey(g.name) === colKey);
+    if (!group) return;
+    const colIds = group.tasks.map((task) => task.id);
+    const oldIndex = colIds.indexOf(activeId);
+    const newIndex = colIds.indexOf(overId);
     if (oldIndex < 0 || newIndex < 0) return;
-    const newCardIds = arrayMove(cardIds, oldIndex, newIndex);
-    const cardSet = new Set(cardIds);
+    const newColIds = arrayMove(colIds, oldIndex, newIndex);
+    const colSet = new Set(colIds);
     let k = 0;
     const result = visible.map((task) =>
-      cardSet.has(task.id) ? newCardIds[k++] : task.id,
+      colSet.has(task.id) ? newColIds[k++] : task.id,
     );
     setLocalOrder(result);
     void reorderTasks(result).then((res) => {
@@ -191,23 +282,35 @@ export function TasksView({
     });
   }
 
-  // Verslepen van een categoriekaart → past de beheerde categorievolgorde aan.
-  function onCardSortEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const currentOrder = orderedGroups.map((group) => group.name ?? "__zonder");
-    const oldIndex = currentOrder.indexOf(active.id as string);
-    const newIndex = currentOrder.indexOf(over.id as string);
+  function recategorize(taskId: string, targetCol: string) {
+    const newCat = targetCol === ZONDER ? null : targetCol;
+    setCatOverride((prev) => ({ ...prev, [taskId]: newCat }));
+    void setTaskCategory(taskId, newCat).then((res) => {
+      if (!res.ok) {
+        setCatOverride((prev) => {
+          const next = { ...prev };
+          delete next[taskId];
+          return next;
+        });
+        toast.error("Verplaatsen mislukt", { description: res.error });
+      }
+    });
+  }
+
+  function reorderCards(activeId: string, overId: string) {
+    const currentOrder = orderedGroups.map((g) => `card:${columnKey(g.name)}`);
+    const oldIndex = currentOrder.indexOf(activeId);
+    const newIndex = currentOrder.indexOf(overId);
     if (oldIndex < 0 || newIndex < 0) return;
-    const newOrder = arrayMove(currentOrder, oldIndex, newIndex);
+    const newOrder = arrayMove(currentOrder, oldIndex, newIndex).map((id) =>
+      id.slice(5),
+    );
     setCardOrder(newOrder); // optimistisch
 
-    // Persisteer enkel de echte categorieën; ongebruikte categorieën (niet als
-    // kaart zichtbaar) houden hun plek in de beheerde lijst.
     const idByName = new Map(categories.map((c) => [c.name, c.id]));
     const newVisibleIds = newOrder
-      .filter((name) => name !== "__zonder" && idByName.has(name))
-      .map((name) => idByName.get(name) as string);
+      .filter((key) => key !== ZONDER && idByName.has(key))
+      .map((key) => idByName.get(key) as string);
     if (newVisibleIds.length === 0) return;
     const visibleIdSet = new Set(newVisibleIds);
     let k = 0;
@@ -245,7 +348,7 @@ export function TasksView({
     <div>
       <PageHeader
         title="Taken"
-        description="Sleep aan het handvat om de volgorde aan te passen."
+        description="Sleep taken tussen categorieën of binnen een kaart om te ordenen."
       >
         <RecurringTasksButton
           recurringTasks={recurringTasks}
@@ -343,30 +446,30 @@ export function TasksView({
       ) : (
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={onCardSortEnd}
+          collisionDetection={collision}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
         >
           <SortableContext
-            items={orderedGroups.map((group) => group.name ?? "__zonder")}
+            items={orderedGroups.map((group) => `card:${columnKey(group.name)}`)}
             strategy={rectSortingStrategy}
           >
             <div className="grid items-start gap-4 lg:grid-cols-2">
               {orderedGroups.map((group) => (
-                <TaskCategoryCard
-                  key={group.name ?? "__zonder"}
+                <TaskColumn
+                  key={columnKey(group.name)}
                   group={group}
-                  cardId={group.name ?? "__zonder"}
                   reorderable={cardsReorderable && group.name !== null}
-                  sensors={sensors}
-                  sort={sort}
                   todayKey={todayKey}
                   onEdit={openEdit}
-                  onTaskDragEnd={onCardDragEnd}
                   exitOnToggle={filter !== "all"}
                 />
               ))}
             </div>
           </SortableContext>
+          <DragOverlay>
+            {activeTask ? <TaskOverlayRow task={activeTask} /> : null}
+          </DragOverlay>
         </DndContext>
       )}
 
@@ -380,29 +483,23 @@ export function TasksView({
   );
 }
 
-// Eén categoriekaart: zelf versleepbaar (kop-handvat → categorievolgorde) met
-// daarbinnen de versleepbare takenlijst (binnen de categorie).
-function TaskCategoryCard({
+// Eén categoriekolom: zelf versleepbaar (kop-handvat → categorievolgorde) en een
+// droppable voor taken (slepen erin = hercategoriseren). De takenlijst is een
+// SortableContext binnen de gedeelde DndContext (slepen tussen kolommen mogelijk).
+function TaskColumn({
   group,
-  cardId,
   reorderable,
-  sensors,
-  sort,
   todayKey,
   onEdit,
-  onTaskDragEnd,
   exitOnToggle,
 }: {
   group: TaskGroup;
-  cardId: string;
   reorderable: boolean;
-  sensors: ReturnType<typeof useSensors>;
-  sort: Sort;
   todayKey: string;
   onEdit: (task: Task) => void;
-  onTaskDragEnd: (event: DragEndEvent, cardIds: string[]) => void;
   exitOnToggle: boolean;
 }) {
+  const colKey = columnKey(group.name);
   const {
     attributes,
     listeners,
@@ -410,8 +507,11 @@ function TaskCategoryCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: cardId, disabled: !reorderable });
-  const ids = group.tasks.map((task) => task.id);
+  } = useSortable({ id: `card:${colKey}`, disabled: !reorderable });
+  const { setNodeRef: setColRef, isOver } = useDroppable({
+    id: `col:${colKey}`,
+  });
+  const taskIds = group.tasks.map((task) => task.id);
 
   return (
     <div
@@ -451,28 +551,47 @@ function TaskCategoryCard({
           {group.tasks.length}
         </span>
       </div>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={(event) => onTaskDragEnd(event, ids)}
-      >
-        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-          <ul className="divide-y border-t px-3">
-            {group.tasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                todayKey={todayKey}
-                onEdit={onEdit}
-                draggable={sort === "handmatig"}
-                hideCategory
-                categoryColor={group.color}
-                exitOnToggle={exitOnToggle}
-              />
-            ))}
-          </ul>
-        </SortableContext>
-      </DndContext>
+      <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+        <ul
+          ref={setColRef}
+          className={cn(
+            "min-h-11 divide-y border-t px-3 transition-colors",
+            isOver && "bg-primary/5",
+          )}
+        >
+          {group.tasks.map((task) => (
+            <TaskItem
+              key={task.id}
+              task={task}
+              todayKey={todayKey}
+              onEdit={onEdit}
+              draggable
+              hideCategory
+              categoryColor={group.color}
+              exitOnToggle={exitOnToggle}
+            />
+          ))}
+          {group.tasks.length === 0 && (
+            <li className="py-3 text-center text-xs text-muted-foreground">
+              Sleep een taak hierheen
+            </li>
+          )}
+        </ul>
+      </SortableContext>
+    </div>
+  );
+}
+
+// Zwevende kopie tijdens het slepen van een taak (buiten de kaart-clipping).
+function TaskOverlayRow({ task }: { task: Task }) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2.5 shadow-xl">
+      <span className="size-5 shrink-0 rounded-full border border-muted-foreground/40" />
+      <span className="flex-1 truncate text-sm">{task.title}</span>
+      <span
+        className="size-1.5 shrink-0 rounded-full"
+        style={{ backgroundColor: priorityMeta(task.priority).color }}
+      />
     </div>
   );
 }

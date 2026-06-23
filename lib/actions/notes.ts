@@ -128,6 +128,43 @@ export async function setNotePinned(
   return { ok: true };
 }
 
+// Enkel de categorie wijzigen — voor slepen naar een andere categoriekaart.
+// Verplaatst ook het vault-bestand mee naar de nieuwe categoriemap.
+export async function setNoteCategory(
+  id: string,
+  category: string | null,
+): Promise<ActionResult> {
+  const clean = category?.trim().slice(0, 60) || null;
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("notes")
+    .select("*")
+    .eq("id", id)
+    .single();
+  const oldPath = existing
+    ? noteFilePath(
+        existing.title as string,
+        existing.id as string,
+        (existing.category as string | null) ?? null,
+      )
+    : null;
+
+  const { data, error } = await supabase
+    .from("notes")
+    .update({ category: clean })
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) {
+    if (isMissingColumn(error)) return { ok: true }; // categorie-kolom nog niet
+    return { ok: false, error: error.message };
+  }
+
+  if (data) await syncNoteFile(toNote(data), oldPath);
+  revalidateNotes();
+  return { ok: true };
+}
+
 // Zachte verwijdering: verbergt de notitie in het portaal maar bewaart het
 // vault-bestand (met archived: true in de frontmatter). archived=false herstelt.
 export async function archiveNote(
