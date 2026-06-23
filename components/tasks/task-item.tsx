@@ -26,12 +26,14 @@ export function TaskItem({
   onEdit,
   draggable,
   categoryColor,
+  hideCategory = false,
 }: {
   task: Task;
   todayKey: string;
   onEdit: (task: Task) => void;
   draggable: boolean;
   categoryColor?: string | null;
+  hideCategory?: boolean;
 }) {
   const {
     attributes,
@@ -125,7 +127,7 @@ export function TaskItem({
             />
             {meta.label}
           </span>
-          {task.category && (
+          {!hideCategory && task.category && (
             <CategoryBadge name={task.category} color={categoryColor} />
           )}
         </div>

@@ -24,7 +24,6 @@ import { PageHeader } from "@/components/page-header";
 import { TaskEditor } from "@/components/tasks/task-editor";
 import { TaskItem } from "@/components/tasks/task-item";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { reorderTasks } from "@/lib/actions/reorder";
 import { orderByManaged, suggestionList } from "@/lib/categories";
 import { priorityMeta } from "@/lib/tasks";
@@ -125,6 +124,13 @@ export function TasksView({
     });
   }, [tasks, filter, sort, activeCategory, localOrder]);
 
+  // Taken gegroepeerd per categorie (beheerde volgorde) voor de kaart-indeling,
+  // zoals het notitietabblad.
+  const grouped = useMemo(
+    () => groupTasksByCategory(visible, categories),
+    [visible, categories],
+  );
+
   function openNew() {
     setEditing(null);
     setEditorOpen(true);
@@ -139,18 +145,24 @@ export function TasksView({
     window.location.href = "/api/tasks/export";
   }
 
-  function onDragEnd(event: DragEndEvent) {
+  // Verslepen binnen één categoriekaart: herorden enkel die categorie en behoud
+  // de globale volgorde (elke categorie houdt haar eigen plekken in de lijst).
+  function onCardDragEnd(event: DragEndEvent, cardIds: string[]) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const ids = visible.map((task) => task.id);
-    const oldIndex = ids.indexOf(active.id as string);
-    const newIndex = ids.indexOf(over.id as string);
+    const oldIndex = cardIds.indexOf(active.id as string);
+    const newIndex = cardIds.indexOf(over.id as string);
     if (oldIndex < 0 || newIndex < 0) return;
-    const newIds = arrayMove(ids, oldIndex, newIndex);
-    setLocalOrder(newIds);
-    void reorderTasks(newIds).then((result) => {
-      if (!result.ok) {
-        toast.error("Volgorde opslaan mislukt", { description: result.error });
+    const newCardIds = arrayMove(cardIds, oldIndex, newIndex);
+    const cardSet = new Set(cardIds);
+    let k = 0;
+    const result = visible.map((task) =>
+      cardSet.has(task.id) ? newCardIds[k++] : task.id,
+    );
+    setLocalOrder(result);
+    void reorderTasks(result).then((res) => {
+      if (!res.ok) {
+        toast.error("Volgorde opslaan mislukt", { description: res.error });
       }
     });
   }
@@ -271,35 +283,60 @@ export function TasksView({
           )}
         </EmptyState>
       ) : (
-        <Card>
-          <CardContent>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={onDragEnd}
-            >
-              <SortableContext
-                items={visible.map((task) => task.id)}
-                strategy={verticalListSortingStrategy}
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          {grouped.map((group) => {
+            const ids = group.tasks.map((task) => task.id);
+            return (
+              <div
+                key={group.name ?? "__zonder"}
+                data-slot="card"
+                className="overflow-hidden rounded-xl border bg-card"
               >
-                <ul className="divide-y">
-                  {visible.map((task) => (
-                    <TaskItem
-                      key={task.id}
-                      task={task}
-                      todayKey={todayKey}
-                      onEdit={openEdit}
-                      draggable={sort === "handmatig" && activeCategory === null}
-                      categoryColor={
-                        task.category ? colorByName.get(task.category) : undefined
-                      }
-                    />
-                  ))}
-                </ul>
-              </SortableContext>
-            </DndContext>
-          </CardContent>
-        </Card>
+                <div className="flex items-center gap-2 px-4 py-2.5">
+                  {group.name &&
+                    (group.color ? (
+                      <span
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: group.color }}
+                      />
+                    ) : (
+                      <span className="size-2.5 shrink-0 rounded-full border border-muted-foreground/40" />
+                    ))}
+                  <h3 className="flex-1 truncate text-sm font-semibold">
+                    {group.name ?? "Zonder categorie"}
+                  </h3>
+                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                    {group.tasks.length}
+                  </span>
+                </div>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event) => onCardDragEnd(event, ids)}
+                >
+                  <SortableContext
+                    items={ids}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <ul className="divide-y border-t px-3">
+                      {group.tasks.map((task) => (
+                        <TaskItem
+                          key={task.id}
+                          task={task}
+                          todayKey={todayKey}
+                          onEdit={openEdit}
+                          draggable={sort === "handmatig"}
+                          hideCategory
+                          categoryColor={group.color}
+                        />
+                      ))}
+                    </ul>
+                  </SortableContext>
+                </DndContext>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       <TaskEditor
@@ -310,6 +347,42 @@ export function TasksView({
       />
     </div>
   );
+}
+
+type TaskGroup = { name: string | null; color: string | null; tasks: Task[] };
+
+// Groepeert taken per categorie; volgorde volgt de beheerde categorielijst,
+// "Zonder categorie" komt achteraan.
+function groupTasksByCategory(
+  tasks: Task[],
+  categories: Category[],
+): TaskGroup[] {
+  const order = new Map(
+    categories.map((category, index) => [category.name, index]),
+  );
+  const colorOf = new Map(
+    categories.map((category) => [category.name, category.color]),
+  );
+  const buckets = new Map<string, Task[]>();
+  for (const task of tasks) {
+    const key = task.category ?? "";
+    const list = buckets.get(key);
+    if (list) list.push(task);
+    else buckets.set(key, [task]);
+  }
+  const groups: TaskGroup[] = [...buckets.entries()].map(([key, list]) => ({
+    name: key || null,
+    color: key ? (colorOf.get(key) ?? null) : null,
+    tasks: list,
+  }));
+  const rank = (name: string) => order.get(name) ?? Number.MAX_SAFE_INTEGER;
+  groups.sort((a, b) => {
+    if (a.name === null) return 1;
+    if (b.name === null) return -1;
+    const diff = rank(a.name) - rank(b.name);
+    return diff !== 0 ? diff : a.name.localeCompare(b.name, "nl");
+  });
+  return groups;
 }
 
 function Chip({
