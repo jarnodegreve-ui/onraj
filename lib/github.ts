@@ -71,21 +71,6 @@ export async function putFile(
   }
 }
 
-// Lijst van bestandspaden in een map (voor opruimen van weesbestanden, bv. na
-// het hernoemen van notities). Lege array als de map nog niet bestaat.
-export async function listDir(path: string): Promise<string[]> {
-  const res = await fetch(
-    `${API_BASE}/repos/${repo}/contents/${encodePath(path)}?ref=${encodeURIComponent(branch)}`,
-    { headers: ghHeaders(), cache: "no-store" },
-  );
-  if (res.status === 404) return [];
-  if (!res.ok) {
-    throw new Error(`GitHub-status ${res.status} bij lijst ${path}`);
-  }
-  const data = (await res.json()) as Array<{ path: string; type: string }>;
-  return data.filter((entry) => entry.type === "file").map((entry) => entry.path);
-}
-
 // Alle bestandspaden onder een prefix, recursief (incl. submappen per categorie)
 // via de Git Trees-API. Lege array bij een lege repo / ontbrekende branch.
 export async function listTreeFiles(prefix: string): Promise<string[]> {
