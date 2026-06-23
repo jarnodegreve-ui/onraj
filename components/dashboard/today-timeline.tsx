@@ -11,6 +11,7 @@ import {
 import { formatDate, formatTime } from "@/lib/format";
 import { priorityMeta } from "@/lib/tasks";
 import type { CalendarEvent, Task } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 /**
  * Eén blik op vandaag: afspraken (op tijd) als tijdlijn + de taken die vandaag
@@ -20,15 +21,17 @@ export function TodayTimeline({
   events,
   tasks,
   todayKey,
+  className,
 }: {
   events: CalendarEvent[];
   tasks: Task[];
   todayKey: string;
+  className?: string;
 }) {
   const leeg = events.length === 0 && tasks.length === 0;
 
   return (
-    <Card>
+    <Card className={cn("flex flex-col", className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <CalendarClock className="size-4 text-primary" />
@@ -38,11 +41,14 @@ export function TodayTimeline({
           {formatDate(todayKey, "EEEE d MMMM")}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-5">
+      <CardContent className="flex-1 space-y-5">
         {leeg ? (
-          <p className="py-2 text-sm text-muted-foreground">
-            Niets op de planning vandaag — geniet ervan! 🎉
-          </p>
+          <div className="flex h-full flex-col items-center justify-center gap-3 py-8 text-center">
+            <CalendarClock className="size-9 text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">
+              Niets op de planning vandaag — geniet ervan! 🎉
+            </p>
+          </div>
         ) : (
           <>
             {events.length > 0 && (

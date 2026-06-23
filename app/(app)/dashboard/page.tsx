@@ -100,38 +100,39 @@ export default async function DashboardPage() {
         <PushToggle />
       </div>
 
-      {/* Bento — bovenste band: 'Vandaag' als blikvanger + een rail met saldo en tegels. */}
-      <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+      {/* Bento — bovenste band: 'Vandaag' als blikvanger + een rail met saldo en tegels.
+          Geen items-start: 'Vandaag' vult de rijhoogte zodat een lege dag geen gat laat. */}
+      <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <TodayTimeline
             events={eventsToday}
             tasks={tasksToday}
             todayKey={todayKey}
+            className="h-full"
           />
         </div>
-        <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
           <SaldoCard
+            className="col-span-2"
             locked={financeLocked}
             inkomsten={summary.inkomsten}
             uitgaven={summary.uitgaven}
             saldo={summary.saldo}
           />
-          <div className="grid grid-cols-2 gap-4">
-            <StatTile
-              href="/taken"
-              icon={ListTodo}
-              label="Open taken"
-              value={openTasks.length}
-              accent="#f59e0b"
-            />
-            <StatTile
-              href="/notities"
-              icon={NotebookPen}
-              label="Notities"
-              value={notes.length}
-              accent="#2563eb"
-            />
-          </div>
+          <StatTile
+            href="/taken"
+            icon={ListTodo}
+            label="Open taken"
+            value={openTasks.length}
+            accent="#f59e0b"
+          />
+          <StatTile
+            href="/notities"
+            icon={NotebookPen}
+            label="Notities"
+            value={notes.length}
+            accent="#2563eb"
+          />
         </div>
       </div>
 
@@ -185,17 +186,19 @@ function SaldoCard({
   inkomsten,
   uitgaven,
   saldo,
+  className,
 }: {
   locked: boolean;
   inkomsten: number;
   uitgaven: number;
   saldo: number;
+  className?: string;
 }) {
   return (
-    <Link href="/financien" className="group block">
+    <Link href="/financien" className={cn("group block", className)}>
       <div
         data-slot="card"
-        className="rounded-xl border bg-card p-5 transition-colors group-hover:border-primary/30"
+        className="h-full rounded-xl border bg-card p-5 transition-colors group-hover:border-primary/30"
       >
         <div className="flex items-center justify-between">
           <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
