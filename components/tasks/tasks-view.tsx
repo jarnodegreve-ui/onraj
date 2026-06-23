@@ -24,6 +24,7 @@ import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { RecurringTasksButton } from "@/components/tasks/recurring-tasks-dialog";
 import { TaskEditor } from "@/components/tasks/task-editor";
 import { TaskItem } from "@/components/tasks/task-item";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ import { reorderCategories } from "@/lib/actions/categories";
 import { reorderTasks } from "@/lib/actions/reorder";
 import { orderByManaged, suggestionList } from "@/lib/categories";
 import { priorityMeta } from "@/lib/tasks";
-import type { Category, Task } from "@/lib/types";
+import type { Category, RecurringTask, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Filter = "open" | "done" | "all";
@@ -50,11 +51,13 @@ export function TasksView({
   todayKey,
   preview,
   categories = [],
+  recurringTasks = [],
 }: {
   tasks: Task[];
   todayKey: string;
   preview: boolean;
   categories?: Category[];
+  recurringTasks?: RecurringTask[];
 }) {
   const [filter, setFilter] = useState<Filter>("open");
   const [sort, setSort] = useState<Sort>("handmatig");
@@ -244,6 +247,10 @@ export function TasksView({
         title="Taken"
         description="Sleep aan het handvat om de volgorde aan te passen."
       >
+        <RecurringTasksButton
+          recurringTasks={recurringTasks}
+          categories={editorCategories}
+        />
         {tasks.length > 0 && (
           <Button variant="outline" onClick={exportTasks}>
             <Download className="size-4" /> Exporteer

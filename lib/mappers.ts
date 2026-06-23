@@ -9,6 +9,8 @@ import type {
   EventRow,
   Note,
   NoteRow,
+  RecurringTask,
+  RecurringTaskRow,
   RecurringTransaction,
   RecurringTransactionRow,
   SavingsGoal,
@@ -111,6 +113,24 @@ export function toRecurringTransaction(
     active: row.active,
     startMonth: row.start_month,
     lastGeneratedMonth: row.last_generated_month,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function toRecurringTask(row: RecurringTaskRow): RecurringTask {
+  return {
+    id: row.id,
+    title: row.title,
+    notes: row.notes,
+    priority: row.priority ?? "middel",
+    category: row.category,
+    frequency: row.frequency,
+    weekday: row.weekday,
+    dayOfMonth: row.day_of_month,
+    active: row.active,
+    startOn: row.start_on,
+    lastGeneratedOn: row.last_generated_on,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

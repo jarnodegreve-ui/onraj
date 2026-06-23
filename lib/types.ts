@@ -117,6 +117,43 @@ export interface TaskRow {
   updated_at: string;
 }
 
+// ─── Terugkerende taken ──────────────────────────────────────────────────────
+
+export type RecurringFrequency = "dagelijks" | "wekelijks" | "maandelijks";
+
+export interface RecurringTask {
+  id: string;
+  title: string;
+  notes: string | null;
+  priority: TaskPriority;
+  category: string | null;
+  frequency: RecurringFrequency;
+  weekday: number | null; // 0=zondag … 6=zaterdag (voor wekelijks)
+  dayOfMonth: number | null; // 1–28 (voor maandelijks)
+  active: boolean;
+  startOn: string; // 'YYYY-MM-DD'
+  lastGeneratedOn: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecurringTaskRow {
+  id: string;
+  user_id: string;
+  title: string;
+  notes: string | null;
+  priority: TaskPriority;
+  category: string | null;
+  frequency: RecurringFrequency;
+  weekday: number | null;
+  day_of_month: number | null;
+  active: boolean;
+  start_on: string;
+  last_generated_on: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // ─── Budgetten ──────────────────────────────────────────────────────────────
 
 export interface Budget {
