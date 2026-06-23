@@ -120,10 +120,10 @@ export function QuickAddFab() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Snel taak toevoegen"
-        className="bg-brand-gradient fixed right-4 z-40 flex size-14 items-center justify-center rounded-full text-white shadow-lg transition-transform active:scale-95 md:hidden"
+        className="bg-brand-gradient fixed right-4 z-40 flex size-16 items-center justify-center rounded-full text-white shadow-lg transition-transform active:scale-95 md:hidden"
         style={{ bottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}
       >
-        <Plus className="size-6" />
+        <Plus className="size-7" />
       </button>
       <QuickAddDialog open={open} onOpenChange={setOpen} mode="task" />
     </>
