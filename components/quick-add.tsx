@@ -85,7 +85,8 @@ export function QuickAddDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      {/* Mobiel: hoger ankeren (gecentreerd boven het toetsenbord); desktop: centraal. */}
+      <DialogContent className="top-[8%] max-h-[88dvh] translate-y-0 overflow-y-auto sm:top-1/2 sm:max-w-md sm:-translate-y-1/2">
         <DialogHeader>
           <DialogTitle>Snel toevoegen</DialogTitle>
           <DialogDescription>

@@ -23,7 +23,15 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Download, GripVertical, ListTodo, Plus } from "lucide-react";
+import {
+  ArrowDownUp,
+  Check,
+  ChevronDown,
+  Download,
+  GripVertical,
+  ListTodo,
+  Plus,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
@@ -32,6 +40,12 @@ import { RecurringTasksButton } from "@/components/tasks/recurring-tasks-dialog"
 import { TaskEditor } from "@/components/tasks/task-editor";
 import { TaskItem } from "@/components/tasks/task-item";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { reorderCategories } from "@/lib/actions/categories";
 import { reorderTasks } from "@/lib/actions/reorder";
 import { setTaskCategory } from "@/lib/actions/tasks";
@@ -42,6 +56,13 @@ import { cn } from "@/lib/utils";
 
 type Filter = "open" | "done" | "all";
 type Sort = "handmatig" | "prioriteit" | "deadline";
+
+const SORTS: Sort[] = ["prioriteit", "deadline", "handmatig"];
+const SORT_LABELS: Record<Sort, string> = {
+  prioriteit: "Prioriteit",
+  deadline: "Deadline",
+  handmatig: "Handmatig",
+};
 
 const ZONDER = "__zonder";
 function columnKey(name: string | null) {
@@ -81,7 +102,7 @@ export function TasksView({
   recurringTasks?: RecurringTask[];
 }) {
   const [filter, setFilter] = useState<Filter>("open");
-  const [sort, setSort] = useState<Sort>("handmatig");
+  const [sort, setSort] = useState<Sort>("prioriteit");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [localOrder, setLocalOrder] = useState<string[]>([]);
   const [cardOrder, setCardOrder] = useState<string[] | null>(null);
@@ -364,43 +385,46 @@ export function TasksView({
         </Button>
       </PageHeader>
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5">
-          <Chip active={filter === "open"} onClick={() => setFilter("open")}>
-            Open ({openCount})
-          </Chip>
-          <Chip active={filter === "done"} onClick={() => setFilter("done")}>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="inline-flex rounded-lg bg-muted p-0.5">
+          <FilterSeg active={filter === "open"} onClick={() => setFilter("open")}>
+            Open <span className="tabular-nums opacity-70">{openCount}</span>
+          </FilterSeg>
+          <FilterSeg active={filter === "done"} onClick={() => setFilter("done")}>
             Afgewerkt
-          </Chip>
-          <Chip active={filter === "all"} onClick={() => setFilter("all")}>
+          </FilterSeg>
+          <FilterSeg active={filter === "all"} onClick={() => setFilter("all")}>
             Alles
-          </Chip>
+          </FilterSeg>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">Sorteer:</span>
-          <Chip active={sort === "handmatig"} onClick={() => setSort("handmatig")}>
-            Handmatig
-          </Chip>
-          <Chip
-            active={sort === "prioriteit"}
-            onClick={() => setSort("prioriteit")}
-          >
-            Prioriteit
-          </Chip>
-          <Chip active={sort === "deadline"} onClick={() => setSort("deadline")}>
-            Deadline
-          </Chip>
-        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="outline" size="sm" className="shrink-0">
+                <ArrowDownUp className="size-3.5" />
+                {SORT_LABELS[sort]}
+                <ChevronDown className="size-3.5 opacity-60" />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end">
+            {SORTS.map((option) => (
+              <DropdownMenuItem key={option} onClick={() => setSort(option)}>
+                {SORT_LABELS[option]}
+                {sort === option && <Check className="ml-auto size-4" />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {filterCategories.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-xs font-medium text-muted-foreground">
-            Categorie:
-          </span>
+        <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1">
           <Chip
             active={activeCategory === null}
             onClick={() => setActiveCategory(null)}
+            className="shrink-0"
           >
             Alle
           </Chip>
@@ -414,6 +438,7 @@ export function TasksView({
                   current === category ? null : category,
                 )
               }
+              className="shrink-0"
             >
               {category}
             </Chip>
@@ -632,26 +657,54 @@ function groupTasksByCategory(
   return groups;
 }
 
-function Chip({
+function FilterSeg({
   active,
   onClick,
   children,
-  color,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
-  color?: string | null;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors",
+        "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-colors",
+        active
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Chip({
+  active,
+  onClick,
+  children,
+  color,
+  className,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  color?: string | null;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs whitespace-nowrap transition-colors",
         active
           ? "border-primary bg-primary text-primary-foreground"
           : "border-border bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+        className,
       )}
     >
       {color && (
