@@ -69,29 +69,62 @@ export function QuickAdd() {
         <span className="hidden sm:inline">Toevoegen</span>
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Snel toevoegen</DialogTitle>
-            <DialogDescription>
-              Maak snel een notitie of taak aan. Tip: druk op{" "}
-              <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">
-                n
-              </kbd>{" "}
-              of{" "}
-              <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">
-                t
-              </kbd>
-              .
-            </DialogDescription>
-          </DialogHeader>
-          <QuickForm
-            key={mode}
-            initialMode={mode}
-            onClose={() => setOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <QuickAddDialog open={open} onOpenChange={setOpen} mode={mode} />
+    </>
+  );
+}
+
+export function QuickAddDialog({
+  open,
+  onOpenChange,
+  mode,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  mode: Mode;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Snel toevoegen</DialogTitle>
+          <DialogDescription>
+            Maak snel een notitie of taak aan. Tip: druk op{" "}
+            <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">
+              n
+            </kbd>{" "}
+            of{" "}
+            <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">
+              t
+            </kbd>
+            .
+          </DialogDescription>
+        </DialogHeader>
+        <QuickForm
+          key={mode}
+          initialMode={mode}
+          onClose={() => onOpenChange(false)}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Zwevende +-knop (mobiel) om vanaf elke pagina snel een taak toe te voegen.
+export function QuickAddFab() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Snel taak toevoegen"
+        className="bg-brand-gradient fixed right-4 z-40 flex size-14 items-center justify-center rounded-full text-white shadow-lg transition-transform active:scale-95 md:hidden"
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}
+      >
+        <Plus className="size-6" />
+      </button>
+      <QuickAddDialog open={open} onOpenChange={setOpen} mode="task" />
     </>
   );
 }
