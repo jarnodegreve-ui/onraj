@@ -62,7 +62,9 @@ export function AppSidebar({ email }: { email: string | null }) {
                           onClick={() => setOpenMobile(false)}
                         >
                           <item.icon />
-                          <span>{item.title}</span>
+                          <span className="group-data-[collapsible=icon]:hidden">
+                            {item.title}
+                          </span>
                         </Link>
                       }
                     />
@@ -88,7 +90,9 @@ export function AppSidebar({ email }: { email: string | null }) {
                       onClick={() => setOpenMobile(false)}
                     >
                       <Settings />
-                      <span>Instellingen</span>
+                      <span className="group-data-[collapsible=icon]:hidden">
+                        Instellingen
+                      </span>
                     </Link>
                   }
                 />
