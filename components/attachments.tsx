@@ -14,6 +14,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { AttachmentEntity, AttachmentView } from "@/lib/types";
 
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
+const MAX_DIM = 1600; // langste zijde na verkleinen
+const QUALITY = 0.82;
 
 function sanitize(name: string) {
   return name.replace(/[^\w.-]+/g, "_").slice(-80) || "bestand";
@@ -21,6 +23,40 @@ function sanitize(name: string) {
 
 function isImage(mime: string | null) {
   return !!mime && mime.startsWith("image/");
+}
+
+// Verkleint + hercomprimeert een afbeelding client-side naar JPEG (scheelt
+// opslag + bandbreedte). Geeft null voor niet-afbeeldingen of wanneer het niet
+// kleiner wordt → dan upload je het origineel. Respecteert de EXIF-oriëntatie.
+async function compressImage(
+  file: File,
+): Promise<{ blob: Blob; name: string } | null> {
+  if (!file.type.startsWith("image/")) return null;
+  try {
+    const bitmap = await createImageBitmap(file, {
+      imageOrientation: "from-image",
+    });
+    const scale = Math.min(1, MAX_DIM / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return null;
+    }
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((result) => resolve(result), "image/jpeg", QUALITY),
+    );
+    if (!blob || blob.size >= file.size) return null;
+    return { blob, name: `${file.name.replace(/\.[^.]+$/, "")}.jpg` };
+  } catch {
+    return null; // niet-decodeerbaar formaat → upload het origineel
+  }
 }
 
 export function Attachments({
@@ -59,6 +95,12 @@ export function Attachments({
     }
     setBusy(true);
     try {
+      // Afbeeldingen verkleinen vóór upload; andere bestanden ongewijzigd.
+      const compressed = await compressImage(file);
+      const body: Blob = compressed?.blob ?? file;
+      const name = compressed?.name ?? file.name;
+      const mime = compressed ? "image/jpeg" : file.type;
+
       const supabase = createClient();
       const {
         data: { user },
@@ -68,11 +110,11 @@ export function Attachments({
         return;
       }
 
-      const path = `${user.id}/${entityType}/${crypto.randomUUID()}-${sanitize(file.name)}`;
+      const path = `${user.id}/${entityType}/${crypto.randomUUID()}-${sanitize(name)}`;
       const { error: uploadError } = await supabase.storage
         .from("attachments")
-        .upload(path, file, {
-          contentType: file.type || undefined,
+        .upload(path, body, {
+          contentType: mime || undefined,
           upsert: false,
         });
       if (uploadError) {
@@ -84,9 +126,9 @@ export function Attachments({
         entityType,
         entityId,
         path,
-        name: file.name,
-        mime: file.type,
-        size: file.size,
+        name,
+        mime,
+        size: body.size,
       });
       if (!result.ok) {
         toast.error("Opslaan mislukt", { description: result.error });
