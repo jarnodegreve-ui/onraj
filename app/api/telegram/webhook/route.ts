@@ -108,6 +108,38 @@ async function handleVandaag(admin: Admin, ownerId: string) {
 }
 
 async function handleSaldo(admin: Admin, ownerId: string) {
+  const lines: string[] = [];
+
+  // Rekeningstanden: het laatste bekende saldo per rekening.
+  const { data: balances } = await admin
+    .from("account_balances")
+    .select("account, month, amount")
+    .eq("user_id", ownerId);
+
+  const latest = new Map<string, { month: string; amount: number }>();
+  for (const row of balances ?? []) {
+    const account = row.account as string;
+    const month = row.month as string;
+    const current = latest.get(account);
+    if (!current || month > current.month) {
+      latest.set(account, { month, amount: toNumber(row.amount) });
+    }
+  }
+
+  if (latest.size > 0) {
+    const sorted = [...latest.entries()].sort(
+      (a, b) => b[1].amount - a[1].amount,
+    );
+    let total = 0;
+    lines.push("🏦 Rekeningen");
+    for (const [account, info] of sorted) {
+      total += info.amount;
+      lines.push(`• ${account}: ${euro(info.amount)}`);
+    }
+    lines.push(`Totaal: ${euro(total)}`);
+  }
+
+  // Maandoverzicht uit de transacties.
   const monthKey = brusselsToday(new Date()).slice(0, 7); // YYYY-MM
   const [year, month] = monthKey.split("-").map(Number);
   const start = `${monthKey}-01`;
@@ -131,12 +163,15 @@ async function handleSaldo(admin: Admin, ownerId: string) {
     else uitgave += amount;
   }
 
-  return [
+  if (lines.length > 0) lines.push("");
+  lines.push(
     "💶 Deze maand",
     `Inkomsten: ${euro(inkomst)}`,
     `Uitgaven: ${euro(uitgave)}`,
     `Saldo: ${euro(inkomst - uitgave)}`,
-  ].join("\n");
+  );
+
+  return lines.join("\n");
 }
 
 async function createTask(admin: Admin, ownerId: string, title: string) {

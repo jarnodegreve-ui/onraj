@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { Attachments } from "@/components/attachments";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -164,6 +165,8 @@ function TaskForm({
             className="min-h-20"
           />
         </div>
+
+        {task && <Attachments entityType="task" entityId={task.id} />}
       </div>
       <DialogFooter>
         <Button variant="outline" onClick={onClose} disabled={pending}>

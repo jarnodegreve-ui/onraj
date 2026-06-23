@@ -277,7 +277,7 @@ export interface CategoryRow {
 
 // ─── Bijlagen ────────────────────────────────────────────────────────────────
 
-export type AttachmentEntity = "note" | "transaction";
+export type AttachmentEntity = "note" | "transaction" | "task";
 
 /** Bijlage zoals getoond in de client — met een tijdelijke (signed) URL. */
 export interface AttachmentView {

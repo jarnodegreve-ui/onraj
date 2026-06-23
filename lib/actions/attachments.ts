@@ -7,7 +7,7 @@ import type { AttachmentEntity, AttachmentView } from "@/lib/types";
 import type { ActionResult } from "./result";
 
 const recordInput = z.object({
-  entityType: z.enum(["note", "transaction"]),
+  entityType: z.enum(["note", "transaction", "task"]),
   entityId: z.string().min(1).max(64),
   path: z.string().min(1).max(400),
   name: z.string().min(1).max(255),
