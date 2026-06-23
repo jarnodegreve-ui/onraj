@@ -28,8 +28,8 @@ export function AppSidebar({ email }: { email: string | null }) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2.5 px-1 py-2">
-          <BrandMark className="size-12 shrink-0" />
+        <div className="flex items-center gap-2.5 px-1 py-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+          <BrandMark className="size-12 shrink-0 group-data-[collapsible=icon]:size-8" />
           <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
             <span className="truncate text-base font-semibold tracking-tight">
               ONRAJ
