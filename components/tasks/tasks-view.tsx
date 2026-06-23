@@ -355,6 +355,7 @@ export function TasksView({
                   todayKey={todayKey}
                   onEdit={openEdit}
                   onTaskDragEnd={onCardDragEnd}
+                  exitOnToggle={filter !== "all"}
                 />
               ))}
             </div>
@@ -383,6 +384,7 @@ function TaskCategoryCard({
   todayKey,
   onEdit,
   onTaskDragEnd,
+  exitOnToggle,
 }: {
   group: TaskGroup;
   cardId: string;
@@ -392,6 +394,7 @@ function TaskCategoryCard({
   todayKey: string;
   onEdit: (task: Task) => void;
   onTaskDragEnd: (event: DragEndEvent, cardIds: string[]) => void;
+  exitOnToggle: boolean;
 }) {
   const {
     attributes,
@@ -457,6 +460,7 @@ function TaskCategoryCard({
                 draggable={sort === "handmatig"}
                 hideCategory
                 categoryColor={group.color}
+                exitOnToggle={exitOnToggle}
               />
             ))}
           </ul>

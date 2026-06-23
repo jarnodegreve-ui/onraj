@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Check, GripVertical, MoreVertical, Pencil, Trash2 } from "lucide-react";
@@ -27,6 +27,7 @@ export function TaskItem({
   draggable,
   categoryColor,
   hideCategory = false,
+  exitOnToggle = false,
 }: {
   task: Task;
   todayKey: string;
@@ -34,6 +35,8 @@ export function TaskItem({
   draggable: boolean;
   categoryColor?: string | null;
   hideCategory?: boolean;
+  // True wanneer afvinken de taak uit de huidige weergave haalt → wegglijd-effect.
+  exitOnToggle?: boolean;
 }) {
   const {
     attributes,
@@ -44,14 +47,34 @@ export function TaskItem({
     isDragging,
   } = useSortable({ id: task.id, disabled: !draggable });
   const [pending, startTransition] = useTransition();
-  const overdue = !task.done && !!task.dueOn && task.dueOn < todayKey;
+  const [leaving, setLeaving] = useState(false);
+  const [optimisticDone, setOptimisticDone] = useState<boolean | null>(null);
+  const shownDone = optimisticDone ?? task.done;
+  const overdue = !shownDone && !!task.dueOn && task.dueOn < todayKey;
   const meta = priorityMeta(task.priority);
 
+  // Afvinken: vink optimistisch aan voor directe feedback, laat de regel
+  // wegglijden wanneer de taak hierdoor uit de weergave verdwijnt, en markeer
+  // dan pas op de server (die de regel daarna uit de lijst haalt).
   function toggle() {
-    startTransition(async () => {
-      const result = await setTaskDone(task.id, !task.done);
-      if (!result.ok) toast.error("Mislukt", { description: result.error });
-    });
+    if (pending || leaving) return;
+    const next = !task.done;
+    setOptimisticDone(next);
+    const commit = () =>
+      startTransition(async () => {
+        const result = await setTaskDone(task.id, next);
+        if (!result.ok) {
+          setLeaving(false);
+          setOptimisticDone(null);
+          toast.error("Mislukt", { description: result.error });
+        }
+      });
+    if (exitOnToggle) {
+      setLeaving(true);
+      window.setTimeout(commit, 300);
+    } else {
+      commit();
+    }
   }
 
   function remove() {
@@ -68,8 +91,10 @@ export function TaskItem({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "flex items-center gap-2.5 py-2.5",
+        "flex max-h-20 items-center gap-2.5 py-2.5 transition-all duration-300 ease-out",
         isDragging && "relative z-10 opacity-80",
+        leaving &&
+          "pointer-events-none max-h-0 translate-x-12 scale-95 overflow-hidden !py-0 opacity-0",
       )}
     >
       {draggable && (
@@ -86,23 +111,25 @@ export function TaskItem({
       <button
         type="button"
         onClick={toggle}
-        disabled={pending}
-        aria-label={task.done ? "Heropenen" : "Afvinken"}
+        disabled={pending || leaving}
+        aria-label={shownDone ? "Heropenen" : "Afvinken"}
         className={cn(
           "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-          task.done
+          shownDone
             ? "border-primary bg-primary text-primary-foreground"
             : "border-muted-foreground/40 hover:border-primary",
         )}
       >
-        {task.done && <Check className="size-3.5" />}
+        {shownDone && (
+          <Check className="size-3.5 animate-in zoom-in-50 duration-200" />
+        )}
       </button>
 
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "truncate text-sm",
-            task.done && "text-muted-foreground line-through",
+            "truncate text-sm transition-colors",
+            shownDone && "text-muted-foreground line-through",
           )}
         >
           {task.title}
