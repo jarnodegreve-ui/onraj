@@ -56,3 +56,32 @@ export async function sendTelegramMessage(
     console.error("[telegram] sendMessage mislukt:", error);
   }
 }
+
+// Stuurt een bestand (document) naar de chat — gebruikt voor backups die zo
+// buiten Supabase belanden. Geeft true bij succes. Best-effort.
+export async function sendTelegramDocument(
+  chatId: number | string,
+  filename: string,
+  contents: string,
+  caption?: string,
+): Promise<boolean> {
+  if (!telegramConfigured) return false;
+  try {
+    const form = new FormData();
+    form.append("chat_id", String(chatId));
+    if (caption) form.append("caption", caption);
+    form.append(
+      "document",
+      new Blob([contents], { type: "application/json" }),
+      filename,
+    );
+    const res = await fetch(`${API_BASE}/bot${token}/sendDocument`, {
+      method: "POST",
+      body: form,
+    });
+    return res.ok;
+  } catch (error) {
+    console.error("[telegram] sendDocument mislukt:", error);
+    return false;
+  }
+}

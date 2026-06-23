@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
+import { buildBackup } from "@/lib/backup";
 import { toNote } from "@/lib/mappers";
 import { secureEquals } from "@/lib/secure";
 import {
@@ -10,7 +11,11 @@ import {
   createAdminClient,
   getOwnerUserId,
 } from "@/lib/supabase/admin";
-import { downloadTelegramFile, sendTelegramMessage } from "@/lib/telegram";
+import {
+  downloadTelegramFile,
+  sendTelegramDocument,
+  sendTelegramMessage,
+} from "@/lib/telegram";
 import { syncNoteFile } from "@/lib/vault-sync";
 
 const allowedUserId = process.env.TELEGRAM_ALLOWED_USER_ID ?? "";
@@ -40,11 +45,16 @@ const HELP = [
   "Stuur gewoon tekst → het wordt een notitie.",
   "📷 Stuur een foto → het wordt een taak (bijschrift /notitie = notitie).",
   "",
-  "Of gebruik een commando:",
+  "Commando's:",
   "• /vandaag — taken & afspraken van vandaag",
-  "• /saldo — saldo deze maand",
+  "• /komende — afspraken komende 7 dagen",
+  "• /saldo — saldo & rekeningen",
+  "• /budget — budgetstatus deze maand",
+  "• /uitgave <bedrag> <tekst> — boek een uitgave (bv. /uitgave 40 tanken)",
+  "• /inkomst <bedrag> <tekst> — boek een inkomst",
   "• /taak <tekst> — maak een taak",
   "• /notitie <tekst> — maak een notitie",
+  "• /backup — stuur een backup van al je data",
   "• /help — deze hulp",
 ].join("\n");
 
@@ -181,6 +191,142 @@ async function handleSaldo(admin: Admin, ownerId: string) {
   );
 
   return lines.join("\n");
+}
+
+// Parseert een bedrag uit tekst, robuust voor NL/BE-notatie: "40", "40,50",
+// "1.234,56" en "1234.56". Geeft null bij een ongeldig of negatief bedrag.
+function parseAmount(token: string): number | null {
+  let t = token.trim();
+  if (t.includes(".") && t.includes(",")) {
+    t = t.replace(/\./g, "").replace(",", "."); // 1.234,56 → 1234.56
+  } else if (t.includes(",")) {
+    t = t.replace(",", "."); // 40,50 → 40.50
+  }
+  const n = Number.parseFloat(t);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+async function createTransaction(
+  admin: Admin,
+  ownerId: string,
+  direction: "inkomst" | "uitgave",
+  args: string,
+) {
+  const verb = direction === "uitgave" ? "/uitgave" : "/inkomst";
+  const parts = args.trim().split(/\s+/).filter(Boolean);
+  const amount = parts.length ? parseAmount(parts[0]) : null;
+  const description = parts.slice(1).join(" ").trim().slice(0, 200);
+  if (amount === null) {
+    return `Gebruik: ${verb} <bedrag> <omschrijving>\nBv. ${verb} 40 tanken`;
+  }
+  const { error } = await admin.from("transactions").insert({
+    user_id: ownerId,
+    occurred_on: brusselsToday(new Date()),
+    amount,
+    direction,
+    category: "",
+    description,
+  });
+  if (error) return "Transactie opslaan mislukt 😕";
+  revalidatePath("/financien");
+  revalidatePath("/dashboard");
+  const emoji = direction === "uitgave" ? "💸" : "💰";
+  const label = direction === "uitgave" ? "Uitgave" : "Inkomst";
+  return `${emoji} ${label} genoteerd: ${euro(amount)}${description ? ` — ${description}` : ""}`;
+}
+
+async function handleKomende(admin: Admin, ownerId: string) {
+  const now = new Date();
+  const in7d = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString();
+  const { data: events } = await admin
+    .from("events")
+    .select("title, starts_at, all_day, location")
+    .eq("user_id", ownerId)
+    .gte("starts_at", now.toISOString())
+    .lte("starts_at", in7d)
+    .order("starts_at");
+
+  if (!events || events.length === 0) {
+    return "Geen afspraken de komende 7 dagen 🌴";
+  }
+  const fmtDay = (iso: string) =>
+    new Intl.DateTimeFormat("nl-BE", {
+      timeZone: "Europe/Brussels",
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    }).format(new Date(iso));
+
+  const lines: string[] = ["🗓 Komende 7 dagen"];
+  for (const event of events) {
+    const day = fmtDay(event.starts_at as string);
+    const when = event.all_day
+      ? day
+      : `${day} ${fmtTime(event.starts_at as string)}`;
+    const loc = event.location ? ` (${event.location})` : "";
+    lines.push(`• ${when} — ${event.title}${loc}`);
+  }
+  return lines.join("\n");
+}
+
+async function handleBudget(admin: Admin, ownerId: string) {
+  const { data: budgets } = await admin
+    .from("budgets")
+    .select("category, amount")
+    .eq("user_id", ownerId);
+
+  if (!budgets || budgets.length === 0) {
+    return "Nog geen budgetten ingesteld.";
+  }
+
+  const monthKey = brusselsToday(new Date()).slice(0, 7);
+  const [year, month] = monthKey.split("-").map(Number);
+  const start = `${monthKey}-01`;
+  const next =
+    month === 12
+      ? `${year + 1}-01-01`
+      : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+
+  const { data: tx } = await admin
+    .from("transactions")
+    .select("category, amount")
+    .eq("user_id", ownerId)
+    .eq("direction", "uitgave")
+    .gte("occurred_on", start)
+    .lt("occurred_on", next);
+
+  const spentByCat = new Map<string, number>();
+  for (const row of tx ?? []) {
+    const cat = (row.category as string) || "";
+    spentByCat.set(cat, (spentByCat.get(cat) ?? 0) + toNumber(row.amount));
+  }
+
+  const lines: string[] = ["📊 Budgetten deze maand"];
+  for (const budget of [...budgets].sort((a, b) =>
+    String(a.category).localeCompare(String(b.category)),
+  )) {
+    const limit = toNumber(budget.amount);
+    const spent = spentByCat.get(budget.category as string) ?? 0;
+    const pct = limit > 0 ? Math.round((spent / limit) * 100) : 0;
+    const icon = spent > limit ? "🔴" : pct >= 80 ? "🟠" : "🟢";
+    lines.push(`${icon} ${budget.category}: ${euro(spent)} / ${euro(limit)} (${pct}%)`);
+  }
+  return lines.join("\n");
+}
+
+async function handleBackup(
+  admin: Admin,
+  ownerId: string,
+  chatId: number | string,
+) {
+  const backup = await buildBackup(admin, ownerId, new Date());
+  const ok = await sendTelegramDocument(
+    chatId,
+    backup.filename,
+    backup.contents,
+    `🗄 ${backup.filename}\n${backup.summary}`,
+  );
+  return ok ? "Backup verstuurd ✅" : "Backup versturen mislukt 😕";
 }
 
 async function createTask(admin: Admin, ownerId: string, title: string) {
@@ -395,10 +541,19 @@ export async function POST(request: Request) {
         if (cmd === "start" || cmd === "help") reply = HELP;
         else if (cmd === "vandaag" || cmd === "today")
           reply = await handleVandaag(admin, ownerId);
+        else if (cmd === "komende") reply = await handleKomende(admin, ownerId);
         else if (cmd === "saldo") reply = await handleSaldo(admin, ownerId);
+        else if (cmd === "budget" || cmd === "budgetten")
+          reply = await handleBudget(admin, ownerId);
+        else if (cmd === "uitgave" || cmd === "kost")
+          reply = await createTransaction(admin, ownerId, "uitgave", args);
+        else if (cmd === "inkomst")
+          reply = await createTransaction(admin, ownerId, "inkomst", args);
         else if (cmd === "taak") reply = await createTask(admin, ownerId, args);
         else if (cmd === "notitie" || cmd === "note")
           reply = await createNoteFromText(admin, ownerId, args);
+        else if (cmd === "backup")
+          reply = await handleBackup(admin, ownerId, chatId);
         else reply = "Onbekend commando. Stuur /help voor de opties.";
       } else {
         reply = await createNoteFromText(admin, ownerId, trimmed);
