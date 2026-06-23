@@ -1,10 +1,11 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  CalendarDays,
   ChevronRight,
   ListTodo,
   NotebookPen,
+  TrendingDown,
+  TrendingUp,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -39,6 +40,7 @@ import { displayName, formatDate, formatEuro } from "@/lib/format";
 import { navItems } from "@/lib/nav";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
 
 const MODULE_BESCHRIJVING: Record<string, string> = {
   "/taken": "Je to-do's met deadlines.",
@@ -91,60 +93,46 @@ export default async function DashboardPage() {
   }));
   const networthData = netWorthByMonth(accountBalances);
 
-  const cards = [
-    {
-      href: "/taken",
-      icon: ListTodo,
-      title: "Taken",
-      value: openTasks.length,
-      sublabel: "openstaand",
-      accent: "#f59e0b",
-    },
-    {
-      href: "/notities",
-      icon: NotebookPen,
-      title: "Notities",
-      value: notes.length,
-      sublabel: "actieve notities",
-      accent: "#2563eb",
-    },
-    {
-      href: "/agenda",
-      icon: CalendarDays,
-      title: "Agenda",
-      value: eventsToday.length,
-      sublabel: "afspraken vandaag",
-      accent: "#7c3aed",
-    },
-    {
-      href: "/financien",
-      icon: Wallet,
-      title: "Financiën",
-      value: financeLocked ? "•••" : formatEuro(summary.saldo),
-      sublabel: financeLocked ? "vergrendeld" : "saldo deze maand",
-      accent: "#22c55e",
-    },
-  ];
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <Greeting name={name} />
         <PushToggle />
       </div>
 
-      {(eventsToday.length > 0 || tasksToday.length > 0) && (
-        <TodayTimeline
-          events={eventsToday}
-          tasks={tasksToday}
-          todayKey={todayKey}
-        />
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((card) => (
-          <ModuleCard key={card.href} {...card} />
-        ))}
+      {/* Bento — bovenste band: 'Vandaag' als blikvanger + een rail met saldo en tegels. */}
+      <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+        <div className="lg:col-span-2">
+          <TodayTimeline
+            events={eventsToday}
+            tasks={tasksToday}
+            todayKey={todayKey}
+          />
+        </div>
+        <div className="space-y-4">
+          <SaldoCard
+            locked={financeLocked}
+            inkomsten={summary.inkomsten}
+            uitgaven={summary.uitgaven}
+            saldo={summary.saldo}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <StatTile
+              href="/taken"
+              icon={ListTodo}
+              label="Open taken"
+              value={openTasks.length}
+              accent="#f59e0b"
+            />
+            <StatTile
+              href="/notities"
+              icon={NotebookPen}
+              label="Notities"
+              value={notes.length}
+              accent="#2563eb"
+            />
+          </div>
+        </div>
       </div>
 
       {!financeLocked && accountChart.length > 0 && (
@@ -190,41 +178,97 @@ function Greeting({ name }: { name: string }) {
   );
 }
 
-function ModuleCard({
+// Finance-snapshot in de rail: saldo van deze maand + mini inkomst/uitgave.
+// Toont •••  wanneer het finance-slot dicht staat.
+function SaldoCard({
+  locked,
+  inkomsten,
+  uitgaven,
+  saldo,
+}: {
+  locked: boolean;
+  inkomsten: number;
+  uitgaven: number;
+  saldo: number;
+}) {
+  return (
+    <Link href="/financien" className="group block">
+      <div
+        data-slot="card"
+        className="rounded-xl border bg-card p-5 transition-colors group-hover:border-primary/30"
+      >
+        <div className="flex items-center justify-between">
+          <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Wallet className="size-4" /> Saldo deze maand
+          </p>
+          <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+        </div>
+        {locked ? (
+          <>
+            <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">
+              •••
+            </p>
+            <p className="text-xs text-muted-foreground">vergrendeld</p>
+          </>
+        ) : (
+          <>
+            <p
+              className={cn(
+                "mt-2 text-2xl font-semibold tracking-tight tabular-nums",
+                saldo >= 0
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-rose-600 dark:text-rose-400",
+              )}
+            >
+              {formatEuro(saldo)}
+            </p>
+            <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <TrendingUp className="size-3.5 text-emerald-500" />
+                {formatEuro(inkomsten)}
+              </span>
+              <span className="flex items-center gap-1">
+                <TrendingDown className="size-3.5 text-rose-500" />
+                {formatEuro(uitgaven)}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+// Compacte tegel met een telling, linkt naar de module.
+function StatTile({
   href,
   icon: Icon,
-  title,
+  label,
   value,
-  sublabel,
   accent,
 }: {
   href: string;
   icon: LucideIcon;
-  title: string;
-  value: React.ReactNode;
-  sublabel: string;
+  label: string;
+  value: number;
   accent: string;
 }) {
   return (
-    <Link href={href} className="group">
+    <Link href={href} className="group block">
       <div
         data-slot="card"
-        className="flex items-center gap-4 rounded-xl border bg-card p-5 transition-colors group-hover:border-primary/30"
+        className="flex h-full flex-col gap-2 rounded-xl border bg-card p-4 transition-colors group-hover:border-primary/30"
       >
         <div
-          className="flex size-11 shrink-0 items-center justify-center rounded-xl"
+          className="flex size-9 items-center justify-center rounded-lg"
           style={{ backgroundColor: `${accent}1a`, color: accent }}
         >
           <Icon className="size-5" />
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-2xl font-semibold tracking-tight tabular-nums">
-            {value}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">{sublabel}</p>
-        </div>
-        <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+        <p className="text-2xl font-semibold tracking-tight tabular-nums">
+          {value}
+        </p>
+        <p className="truncate text-xs text-muted-foreground">{label}</p>
       </div>
     </Link>
   );
