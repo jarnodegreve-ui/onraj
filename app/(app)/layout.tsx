@@ -7,6 +7,7 @@ import { QuickAddFab } from "@/components/quick-add";
 import { PreviewBanner } from "@/components/preview-banner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { countInbox } from "@/lib/data/inbox";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,6 +17,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   let email: string | null = null;
+  let inboxCount = 0;
 
   // In preview-modus (geen Supabase) tonen we de shell zonder auth-check.
   if (supabaseConfigured) {
@@ -27,12 +29,14 @@ export default async function AppLayout({
       redirect("/login");
     }
     email = user.email ?? null;
+    // Badge met aantal nog-te-triëren captures (faalt stil → 0).
+    inboxCount = await countInbox().catch(() => 0);
   }
 
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <AppSidebar email={email} />
+        <AppSidebar email={email} inboxCount={inboxCount} />
         <SidebarInset>
           <AppTopbar />
           {!supabaseConfigured && <PreviewBanner />}

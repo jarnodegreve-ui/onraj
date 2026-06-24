@@ -94,9 +94,10 @@ async function insertCapturedNote(
 const HELP = [
   "🤖 ONRAJ-bot",
   "",
-  "Stuur gewoon tekst → het wordt een notitie.",
+  "Stuur gewoon tekst → het wordt een taak (in je inbox).",
   "📷 Stuur een foto → het wordt een taak (bijschrift /notitie = notitie).",
   "🎙️ Spreek een memo in → het wordt een taak.",
+  "In de inbox kan je alles omzetten naar een notitie of categoriseren.",
   "",
   "Commando's:",
   "• /vandaag — taken & afspraken van vandaag",
@@ -475,6 +476,24 @@ async function createTask(admin: Admin, ownerId: string, title: string) {
   return `Taak toegevoegd ✅\n"${clean}"`;
 }
 
+// Platte tekst (zonder commando) → taak in de inbox. Meestal zijn snelle
+// captures taken; je kan ze in de inbox altijd omzetten naar een notitie.
+// Eerste regel = titel; eventuele rest belandt in de notitie-omschrijving.
+async function createTaskFromText(admin: Admin, ownerId: string, text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) return "Stuur wat tekst om een taak te maken.";
+  const lines = trimmed.split("\n");
+  const title = lines[0].slice(0, 200);
+  const rest = lines.slice(1).join("\n").trim();
+  const fields: Record<string, unknown> = { title };
+  if (rest) fields.notes = rest.slice(0, 2000);
+  const { error } = await insertCapturedTask(admin, ownerId, fields);
+  if (error) return "Taak opslaan mislukt 😕";
+  revalidatePath("/taken");
+  revalidatePath("/dashboard");
+  return `Genoteerd als taak ✅\n"${title}"`;
+}
+
 async function createNoteFromText(admin: Admin, ownerId: string, text: string) {
   const trimmed = text.trim();
   if (!trimmed) return "Gebruik: /notitie <tekst>";
@@ -587,8 +606,8 @@ async function handlePhoto(
 }
 
 // Telegram stuurt elk binnenkomend bericht hierheen. Tekst zonder commando wordt
-// een notitie; commando's (/vandaag, /saldo, /taak, /notitie) doen het werk via
-// de service-role-client. We antwoorden altijd met 200 (geen retries).
+// een taak in de inbox; commando's (/vandaag, /saldo, /taak, /notitie) doen het
+// werk via de service-role-client. We antwoorden altijd met 200 (geen retries).
 export async function POST(request: Request) {
   // Fail-closed: zonder geconfigureerd secret-token wordt de webhook geweigerd
   // (de afzender-id in het bericht is niet geheim en mag geen poortwachter zijn).
@@ -685,7 +704,7 @@ export async function POST(request: Request) {
           reply = await handleBackup(admin, ownerId, chatId);
         else reply = "Onbekend commando. Stuur /help voor de opties.";
       } else {
-        reply = await createNoteFromText(admin, ownerId, trimmed);
+        reply = await createTaskFromText(admin, ownerId, trimmed);
       }
     }
 

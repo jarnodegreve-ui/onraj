@@ -14,6 +14,7 @@ import {
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
@@ -21,7 +22,13 @@ import {
 } from "@/components/ui/sidebar";
 import { navItems } from "@/lib/nav";
 
-export function AppSidebar({ email }: { email: string | null }) {
+export function AppSidebar({
+  email,
+  inboxCount = 0,
+}: {
+  email: string | null;
+  inboxCount?: number;
+}) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
 
@@ -54,6 +61,7 @@ export function AppSidebar({ email }: { email: string | null }) {
                 const active =
                   pathname === item.href ||
                   pathname.startsWith(`${item.href}/`);
+                const showBadge = item.href === "/inbox" && inboxCount > 0;
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
@@ -73,6 +81,11 @@ export function AppSidebar({ email }: { email: string | null }) {
                         </Link>
                       }
                     />
+                    {showBadge && (
+                      <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground">
+                        {inboxCount > 99 ? "99+" : inboxCount}
+                      </SidebarMenuBadge>
+                    )}
                   </SidebarMenuItem>
                 );
               })}
