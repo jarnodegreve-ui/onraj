@@ -59,7 +59,12 @@ export function LoginForm({ error }: { error?: string }) {
           : signInError.message,
       );
     } else {
-      router.push("/dashboard");
+      // Heeft dit account 2FA, dan eerst de codestap; anders direct het dashboard.
+      const { data: aal } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      const needsStepUp =
+        aal?.currentLevel === "aal1" && aal?.nextLevel === "aal2";
+      router.push(needsStepUp ? "/mfa" : "/dashboard");
       router.refresh();
     }
   }

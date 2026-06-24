@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/page-header";
 import { CategoryManager } from "@/components/settings/category-manager";
+import { MfaManager } from "@/components/settings/mfa-manager";
 import { TrashManager } from "@/components/settings/trash-manager";
 import { Card, CardContent } from "@/components/ui/card";
 import { listCategories } from "@/lib/data/categories";
@@ -50,6 +51,9 @@ export default async function InstellingenPage() {
           accent="#3d5afe"
           categories={noteCategories}
         />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <MfaManager />
       </div>
       <TrashManager items={trashed} />
     </div>

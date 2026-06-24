@@ -86,6 +86,33 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // MFA step-up: heeft de gebruiker een geverifieerde authenticator maar staat
+  // de sessie nog op aal1, dan eerst de codestap (/mfa) afdwingen. Niet op
+  // API-routes (geen redirect op data-calls) en faalveilig: een fout in de
+  // AAL-check mag de toegang nooit blokkeren (geen lockout).
+  if (allowed && !isPublic && !pathname.startsWith("/api")) {
+    try {
+      const { data: aal } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      const needsStepUp =
+        aal?.currentLevel === "aal1" && aal?.nextLevel === "aal2";
+      if (needsStepUp && pathname !== "/mfa") {
+        const url = request.nextUrl.clone();
+        url.pathname = "/mfa";
+        url.search = `?next=${encodeURIComponent(pathname)}`;
+        return NextResponse.redirect(url);
+      }
+      if (!needsStepUp && pathname === "/mfa") {
+        const url = request.nextUrl.clone();
+        url.pathname = "/dashboard";
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
+    } catch {
+      // AAL-check faalde → niet blokkeren.
+    }
+  }
+
   if (allowed && pathname === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
