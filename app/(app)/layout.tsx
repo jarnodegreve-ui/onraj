@@ -28,6 +28,23 @@ export default async function AppLayout({
     if (!user) {
       redirect("/login");
     }
+
+    // MFA step-up: met een geverifieerde authenticator moet de sessie naar
+    // aal2 vóór de app opengaat. Hier (Server Component) i.p.v. in de proxy,
+    // zodat client-navigatie netjes redirect i.p.v. te breken. Faalveilig: een
+    // fout in de AAL-check blokkeert nooit (geen lockout).
+    let needsStepUp = false;
+    try {
+      const { data: aal } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      needsStepUp = aal?.currentLevel === "aal1" && aal?.nextLevel === "aal2";
+    } catch {
+      needsStepUp = false;
+    }
+    if (needsStepUp) {
+      redirect("/mfa");
+    }
+
     email = user.email ?? null;
     // Badge met aantal nog-te-triëren captures (faalt stil → 0).
     inboxCount = await countInbox().catch(() => 0);
