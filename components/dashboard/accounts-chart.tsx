@@ -13,7 +13,7 @@ import {
 
 import { formatEuro } from "@/lib/format";
 
-const COLORS = ["#2563eb", "#7c3aed", "#22d3ee", "#22c55e", "#f59e0b", "#f43f5e"];
+const COLORS = ["#3d5afe", "#7c3aed", "#22d3ee", "#22c55e", "#f59e0b", "#f43f5e"];
 
 type Datum = { account: string; amount: number };
 

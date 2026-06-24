@@ -49,83 +49,85 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ONRAJ-huisstijl (render 2026) — diep navy dark-mode als basis, met blauw
-   (#2563EB), paars (#7C3AED) en cyaan (#22D3EE) accenten en gradient-knoppen.
-   Lichte modus = dezelfde accenten op een koel-grijs canvas. */
+/* ONRAJ-huisstijl (render 2026) — Yves Klein-blauw (International Klein Blue,
+   #002FA7) als merk-identiteit op een diep Klein-navy. Donkere modus gebruikt
+   een helderdere Klein-tint (#3D5AFE) zodat blauw blijft knallen op het navy;
+   lichte modus zet het diepe IKB op een koel canvas. Cyaan blijft als secundair
+   grafiek-accent. */
 :root {
-  --background: #f4f6fb;
+  --background: #f4f6fc;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #2563eb;
+  --primary: #002fa7; /* International Klein Blue */
   --primary-foreground: #ffffff;
-  --secondary: #eef2f8;
+  --secondary: #edf0fa;
   --secondary-foreground: #1e293b;
-  --muted: #eef2f8;
-  --muted-foreground: #64748b;
-  --accent: #eaf0ff;
-  --accent-foreground: #2563eb;
+  --muted: #edf0fa;
+  --muted-foreground: #5c6478;
+  --accent: #e6ebfb;
+  --accent-foreground: #002fa7;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #2563eb;
-  --chart-1: #2563eb; /* blauw */
+  --border: #e3e7f1;
+  --input: #e3e7f1;
+  --ring: #002fa7;
+  --chart-1: #002fa7; /* Klein-blauw */
   --chart-2: #22d3ee; /* cyaan */
-  --chart-3: #7c3aed; /* paars */
+  --chart-3: #5c6fe0; /* lichte Klein */
   --chart-4: #f59e0b; /* amber */
   --chart-5: #f43f5e; /* roze-rood */
   --radius: 0.7rem;
-  /* Merk-gradient (blauw → paars), o.a. voor primaire knoppen. */
-  --brand-grad-from: #2563eb;
-  --brand-grad-to: #7c3aed;
-  --brand-blue: #2563eb;
-  --brand-purple: #7c3aed;
+  /* Merk-gradient (diep IKB → heldere Klein), o.a. voor primaire knoppen. */
+  --brand-grad-from: #002fa7;
+  --brand-grad-to: #3d5afe;
+  --brand-blue: #002fa7;
+  --brand-purple: #5c6fe0;
   --brand-cyan: #22d3ee;
-  /* Donkere navy sidebar — ook in lichte modus (huisstijl). */
-  --sidebar: #0b1424;
+  /* Diepe Klein-navy sidebar — ook in lichte modus (huisstijl). */
+  --sidebar: #0a1330;
   --sidebar-foreground: #cbd5e1;
-  --sidebar-primary: #2563eb;
+  --sidebar-primary: #3d5afe;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1b2942;
+  --sidebar-accent: #182a55;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: oklch(1 0 0 / 7%);
-  --sidebar-ring: #2563eb;
+  --sidebar-ring: #3d5afe;
 }
 
 .dark {
-  --background: #081220;
+  --background: #070d1f;
   --foreground: #f1f5f9;
-  --card: #131e36;
+  --card: #101a36;
   --card-foreground: #f1f5f9;
-  --popover: #131e36;
+  --popover: #101a36;
   --popover-foreground: #f1f5f9;
-  --primary: #3b82f6;
+  --primary: #3d5afe; /* heldere Klein voor donkere modus */
   --primary-foreground: #ffffff;
-  --secondary: #1e293b;
+  --secondary: #1b2745;
   --secondary-foreground: #e2e8f0;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
+  --muted: #1b2745;
+  --muted-foreground: #93a1bd;
+  --accent: #1b2745;
   --accent-foreground: #f1f5f9;
   --destructive: #f87171;
   --border: oklch(1 0 0 / 8%);
   --input: oklch(1 0 0 / 12%);
-  --ring: #3b82f6;
-  --chart-1: #3b82f6;
+  --ring: #3d5afe;
+  --chart-1: #3d5afe;
   --chart-2: #22d3ee;
-  --chart-3: #a78bfa;
+  --chart-3: #818cf8;
   --chart-4: #f59e0b;
   --chart-5: #fb7185;
-  --sidebar: #0b1424;
+  --sidebar: #0a1330;
   --sidebar-foreground: #cbd5e1;
-  --sidebar-primary: #3b82f6;
+  --sidebar-primary: #3d5afe;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1b2942;
+  --sidebar-accent: #182a55;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: oklch(1 0 0 / 6%);
-  --sidebar-ring: #3b82f6;
+  --sidebar-ring: #3d5afe;
 }
 
 @layer base {

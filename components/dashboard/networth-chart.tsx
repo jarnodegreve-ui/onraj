@@ -55,8 +55,8 @@ export function NetWorthChart({ data }: { data: Point[] }) {
       <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id="networth" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2563eb" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
+            <stop offset="0%" stopColor="#3d5afe" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="#3d5afe" stopOpacity={0} />
           </linearGradient>
         </defs>
         <XAxis
@@ -80,10 +80,10 @@ export function NetWorthChart({ data }: { data: Point[] }) {
         <Area
           type="monotone"
           dataKey="total"
-          stroke="#2563eb"
+          stroke="#3d5afe"
           strokeWidth={2}
           fill="url(#networth)"
-          dot={{ r: 3, fill: "#2563eb" }}
+          dot={{ r: 3, fill: "#3d5afe" }}
         />
       </AreaChart>
     </ResponsiveContainer>

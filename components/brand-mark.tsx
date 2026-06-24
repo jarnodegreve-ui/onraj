@@ -1,6 +1,6 @@
 /**
- * ONRAJ-merkmark: de "R" met een open gradient-boog (blauw → paars),
- * naar de huisstijl-render 2026. Stroke-gebaseerd, dus messcherp op elk formaat.
+ * ONRAJ-merkmark: de "R" met een open gradient-boog in Yves Klein-blauw
+ * (heldere Klein → diep IKB). Stroke-gebaseerd, dus messcherp op elk formaat.
  */
 export function BrandMark({ className }: { className?: string }) {
   return (
@@ -20,8 +20,8 @@ export function BrandMark({ className }: { className?: string }) {
           y2="58"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#2563EB" />
-          <stop offset="1" stopColor="#7C3AED" />
+          <stop stopColor="#4F6BFF" />
+          <stop offset="1" stopColor="#1E3FCC" />
         </linearGradient>
       </defs>
       <g

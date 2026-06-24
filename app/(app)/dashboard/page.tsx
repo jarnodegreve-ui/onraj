@@ -134,7 +134,7 @@ export default async function DashboardPage() {
             icon={NotebookPen}
             label="Notities"
             value={notes.length}
-            accent="#2563eb"
+            accent="#3d5afe"
             className="order-1 lg:order-2"
           />
         </div>

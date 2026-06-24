@@ -28,7 +28,12 @@ export function AppSidebar({ email }: { email: string | null }) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2.5 px-1 py-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+        <Link
+          href="/dashboard"
+          onClick={() => setOpenMobile(false)}
+          aria-label="Naar dashboard"
+          className="flex items-center gap-2.5 rounded-md px-1 py-2 transition-colors hover:bg-sidebar-accent/50 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+        >
           <BrandMark className="size-12 shrink-0 group-data-[collapsible=icon]:size-8" />
           <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
             <span className="truncate text-base font-semibold tracking-tight">
@@ -38,7 +43,7 @@ export function AppSidebar({ email }: { email: string | null }) {
               Overzicht
             </span>
           </div>
-        </div>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
