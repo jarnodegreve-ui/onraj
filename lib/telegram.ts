@@ -50,6 +50,28 @@ export async function downloadTelegramFile(
   }
 }
 
+// Registreert de zichtbare commando-lijst (de Menu-knop / "/"-suggesties in
+// Telegram). Eenmalig nodig — Telegram toont commando's pas na setMyCommands.
+export async function setTelegramCommands(
+  commands: { command: string; description: string }[],
+): Promise<boolean> {
+  if (!telegramConfigured) return false;
+  try {
+    const res = await fetch(`${API_BASE}/bot${token}/setMyCommands`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ commands }),
+    });
+    const data = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+    } | null;
+    return res.ok && data?.ok === true;
+  } catch (error) {
+    console.error("[telegram] setMyCommands mislukt:", error);
+    return false;
+  }
+}
+
 // Stuurt een bericht terug naar de chat (bevestiging). Best-effort.
 export async function sendTelegramMessage(
   chatId: number | string,

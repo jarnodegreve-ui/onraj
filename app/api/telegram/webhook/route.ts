@@ -21,6 +21,7 @@ import {
   downloadTelegramFile,
   sendTelegramDocument,
   sendTelegramMessage,
+  setTelegramCommands,
 } from "@/lib/telegram";
 import { transcribeAudio, transcribeConfigured } from "@/lib/transcribe";
 import { syncNoteFile } from "@/lib/vault-sync";
@@ -112,8 +113,22 @@ const HELP = [
   "• /taak <tekst> — maak een taak",
   "• /notitie <tekst> — maak een notitie",
   "• /backup — stuur een backup van al je data",
+  "• /setup — toon de commando's in het Telegram-menu",
   "• /help — deze hulp",
 ].join("\n");
+
+// De zichtbare commando-lijst (Menu-knop / "/"-suggesties). Geregistreerd via
+// /setup. /setup zelf staat er bewust niet in (eenmalige actie).
+const BOT_COMMANDS = [
+  { command: "vandaag", description: "Taken & afspraken van vandaag" },
+  { command: "komende", description: "Afspraken komende 7 dagen" },
+  { command: "uitgave", description: "Boek een uitgave (bv. 40 tanken)" },
+  { command: "inkomst", description: "Boek een inkomst (bv. 2400 loon)" },
+  { command: "taak", description: "Maak een taak" },
+  { command: "notitie", description: "Maak een notitie" },
+  { command: "backup", description: "Stuur een backup van je data" },
+  { command: "help", description: "Toon de hulp" },
+];
 
 function brusselsToday(now: Date) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -377,6 +392,18 @@ async function handleVoice(admin: Admin, ownerId: string, voice: TgVoice) {
   return `🎙️ "${text.slice(0, 140)}"\n\n${reply}`;
 }
 
+// Registreert de commando-lijst zodat /uitgave, /inkomst … in het Telegram-menu
+// verschijnen. Veilig: enkel de toegelaten gebruiker bereikt de webhook.
+async function handleSetupMenu() {
+  const ok = await setTelegramCommands(BOT_COMMANDS);
+  if (!ok) return "Menu instellen mislukt 😕";
+  return [
+    "✅ Menu ingesteld.",
+    "Je ziet nu /uitgave, /inkomst en de andere commando's bij de Menu-knop",
+    "(of als je '/' typt). Heropen eventueel de chat als ze nog niet tonen.",
+  ].join("\n");
+}
+
 async function handleBackup(
   admin: Admin,
   ownerId: string,
@@ -624,6 +651,8 @@ export async function POST(request: Request) {
           reply = await createNoteFromText(admin, ownerId, args);
         else if (cmd === "backup")
           reply = await handleBackup(admin, ownerId, chatId);
+        else if (cmd === "setup" || cmd === "menu")
+          reply = await handleSetupMenu();
         else reply = "Onbekend commando. Stuur /help voor de opties.";
       } else {
         reply = await routeCapture(admin, ownerId, trimmed);
