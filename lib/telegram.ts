@@ -27,12 +27,22 @@ export async function downloadTelegramFile(
     const bytes = await fileRes.arrayBuffer();
 
     const ext = (filePath.split(".").pop() ?? "jpg").toLowerCase();
-    const mime =
-      ext === "png"
-        ? "image/png"
-        : ext === "webp"
-          ? "image/webp"
-          : "image/jpeg";
+    const MIME: Record<string, string> = {
+      png: "image/png",
+      webp: "image/webp",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      // audio (spraakboodschappen zijn meestal .oga / ogg-opus)
+      oga: "audio/ogg",
+      ogg: "audio/ogg",
+      opus: "audio/ogg",
+      mp3: "audio/mpeg",
+      m4a: "audio/mp4",
+      mp4: "audio/mp4",
+      wav: "audio/wav",
+      webm: "audio/webm",
+    };
+    const mime = MIME[ext] ?? "image/jpeg";
     return { bytes, mime, ext: ext === "jpeg" ? "jpg" : ext };
   } catch (error) {
     console.error("[telegram] downloadFile mislukt:", error);

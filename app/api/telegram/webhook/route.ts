@@ -16,6 +16,7 @@ import {
   sendTelegramDocument,
   sendTelegramMessage,
 } from "@/lib/telegram";
+import { transcribeAudio, transcribeConfigured } from "@/lib/transcribe";
 import { syncNoteFile } from "@/lib/vault-sync";
 
 const allowedUserId = process.env.TELEGRAM_ALLOWED_USER_ID ?? "";
@@ -25,10 +26,18 @@ interface TgPhotoSize {
   file_id: string;
   file_size?: number;
 }
+interface TgVoice {
+  file_id: string;
+  mime_type?: string;
+  file_size?: number;
+  duration?: number;
+}
 interface TgMessage {
   text?: string;
   caption?: string;
   photo?: TgPhotoSize[];
+  voice?: TgVoice;
+  audio?: TgVoice;
   chat?: { id: number };
   from?: { id: number };
 }
@@ -44,6 +53,7 @@ const HELP = [
   "",
   "Stuur gewoon tekst → het wordt een notitie.",
   "📷 Stuur een foto → het wordt een taak (bijschrift /notitie = notitie).",
+  "🎙️ Spreek een memo in → het wordt een taak.",
   "",
   "Commando's:",
   "• /vandaag — taken & afspraken van vandaag",
@@ -319,6 +329,33 @@ async function handleBudget(admin: Admin, ownerId: string) {
   return lines.join("\n");
 }
 
+// Spraakboodschap → transcriptie → taak. Claude doet geen audio, dus de
+// transcriptie loopt via Groq Whisper (zie lib/transcribe.ts).
+async function handleVoice(admin: Admin, ownerId: string, voice: TgVoice) {
+  if (!transcribeConfigured) {
+    return "Spraak-transcriptie is nog niet ingesteld (GROQ_API_KEY ontbreekt).";
+  }
+  const file = await downloadTelegramFile(voice.file_id);
+  if (!file) return "Kon de spraakboodschap niet ophalen 😕";
+
+  const text = await transcribeAudio(
+    file.bytes,
+    `voice.${file.ext}`,
+    voice.mime_type || file.mime,
+  );
+  if (!text) return "Kon de spraakboodschap niet omzetten naar tekst 😕";
+
+  const title = text.slice(0, 200);
+  const { error } = await admin
+    .from("tasks")
+    .insert({ user_id: ownerId, title });
+  if (error) return "Taak opslaan mislukt 😕";
+
+  revalidatePath("/taken");
+  revalidatePath("/dashboard");
+  return `🎙️ Genoteerd als taak:\n"${title}"`;
+}
+
 async function handleBackup(
   admin: Admin,
   ownerId: string,
@@ -494,6 +531,7 @@ export async function POST(request: Request) {
   const fromId = message?.from?.id;
   const text = message?.text;
   const photos = message?.photo ?? [];
+  const voice = message?.voice ?? message?.audio;
 
   if (!message || !chatId || String(fromId) !== String(allowedUserId)) {
     return NextResponse.json({ ok: true });
@@ -501,8 +539,12 @@ export async function POST(request: Request) {
 
   const hasPhoto = photos.length > 0;
   const hasText = !!text && !!text.trim();
-  if (!hasPhoto && !hasText) {
-    await sendTelegramMessage(chatId, "Ik kan tekst en foto's verwerken 📝📷");
+  const hasVoice = !!voice;
+  if (!hasPhoto && !hasText && !hasVoice) {
+    await sendTelegramMessage(
+      chatId,
+      "Ik kan tekst, foto's en spraak verwerken 📝📷🎙️",
+    );
     return NextResponse.json({ ok: true });
   }
 
@@ -533,6 +575,8 @@ export async function POST(request: Request) {
         largest.file_id,
         message.caption ?? "",
       );
+    } else if (voice) {
+      reply = await handleVoice(admin, ownerId, voice);
     } else {
       const trimmed = (text ?? "").trim();
       if (trimmed.startsWith("/")) {
