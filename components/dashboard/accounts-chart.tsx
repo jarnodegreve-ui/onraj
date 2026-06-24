@@ -1,23 +1,16 @@
 "use client";
 
-import {
-  Bar,
-  BarChart,
-  Cell,
-  LabelList,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
-import { formatEuro } from "@/lib/format";
-
+// Horizontale balkgrafiek van de rekeningstanden. Bewust geen recharts: bij een
+// groot verschil (bv. één spaarrekening die de rest plat drukt) werden kleine
+// rekeningen onzichtbaar. Hier krijgt elke rekening met saldo een leesbare balk
+// (minimumbreedte) en de grootste balk is afgetopt zodat het bedrag ernaast past.
 const COLORS = ["#3d5afe", "#7c3aed", "#22d3ee", "#22c55e", "#f59e0b", "#f43f5e"];
+
+const MAX_BAR = 80; // % — grootste balk; laat ruimte voor het bedrag.
+const MIN_BAR = 4; // % — kleinste zichtbare balk voor een saldo > 0.
 
 type Datum = { account: string; amount: number };
 
-// Compact bedrag (zonder centen) voor het label naast de balk.
 function shortEuro(value: number) {
   return new Intl.NumberFormat("nl-BE", {
     style: "currency",
@@ -26,63 +19,38 @@ function shortEuro(value: number) {
   }).format(value);
 }
 
-function ChartTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: { payload: Datum; value: number }[];
-}) {
-  if (!active || !payload?.length) return null;
-  const item = payload[0];
-  return (
-    <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-md">
-      <p className="text-sm font-medium text-foreground">
-        {item.payload.account}
-      </p>
-      <p className="text-sm text-muted-foreground tabular-nums">
-        {formatEuro(Number(item.value))}
-      </p>
-    </div>
-  );
-}
-
 export function AccountsChart({ data }: { data: Datum[] }) {
-  const height = Math.max(130, data.length * 34);
+  const sorted = [...data].sort((a, b) => b.amount - a.amount);
+  const max = Math.max(...sorted.map((d) => d.amount), 0);
+
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <BarChart
-        layout="vertical"
-        data={data}
-        margin={{ top: 4, right: 64, bottom: 4, left: 4 }}
-        barCategoryGap="30%"
-      >
-        <XAxis type="number" hide />
-        <YAxis
-          type="category"
-          dataKey="account"
-          width={100}
-          tickLine={false}
-          axisLine={false}
-          tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
-        />
-        <Tooltip
-          cursor={{ fill: "var(--muted)", opacity: 0.35 }}
-          content={<ChartTooltip />}
-        />
-        <Bar dataKey="amount" radius={[0, 6, 6, 0]} barSize={18}>
-          <LabelList
-            dataKey="amount"
-            position="right"
-            fill="var(--foreground)"
-            fontSize={11}
-            formatter={(value) => shortEuro(Number(value))}
-          />
-          {data.map((entry, index) => (
-            <Cell key={entry.account} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="space-y-2.5">
+      {sorted.map((entry, index) => {
+        const ratio = max > 0 ? entry.amount / max : 0;
+        const width =
+          entry.amount > 0 ? Math.max(ratio * MAX_BAR, MIN_BAR) : 0;
+        const color = COLORS[index % COLORS.length];
+        return (
+          <div key={entry.account} className="flex items-center gap-3">
+            <span className="w-24 shrink-0 truncate text-right text-xs text-muted-foreground">
+              {entry.account}
+            </span>
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              {width > 0 ? (
+                <div
+                  className="h-5 shrink-0 rounded-md transition-[width] duration-500"
+                  style={{ width: `${width}%`, backgroundColor: color }}
+                />
+              ) : (
+                <div className="h-5 w-0.5 shrink-0 rounded-full bg-muted-foreground/30" />
+              )}
+              <span className="shrink-0 text-xs font-medium tabular-nums">
+                {shortEuro(entry.amount)}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
