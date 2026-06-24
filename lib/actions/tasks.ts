@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { isMissingColumn } from "@/lib/data/safe";
 import { createClient } from "@/lib/supabase/server";
+import type { Subtask } from "@/lib/types";
 import type { ActionResult } from "./result";
 
 const taskInput = z.object({
@@ -115,6 +116,46 @@ export async function setTaskDone(
   const supabase = await createClient();
   const { error } = await supabase.from("tasks").update({ done }).eq("id", id);
   if (error) return { ok: false, error: error.message };
+
+  revalidateTasks();
+  return { ok: true };
+}
+
+// Subtaken / checklist: de client houdt de volledige lijst bij (optimistisch
+// toggelen/toevoegen/verwijderen) en stuurt ze in hun geheel terug — geen
+// read-modify-write op de server, dus geen race. Saneer hard met zod.
+const subtasksInput = z
+  .array(
+    z.object({
+      id: z.string().trim().min(1).max(60),
+      title: z.string().trim().min(1).max(200),
+      done: z.boolean(),
+    }),
+  )
+  .max(50, "Maximaal 50 deelstappen.");
+
+export async function updateSubtasks(
+  id: string,
+  subtasks: Subtask[],
+): Promise<ActionResult> {
+  const parsed = subtasksInput.safeParse(subtasks);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Ongeldige deelstap.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tasks")
+    .update({ subtasks: parsed.data })
+    .eq("id", id);
+  if (error) {
+    // Kolom bestaat nog niet (migratie 0021) → stil negeren i.p.v. falen.
+    if (isMissingColumn(error)) return { ok: true };
+    return { ok: false, error: error.message };
+  }
 
   revalidateTasks();
   return { ok: true };

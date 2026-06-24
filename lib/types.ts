@@ -90,6 +90,13 @@ export interface EventRow {
 
 export type TaskPriority = "laag" | "middel" | "hoog";
 
+/** Eén afvinkbare deelstap binnen een taak (checklist-item). */
+export interface Subtask {
+  id: string;
+  title: string;
+  done: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -98,6 +105,7 @@ export interface Task {
   notes: string | null;
   priority: TaskPriority;
   category: string | null;
+  subtasks: Subtask[];
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -112,6 +120,7 @@ export interface TaskRow {
   notes: string | null;
   priority: TaskPriority;
   category: string | null;
+  subtasks: unknown; // jsonb — gesanitiseerd in de mapper
   position: number;
   created_at: string;
   updated_at: string;

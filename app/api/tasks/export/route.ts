@@ -29,7 +29,12 @@ function toMarkdown(task: Task): string {
   lines.push(`created: ${task.createdAt.slice(0, 10)}`);
   lines.push(`updated: ${task.updatedAt.slice(0, 10)}`);
   lines.push("---", "");
-  lines.push(`- [${task.done ? "x" : " "}] ${task.title}`, "");
+  lines.push(`- [${task.done ? "x" : " "}] ${task.title}`);
+  // Subtaken als geneste checklist — Obsidian rendert dit als afvinkbare lijst.
+  for (const subtask of task.subtasks) {
+    lines.push(`    - [${subtask.done ? "x" : " "}] ${subtask.title}`);
+  }
+  lines.push("");
   if (task.notes) lines.push(task.notes, "");
   return lines.join("\n");
 }

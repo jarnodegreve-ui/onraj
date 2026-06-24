@@ -15,6 +15,7 @@ import type {
   RecurringTransactionRow,
   SavingsGoal,
   SavingsGoalRow,
+  Subtask,
   Task,
   TaskRow,
   Transaction,
@@ -23,6 +24,20 @@ import type {
 
 function toNumber(value: number | string): number {
   return typeof value === "string" ? Number.parseFloat(value) : value;
+}
+
+// jsonb is vrij vormbaar — saneer elk subtaak-item tot {id, title, done}
+// en gooi onbruikbare items weg, zodat de UI nooit op rommel struikelt.
+function toSubtasks(value: unknown): Subtask[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((raw): Subtask[] => {
+    if (!raw || typeof raw !== "object") return [];
+    const item = raw as Record<string, unknown>;
+    const id = typeof item.id === "string" ? item.id : "";
+    const title = typeof item.title === "string" ? item.title : "";
+    if (!id || !title.trim()) return [];
+    return [{ id, title, done: item.done === true }];
+  });
 }
 
 export function toNote(row: NoteRow): Note {
@@ -83,6 +98,7 @@ export function toTask(row: TaskRow): Task {
     notes: row.notes,
     priority: row.priority ?? "middel",
     category: row.category ?? null,
+    subtasks: toSubtasks(row.subtasks),
     position: row.position ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

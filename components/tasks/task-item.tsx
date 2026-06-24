@@ -7,6 +7,7 @@ import {
   Check,
   ChevronRight,
   GripVertical,
+  ListChecks,
   MoreVertical,
   Pencil,
   Trash2,
@@ -15,6 +16,7 @@ import { toast } from "sonner";
 
 import { Attachments } from "@/components/attachments";
 import { CategoryBadge } from "@/components/category-badge";
+import { SubtaskList } from "@/components/tasks/subtask-list";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -61,6 +63,9 @@ export function TaskItem({
   const shownDone = optimisticDone ?? task.done;
   const overdue = !shownDone && !!task.dueOn && task.dueOn < todayKey;
   const meta = priorityMeta(task.priority);
+  const subtaskCount = task.subtasks.length;
+  const subtasksDone = task.subtasks.filter((s) => s.done).length;
+  const subtasksComplete = subtaskCount > 0 && subtasksDone === subtaskCount;
 
   // Afvinken: vink optimistisch aan voor directe feedback, laat de regel
   // wegglijden wanneer de taak hierdoor uit de weergave verdwijnt, en markeer
@@ -185,6 +190,19 @@ export function TaskItem({
                 />
                 {meta.label}
               </span>
+              {subtaskCount > 0 && (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 tabular-nums",
+                    subtasksComplete
+                      ? "text-primary"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  <ListChecks className="size-3" />
+                  {subtasksDone}/{subtaskCount}
+                </span>
+              )}
               {!hideCategory && task.category && (
                 <CategoryBadge name={task.category} color={categoryColor} />
               )}
@@ -230,6 +248,7 @@ export function TaskItem({
               Geen omschrijving
             </p>
           )}
+          <SubtaskList taskId={task.id} initial={task.subtasks} />
           <Attachments entityType="task" entityId={task.id} />
           <Button size="sm" variant="outline" onClick={() => onEdit(task)}>
             <Pencil className="size-4" /> Bewerken
