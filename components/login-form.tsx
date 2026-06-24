@@ -90,9 +90,6 @@ export function LoginForm({ error }: { error?: string }) {
       <CardHeader className="items-center text-center">
         <BrandMark className="mx-auto mb-1 size-12" />
         <CardTitle className="text-xl">ONRAJ</CardTitle>
-        <p className="text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase">
-          Overzicht
-        </p>
         <CardDescription>
           Meld je aan met je e-mailadres en wachtwoord.
         </CardDescription>
