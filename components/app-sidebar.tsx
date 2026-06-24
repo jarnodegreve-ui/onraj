@@ -82,7 +82,7 @@ export function AppSidebar({
                       }
                     />
                     {showBadge && (
-                      <SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground">
+                      <SidebarMenuBadge className="top-1/2! right-2 -translate-y-1/2 rounded-full bg-sidebar-primary text-sidebar-primary-foreground">
                         {inboxCount > 99 ? "99+" : inboxCount}
                       </SidebarMenuBadge>
                     )}

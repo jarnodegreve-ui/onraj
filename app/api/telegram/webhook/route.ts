@@ -102,9 +102,6 @@ const HELP = [
   "Commando's:",
   "• /vandaag — taken & afspraken van vandaag",
   "• /komende — afspraken komende 7 dagen",
-  "• /saldo — saldo & rekeningen",
-  "• /budget — budgetstatus deze maand",
-  "• /vooruitblik — cashflow: vaste posten deze maand",
   "• /uitgave <bedrag> <tekst> — boek een uitgave (bv. /uitgave 40 tanken)",
   "• /inkomst <bedrag> <tekst> — boek een inkomst",
   "• /taak <tekst> — maak een taak",
@@ -132,10 +129,6 @@ function euro(n: number) {
     style: "currency",
     currency: "EUR",
   }).format(n);
-}
-
-function toNumber(value: number | string) {
-  return typeof value === "string" ? Number.parseFloat(value) : value;
 }
 
 async function handleVandaag(admin: Admin, ownerId: string) {
@@ -180,74 +173,6 @@ async function handleVandaag(admin: Admin, ownerId: string) {
   if ((!tasks || tasks.length === 0) && (!events || events.length === 0)) {
     lines.push("", "Niets op de planning 🎉");
   }
-  return lines.join("\n");
-}
-
-async function handleSaldo(admin: Admin, ownerId: string) {
-  const lines: string[] = [];
-
-  // Rekeningstanden: het laatste bekende saldo per rekening.
-  const { data: balances } = await admin
-    .from("account_balances")
-    .select("account, month, amount")
-    .eq("user_id", ownerId);
-
-  const latest = new Map<string, { month: string; amount: number }>();
-  for (const row of balances ?? []) {
-    const account = row.account as string;
-    const month = row.month as string;
-    const current = latest.get(account);
-    if (!current || month > current.month) {
-      latest.set(account, { month, amount: toNumber(row.amount) });
-    }
-  }
-
-  if (latest.size > 0) {
-    const sorted = [...latest.entries()].sort(
-      (a, b) => b[1].amount - a[1].amount,
-    );
-    let total = 0;
-    lines.push("🏦 Rekeningen");
-    for (const [account, info] of sorted) {
-      total += info.amount;
-      lines.push(`• ${account}: ${euro(info.amount)}`);
-    }
-    lines.push(`Totaal: ${euro(total)}`);
-  }
-
-  // Maandoverzicht uit de transacties.
-  const monthKey = brusselsToday(new Date()).slice(0, 7); // YYYY-MM
-  const [year, month] = monthKey.split("-").map(Number);
-  const start = `${monthKey}-01`;
-  const next =
-    month === 12
-      ? `${year + 1}-01-01`
-      : `${year}-${String(month + 1).padStart(2, "0")}-01`;
-
-  const { data } = await admin
-    .from("transactions")
-    .select("amount, direction")
-    .eq("user_id", ownerId)
-    .is("deleted_at", null)
-    .gte("occurred_on", start)
-    .lt("occurred_on", next);
-
-  let inkomst = 0;
-  let uitgave = 0;
-  for (const row of data ?? []) {
-    const amount = toNumber(row.amount);
-    if (row.direction === "inkomst") inkomst += amount;
-    else uitgave += amount;
-  }
-
-  if (lines.length > 0) lines.push("");
-  lines.push(
-    "💶 Deze maand",
-    `Inkomsten: ${euro(inkomst)}`,
-    `Uitgaven: ${euro(uitgave)}`,
-    `Saldo: ${euro(inkomst - uitgave)}`,
-  );
-
   return lines.join("\n");
 }
 
@@ -325,104 +250,6 @@ async function handleKomende(admin: Admin, ownerId: string) {
     const loc = event.location ? ` (${event.location})` : "";
     lines.push(`• ${when} — ${event.title}${loc}`);
   }
-  return lines.join("\n");
-}
-
-async function handleBudget(admin: Admin, ownerId: string) {
-  const { data: budgets } = await admin
-    .from("budgets")
-    .select("category, amount")
-    .eq("user_id", ownerId);
-
-  if (!budgets || budgets.length === 0) {
-    return "Nog geen budgetten ingesteld.";
-  }
-
-  const monthKey = brusselsToday(new Date()).slice(0, 7);
-  const [year, month] = monthKey.split("-").map(Number);
-  const start = `${monthKey}-01`;
-  const next =
-    month === 12
-      ? `${year + 1}-01-01`
-      : `${year}-${String(month + 1).padStart(2, "0")}-01`;
-
-  const { data: tx } = await admin
-    .from("transactions")
-    .select("category, amount")
-    .eq("user_id", ownerId)
-    .is("deleted_at", null)
-    .eq("direction", "uitgave")
-    .gte("occurred_on", start)
-    .lt("occurred_on", next);
-
-  const spentByCat = new Map<string, number>();
-  for (const row of tx ?? []) {
-    const cat = (row.category as string) || "";
-    spentByCat.set(cat, (spentByCat.get(cat) ?? 0) + toNumber(row.amount));
-  }
-
-  const lines: string[] = ["📊 Budgetten deze maand"];
-  for (const budget of [...budgets].sort((a, b) =>
-    String(a.category).localeCompare(String(b.category)),
-  )) {
-    const limit = toNumber(budget.amount);
-    const spent = spentByCat.get(budget.category as string) ?? 0;
-    const pct = limit > 0 ? Math.round((spent / limit) * 100) : 0;
-    const icon = spent > limit ? "🔴" : pct >= 80 ? "🟠" : "🟢";
-    lines.push(`${icon} ${budget.category}: ${euro(spent)} / ${euro(limit)} (${pct}%)`);
-  }
-  return lines.join("\n");
-}
-
-// Cashflow-vooruitblik: vaste posten van deze maand + wat er nog moet komen.
-async function handleVooruitblik(admin: Admin, ownerId: string) {
-  const today = brusselsToday(new Date());
-  const monthKey = today.slice(0, 7);
-  const todayDay = Number(today.slice(8, 10));
-
-  const { data } = await admin
-    .from("recurring_transactions")
-    .select("*")
-    .eq("user_id", ownerId)
-    .eq("active", true);
-
-  let inkomsten = 0;
-  let uitgaven = 0;
-  let komendInk = 0;
-  let komendUit = 0;
-  let count = 0;
-  for (const r of data ?? []) {
-    if ((r.start_month as string) > monthKey) continue;
-    if (r.end_month && (r.end_month as string) < monthKey) continue;
-    count += 1;
-    const amount = toNumber(r.amount);
-    const upcoming = (r.day_of_month as number) >= todayDay;
-    if (r.direction === "inkomst") {
-      inkomsten += amount;
-      if (upcoming) komendInk += amount;
-    } else {
-      uitgaven += amount;
-      if (upcoming) komendUit += amount;
-    }
-  }
-
-  if (count === 0) return "Nog geen vaste posten ingesteld.";
-
-  const lines: string[] = [
-    "🔮 Cashflow-vooruitblik",
-    "",
-    "Nog te komen deze maand:",
-    `• Uitgaven: ${euro(komendUit)}`,
-  ];
-  if (komendInk > 0) lines.push(`• Inkomsten: ${euro(komendInk)}`);
-  lines.push(
-    `• Netto: ${euro(komendInk - komendUit)}`,
-    "",
-    "Vaste posten per maand:",
-    `• Inkomsten: ${euro(inkomsten)}`,
-    `• Uitgaven: ${euro(uitgaven)}`,
-    `• Netto: ${euro(inkomsten - uitgaven)}`,
-  );
   return lines.join("\n");
 }
 
@@ -606,7 +433,7 @@ async function handlePhoto(
 }
 
 // Telegram stuurt elk binnenkomend bericht hierheen. Tekst zonder commando wordt
-// een taak in de inbox; commando's (/vandaag, /saldo, /taak, /notitie) doen het
+// een taak in de inbox; commando's (/vandaag, /komende, /taak, /notitie) doen het
 // werk via de service-role-client. We antwoorden altijd met 200 (geen retries).
 export async function POST(request: Request) {
   // Fail-closed: zonder geconfigureerd secret-token wordt de webhook geweigerd
@@ -688,11 +515,6 @@ export async function POST(request: Request) {
         else if (cmd === "vandaag" || cmd === "today")
           reply = await handleVandaag(admin, ownerId);
         else if (cmd === "komende") reply = await handleKomende(admin, ownerId);
-        else if (cmd === "saldo") reply = await handleSaldo(admin, ownerId);
-        else if (cmd === "budget" || cmd === "budgetten")
-          reply = await handleBudget(admin, ownerId);
-        else if (cmd === "vooruitblik" || cmd === "cashflow")
-          reply = await handleVooruitblik(admin, ownerId);
         else if (cmd === "uitgave" || cmd === "kost")
           reply = await createTransaction(admin, ownerId, "uitgave", args);
         else if (cmd === "inkomst")
