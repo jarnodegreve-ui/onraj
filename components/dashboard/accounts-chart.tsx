@@ -4,7 +4,7 @@
 // groot verschil (bv. één spaarrekening die de rest plat drukt) werden kleine
 // rekeningen onzichtbaar. Hier krijgt elke rekening met saldo een leesbare balk
 // (minimumbreedte) en de grootste balk is afgetopt zodat het bedrag ernaast past.
-const COLORS = ["#c2f04d", "#7c3aed", "#22d3ee", "#22c55e", "#f59e0b", "#f43f5e"];
+const COLORS = ["#c2f04d", "#8a8f98", "#22d3ee", "#22c55e", "#f59e0b", "#f43f5e"];
 
 const MAX_BAR = 80; // % — grootste balk; laat ruimte voor het bedrag.
 const MIN_BAR = 4; // % — kleinste zichtbare balk voor een saldo > 0.

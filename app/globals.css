@@ -143,6 +143,14 @@
     @apply font-sans;
     -webkit-text-size-adjust: 100%;
   }
+  /* Koppen in Archivo (de wordmark-stijl), met krappe tracking. */
+  h1,
+  h2,
+  h3,
+  [data-slot="card-title"] {
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
+  }
   /* Dialogen mogen op kleine schermen meescrollen i.p.v. afgekapt te worden. */
   [data-slot="dialog-content"] {
     max-height: calc(100svh - 2rem);

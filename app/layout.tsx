@@ -28,11 +28,11 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ONRAJ — Persoonlijk portaal",
+  title: "onraj",
   description: "Persoonlijk portaal: taken, notities, financiën en agenda.",
   appleWebApp: {
     capable: true,
-    title: "ONRAJ",
+    title: "onraj",
     statusBarStyle: "default",
   },
 };

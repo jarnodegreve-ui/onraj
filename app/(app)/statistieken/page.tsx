@@ -37,7 +37,7 @@ import { formatEuro } from "@/lib/format";
 import { eventStats, noteStats, taskStats } from "@/lib/stats";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
-export const metadata = { title: "Statistieken · ONRAJ" };
+export const metadata = { title: "Statistieken · onraj" };
 
 export default async function StatistiekenPage() {
   if (!supabaseConfigured) {

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "ONRAJ — Persoonlijk portaal",
-    short_name: "ONRAJ",
+    name: "onraj",
+    short_name: "onraj",
     description: "Persoonlijk portaal: taken, notities, financiën en agenda.",
     start_url: "/dashboard",
     display: "standalone",

@@ -7,7 +7,7 @@ import { listCategories } from "@/lib/data/categories";
 import { listTrashed } from "@/lib/data/trash";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
-export const metadata = { title: "Instellingen · ONRAJ" };
+export const metadata = { title: "Instellingen · onraj" };
 
 export default async function InstellingenPage() {
   if (!supabaseConfigured) {

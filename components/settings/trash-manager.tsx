@@ -28,7 +28,7 @@ const TYPE_COLOR: Record<TrashType, string> = {
   taak: "#f59e0b",
   notitie: "#c2f04d",
   transactie: "#22c55e",
-  afspraak: "#7c3aed",
+  afspraak: "#22d3ee",
 };
 
 export function TrashManager({ items }: { items: TrashItem[] }) {

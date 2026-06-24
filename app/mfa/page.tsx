@@ -1,6 +1,6 @@
 import { MfaChallenge } from "@/components/mfa-challenge";
 
-export const metadata = { title: "Verificatie · ONRAJ" };
+export const metadata = { title: "Verificatie · onraj" };
 
 // Alleen interne paden als redirect-doel toelaten (geen open redirect).
 function safeNext(value: string | undefined): string {

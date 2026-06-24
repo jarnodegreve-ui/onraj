@@ -5,7 +5,7 @@ import { listCategories } from "@/lib/data/categories";
 import { listInbox } from "@/lib/data/inbox";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
-export const metadata = { title: "Inbox · ONRAJ" };
+export const metadata = { title: "Inbox · onraj" };
 
 export default async function InboxPage() {
   if (!supabaseConfigured) {

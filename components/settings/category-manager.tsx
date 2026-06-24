@@ -52,7 +52,7 @@ import { cn } from "@/lib/utils";
 // Vaste kleurkeuzes (huisstijlpalet).
 const PALETTE = [
   "#c2f04d",
-  "#7c3aed",
+  "#22d3ee",
   "#06b6d4",
   "#14b8a6",
   "#22c55e",
