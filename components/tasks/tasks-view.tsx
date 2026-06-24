@@ -112,6 +112,7 @@ export function TasksView({
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   // Wis de optimistische hercategorisatie zodra de server nieuwe data levert.
   const [prevTasks, setPrevTasks] = useState(tasks);
@@ -130,6 +131,19 @@ export function TasksView({
   const openCount = useMemo(
     () => tasks.filter((task) => !task.done).length,
     [tasks],
+  );
+
+  // Afgewerkte taken voor de inklapbare "Afgewerkt"-sectie (TickTick-stijl):
+  // recentst afgewerkt eerst, gefilterd op de actieve categorie.
+  const completedTasks = useMemo(
+    () =>
+      tasks
+        .filter(
+          (task) =>
+            task.done && (!activeCategory || task.category === activeCategory),
+        )
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    [tasks, activeCategory],
   );
 
   const colorByName = useMemo(
@@ -496,6 +510,49 @@ export function TasksView({
             {activeTask ? <TaskOverlayRow task={activeTask} /> : null}
           </DragOverlay>
         </DndContext>
+      )}
+
+      {/* Inklapbare "Afgewerkt"-sectie onder het bord (alleen in de open-weergave). */}
+      {filter === "open" && completedTasks.length > 0 && (
+        <div className="mt-4 overflow-hidden rounded-xl border bg-card">
+          <button
+            type="button"
+            onClick={() => setShowCompleted((value) => !value)}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold"
+          >
+            <ChevronDown
+              className={cn(
+                "size-4 text-muted-foreground transition-transform",
+                !showCompleted && "-rotate-90",
+              )}
+            />
+            Afgewerkt
+            <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+              {completedTasks.length}
+            </span>
+          </button>
+          {showCompleted && (
+            <DndContext>
+              <SortableContext
+                items={completedTasks.map((task) => task.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="divide-y border-t px-3">
+                  {completedTasks.map((task) => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      todayKey={todayKey}
+                      onEdit={openEdit}
+                      draggable={false}
+                      exitOnToggle
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
+          )}
+        </div>
       )}
 
       <TaskEditor
