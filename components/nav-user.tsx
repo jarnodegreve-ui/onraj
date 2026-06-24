@@ -1,9 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { ChevronsUpDown, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { toast } from "sonner";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -20,24 +18,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { createClient } from "@/lib/supabase/client";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
 export function NavUser({ email }: { email: string | null }) {
-  const router = useRouter();
   const { setTheme } = useTheme();
   const initials = (email?.[0] ?? "J").toUpperCase();
 
-  async function handleSignOut() {
+  // Afmelden via de server-route (onder /auth → buiten de MFA-proxy). Een harde
+  // navigatie vermijdt race-condities met de sessie-verversing.
+  function handleSignOut() {
     if (!supabaseConfigured) return;
-    const supabase = createClient();
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Afmelden mislukt", { description: error.message });
-      return;
-    }
-    router.push("/login");
-    router.refresh();
+    window.location.href = "/auth/signout";
   }
 
   return (

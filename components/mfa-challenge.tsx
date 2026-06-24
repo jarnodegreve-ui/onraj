@@ -67,10 +67,9 @@ export function MfaChallenge({ next }: { next: string }) {
     router.refresh();
   }
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+  function signOut() {
+    // Server-route onder /auth → buiten de MFA-proxy, geen race.
+    window.location.href = "/auth/signout";
   }
 
   return (
