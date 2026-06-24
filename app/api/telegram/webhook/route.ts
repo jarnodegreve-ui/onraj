@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { buildBackup } from "@/lib/backup";
+import {
+  classifyCapture,
+  classifyConfigured,
+  type CaptureRoute,
+} from "@/lib/classify";
 import { isMissingColumn } from "@/lib/data/safe";
 import { toNote } from "@/lib/mappers";
 import { secureEquals } from "@/lib/secure";
@@ -94,10 +99,10 @@ async function insertCapturedNote(
 const HELP = [
   "🤖 ONRAJ-bot",
   "",
-  "Stuur gewoon tekst → het wordt een taak (in je inbox).",
+  "Stuur tekst of spreek een memo in → ONRAJ sorteert het slim naar",
+  "taak, notitie of uitgave/inkomst (bij twijfel een taak in je inbox).",
   "📷 Stuur een foto → het wordt een taak (bijschrift /notitie = notitie).",
-  "🎙️ Spreek een memo in → het wordt een taak.",
-  "In de inbox kan je alles omzetten naar een notitie of categoriseren.",
+  "Alles is in de inbox nog te corrigeren.",
   "",
   "Commando's:",
   "• /vandaag — taken & afspraken van vandaag",
@@ -253,8 +258,106 @@ async function handleKomende(admin: Admin, ownerId: string) {
   return lines.join("\n");
 }
 
-// Spraakboodschap → transcriptie → taak. Claude doet geen audio, dus de
-// transcriptie loopt via Groq Whisper (zie lib/transcribe.ts).
+function brusselsWeekday(now: Date) {
+  return new Intl.DateTimeFormat("nl-BE", {
+    timeZone: "Europe/Brussels",
+    weekday: "long",
+  }).format(now);
+}
+
+function formatDayNl(isoDate: string) {
+  return new Intl.DateTimeFormat("nl-BE", {
+    timeZone: "Europe/Brussels",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(new Date(`${isoDate}T12:00:00`));
+}
+
+// Boek een uitgave/inkomst uit een slim-geclassificeerde capture.
+async function bookTransaction(
+  admin: Admin,
+  ownerId: string,
+  direction: "inkomst" | "uitgave",
+  amount: number,
+  description: string,
+  category: string | null,
+) {
+  const { error } = await admin.from("transactions").insert({
+    user_id: ownerId,
+    occurred_on: brusselsToday(new Date()),
+    amount,
+    direction,
+    category: category ?? "",
+    description: description.slice(0, 200),
+  });
+  if (error) return "Transactie opslaan mislukt 😕";
+  revalidatePath("/financien");
+  revalidatePath("/dashboard");
+  const emoji = direction === "uitgave" ? "💸" : "💰";
+  const label = direction === "uitgave" ? "Uitgave" : "Inkomst";
+  const cat = category ? ` · ${category}` : "";
+  return `${emoji} ${label} genoteerd: ${euro(amount)} — ${description}${cat}\n(Aanpasbaar in Financiën.)`;
+}
+
+// Taak uit een slim-geclassificeerde capture (met optionele deadline/prioriteit).
+async function createTaskRouted(
+  admin: Admin,
+  ownerId: string,
+  route: CaptureRoute,
+) {
+  const fields: Record<string, unknown> = { title: route.title.slice(0, 200) };
+  if (route.dueOn) fields.due_on = route.dueOn;
+  if (route.priority) fields.priority = route.priority;
+  const { error } = await insertCapturedTask(admin, ownerId, fields);
+  if (error) return "Taak opslaan mislukt 😕";
+  revalidatePath("/taken");
+  revalidatePath("/dashboard");
+  const deadline = route.dueOn
+    ? `\n📅 Deadline: ${formatDayNl(route.dueOn)}`
+    : "";
+  return `Genoteerd als taak ✅\n"${route.title}"${deadline}`;
+}
+
+// Slimme routering: classificeer de capture (taak/notitie/uitgave/inkomst) via
+// Claude Haiku en stuur ze naar de juiste plek. Zonder classifier of bij
+// twijfel → taak in de inbox (robuuste fallback).
+async function routeCapture(admin: Admin, ownerId: string, text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) return "Stuur wat tekst om iets te noteren.";
+
+  if (classifyConfigured) {
+    const now = new Date();
+    const route = await classifyCapture(
+      trimmed,
+      brusselsToday(now),
+      brusselsWeekday(now),
+    );
+    if (route) {
+      if (
+        (route.kind === "uitgave" || route.kind === "inkomst") &&
+        route.amount !== null
+      ) {
+        return bookTransaction(
+          admin,
+          ownerId,
+          route.kind,
+          route.amount,
+          route.title,
+          route.category,
+        );
+      }
+      if (route.kind === "notitie") {
+        return createNoteFromText(admin, ownerId, trimmed);
+      }
+      return createTaskRouted(admin, ownerId, route);
+    }
+  }
+  return createTaskFromText(admin, ownerId, trimmed);
+}
+
+// Spraakboodschap → transcriptie → slimme routering. Claude doet geen audio,
+// dus de transcriptie loopt via Groq Whisper (zie lib/transcribe.ts).
 async function handleVoice(admin: Admin, ownerId: string, voice: TgVoice) {
   if (!transcribeConfigured) {
     return "Spraak-transcriptie is nog niet ingesteld (GROQ_API_KEY ontbreekt).";
@@ -269,13 +372,9 @@ async function handleVoice(admin: Admin, ownerId: string, voice: TgVoice) {
   );
   if (!text) return "Kon de spraakboodschap niet omzetten naar tekst 😕";
 
-  const title = text.slice(0, 200);
-  const { error } = await insertCapturedTask(admin, ownerId, { title });
-  if (error) return "Taak opslaan mislukt 😕";
-
-  revalidatePath("/taken");
-  revalidatePath("/dashboard");
-  return `🎙️ Genoteerd als taak:\n"${title}"`;
+  // Toon wat er gehoord werd (transcriptie kan fouten bevatten) + de routering.
+  const reply = await routeCapture(admin, ownerId, text);
+  return `🎙️ "${text.slice(0, 140)}"\n\n${reply}`;
 }
 
 async function handleBackup(
@@ -433,8 +532,9 @@ async function handlePhoto(
 }
 
 // Telegram stuurt elk binnenkomend bericht hierheen. Tekst zonder commando wordt
-// een taak in de inbox; commando's (/vandaag, /komende, /taak, /notitie) doen het
-// werk via de service-role-client. We antwoorden altijd met 200 (geen retries).
+// slim gerouteerd (taak/notitie/uitgave via Haiku, fallback taak); commando's
+// (/vandaag, /komende, /taak, /notitie) doen het werk via de service-role-
+// client. We antwoorden altijd met 200 (geen retries).
 export async function POST(request: Request) {
   // Fail-closed: zonder geconfigureerd secret-token wordt de webhook geweigerd
   // (de afzender-id in het bericht is niet geheim en mag geen poortwachter zijn).
@@ -526,7 +626,7 @@ export async function POST(request: Request) {
           reply = await handleBackup(admin, ownerId, chatId);
         else reply = "Onbekend commando. Stuur /help voor de opties.";
       } else {
-        reply = await createTaskFromText(admin, ownerId, trimmed);
+        reply = await routeCapture(admin, ownerId, trimmed);
       }
     }
 
