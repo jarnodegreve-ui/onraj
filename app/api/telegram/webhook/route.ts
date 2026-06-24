@@ -4,11 +4,6 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { buildBackup } from "@/lib/backup";
-import {
-  classifyCapture,
-  classifyConfigured,
-  type CaptureRoute,
-} from "@/lib/classify";
 import { isMissingColumn } from "@/lib/data/safe";
 import { toNote } from "@/lib/mappers";
 import { secureEquals } from "@/lib/secure";
@@ -23,7 +18,6 @@ import {
   sendTelegramMessage,
   setTelegramCommands,
 } from "@/lib/telegram";
-import { transcribeAudio, transcribeConfigured } from "@/lib/transcribe";
 import { syncNoteFile } from "@/lib/vault-sync";
 
 const allowedUserId = process.env.TELEGRAM_ALLOWED_USER_ID ?? "";
@@ -33,18 +27,10 @@ interface TgPhotoSize {
   file_id: string;
   file_size?: number;
 }
-interface TgVoice {
-  file_id: string;
-  mime_type?: string;
-  file_size?: number;
-  duration?: number;
-}
 interface TgMessage {
   text?: string;
   caption?: string;
   photo?: TgPhotoSize[];
-  voice?: TgVoice;
-  audio?: TgVoice;
   chat?: { id: number };
   from?: { id: number };
 }
@@ -100,10 +86,9 @@ async function insertCapturedNote(
 const HELP = [
   "🤖 ONRAJ-bot",
   "",
-  "Stuur tekst of spreek een memo in → ONRAJ sorteert het slim naar",
-  "taak, notitie of uitgave/inkomst (bij twijfel een taak in je inbox).",
+  "Stuur gewoon tekst → het wordt een taak (in je inbox).",
   "📷 Stuur een foto → het wordt een taak (bijschrift /notitie = notitie).",
-  "Alles is in de inbox nog te corrigeren.",
+  "In de inbox kan je alles omzetten naar een notitie of categoriseren.",
   "",
   "Commando's:",
   "• /vandaag — taken & afspraken van vandaag",
@@ -273,125 +258,6 @@ async function handleKomende(admin: Admin, ownerId: string) {
   return lines.join("\n");
 }
 
-function brusselsWeekday(now: Date) {
-  return new Intl.DateTimeFormat("nl-BE", {
-    timeZone: "Europe/Brussels",
-    weekday: "long",
-  }).format(now);
-}
-
-function formatDayNl(isoDate: string) {
-  return new Intl.DateTimeFormat("nl-BE", {
-    timeZone: "Europe/Brussels",
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  }).format(new Date(`${isoDate}T12:00:00`));
-}
-
-// Boek een uitgave/inkomst uit een slim-geclassificeerde capture.
-async function bookTransaction(
-  admin: Admin,
-  ownerId: string,
-  direction: "inkomst" | "uitgave",
-  amount: number,
-  description: string,
-  category: string | null,
-) {
-  const { error } = await admin.from("transactions").insert({
-    user_id: ownerId,
-    occurred_on: brusselsToday(new Date()),
-    amount,
-    direction,
-    category: category ?? "",
-    description: description.slice(0, 200),
-  });
-  if (error) return "Transactie opslaan mislukt 😕";
-  revalidatePath("/financien");
-  revalidatePath("/dashboard");
-  const emoji = direction === "uitgave" ? "💸" : "💰";
-  const label = direction === "uitgave" ? "Uitgave" : "Inkomst";
-  const cat = category ? ` · ${category}` : "";
-  return `${emoji} ${label} genoteerd: ${euro(amount)} — ${description}${cat}\n(Aanpasbaar in Financiën.)`;
-}
-
-// Taak uit een slim-geclassificeerde capture (met optionele deadline/prioriteit).
-async function createTaskRouted(
-  admin: Admin,
-  ownerId: string,
-  route: CaptureRoute,
-) {
-  const fields: Record<string, unknown> = { title: route.title.slice(0, 200) };
-  if (route.dueOn) fields.due_on = route.dueOn;
-  if (route.priority) fields.priority = route.priority;
-  const { error } = await insertCapturedTask(admin, ownerId, fields);
-  if (error) return "Taak opslaan mislukt 😕";
-  revalidatePath("/taken");
-  revalidatePath("/dashboard");
-  const deadline = route.dueOn
-    ? `\n📅 Deadline: ${formatDayNl(route.dueOn)}`
-    : "";
-  return `Genoteerd als taak ✅\n"${route.title}"${deadline}`;
-}
-
-// Slimme routering: classificeer de capture (taak/notitie/uitgave/inkomst) via
-// Claude Haiku en stuur ze naar de juiste plek. Zonder classifier of bij
-// twijfel → taak in de inbox (robuuste fallback).
-async function routeCapture(admin: Admin, ownerId: string, text: string) {
-  const trimmed = text.trim();
-  if (!trimmed) return "Stuur wat tekst om iets te noteren.";
-
-  if (classifyConfigured) {
-    const now = new Date();
-    const route = await classifyCapture(
-      trimmed,
-      brusselsToday(now),
-      brusselsWeekday(now),
-    );
-    if (route) {
-      if (
-        (route.kind === "uitgave" || route.kind === "inkomst") &&
-        route.amount !== null
-      ) {
-        return bookTransaction(
-          admin,
-          ownerId,
-          route.kind,
-          route.amount,
-          route.title,
-          route.category,
-        );
-      }
-      if (route.kind === "notitie") {
-        return createNoteFromText(admin, ownerId, trimmed);
-      }
-      return createTaskRouted(admin, ownerId, route);
-    }
-  }
-  return createTaskFromText(admin, ownerId, trimmed);
-}
-
-// Spraakboodschap → transcriptie → slimme routering. Claude doet geen audio,
-// dus de transcriptie loopt via Groq Whisper (zie lib/transcribe.ts).
-async function handleVoice(admin: Admin, ownerId: string, voice: TgVoice) {
-  if (!transcribeConfigured) {
-    return "Spraak-transcriptie is nog niet ingesteld (GROQ_API_KEY ontbreekt).";
-  }
-  const file = await downloadTelegramFile(voice.file_id);
-  if (!file) return "Kon de spraakboodschap niet ophalen 😕";
-
-  const text = await transcribeAudio(
-    file.bytes,
-    `voice.${file.ext}`,
-    voice.mime_type || file.mime,
-  );
-  if (!text) return "Kon de spraakboodschap niet omzetten naar tekst 😕";
-
-  // Toon wat er gehoord werd (transcriptie kan fouten bevatten) + de routering.
-  const reply = await routeCapture(admin, ownerId, text);
-  return `🎙️ "${text.slice(0, 140)}"\n\n${reply}`;
-}
-
 // Registreert de commando-lijst zodat /uitgave, /inkomst … in het Telegram-menu
 // verschijnen. Veilig: enkel de toegelaten gebruiker bereikt de webhook.
 async function handleSetupMenu() {
@@ -559,9 +425,9 @@ async function handlePhoto(
 }
 
 // Telegram stuurt elk binnenkomend bericht hierheen. Tekst zonder commando wordt
-// slim gerouteerd (taak/notitie/uitgave via Haiku, fallback taak); commando's
-// (/vandaag, /komende, /taak, /notitie) doen het werk via de service-role-
-// client. We antwoorden altijd met 200 (geen retries).
+// een taak in de inbox; commando's (/vandaag, /komende, /taak, /notitie) doen
+// het werk via de service-role-client. We antwoorden altijd met 200 (geen
+// retries).
 export async function POST(request: Request) {
   // Fail-closed: zonder geconfigureerd secret-token wordt de webhook geweigerd
   // (de afzender-id in het bericht is niet geheim en mag geen poortwachter zijn).
@@ -582,7 +448,6 @@ export async function POST(request: Request) {
   const fromId = message?.from?.id;
   const text = message?.text;
   const photos = message?.photo ?? [];
-  const voice = message?.voice ?? message?.audio;
 
   if (!message || !chatId || String(fromId) !== String(allowedUserId)) {
     return NextResponse.json({ ok: true });
@@ -590,12 +455,8 @@ export async function POST(request: Request) {
 
   const hasPhoto = photos.length > 0;
   const hasText = !!text && !!text.trim();
-  const hasVoice = !!voice;
-  if (!hasPhoto && !hasText && !hasVoice) {
-    await sendTelegramMessage(
-      chatId,
-      "Ik kan tekst, foto's en spraak verwerken 📝📷🎙️",
-    );
+  if (!hasPhoto && !hasText) {
+    await sendTelegramMessage(chatId, "Ik kan tekst en foto's verwerken 📝📷");
     return NextResponse.json({ ok: true });
   }
 
@@ -626,8 +487,6 @@ export async function POST(request: Request) {
         largest.file_id,
         message.caption ?? "",
       );
-    } else if (voice) {
-      reply = await handleVoice(admin, ownerId, voice);
     } else {
       const trimmed = (text ?? "").trim();
       if (trimmed.startsWith("/")) {
@@ -655,7 +514,7 @@ export async function POST(request: Request) {
           reply = await handleSetupMenu();
         else reply = "Onbekend commando. Stuur /help voor de opties.";
       } else {
-        reply = await routeCapture(admin, ownerId, trimmed);
+        reply = await createTaskFromText(admin, ownerId, trimmed);
       }
     }
 
