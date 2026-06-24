@@ -8,7 +8,9 @@ import { toNote } from "@/lib/mappers";
 import { createClient } from "@/lib/supabase/server";
 import { noteFilePath } from "@/lib/vault";
 import { removeNoteFile, syncNoteFile } from "@/lib/vault-sync";
+import { deleteNote, restoreNote } from "./notes";
 import type { ActionResult } from "./result";
+import { deleteTask, restoreTask } from "./tasks";
 
 function revalidateInbox() {
   revalidatePath("/inbox");
@@ -34,6 +36,22 @@ export async function clearInbox(
   }
   revalidateInbox();
   return { ok: true };
+}
+
+// Verwijder een capture rechtstreeks vanuit de inbox — soft-delete naar de
+// prullenbak (met undo), zodat per ongeluk toegevoegde items snel weg kunnen.
+export async function deleteInboxItem(
+  kind: InboxKind,
+  id: string,
+): Promise<ActionResult> {
+  return kind === "taak" ? deleteTask(id) : deleteNote(id);
+}
+
+export async function restoreInboxItem(
+  kind: InboxKind,
+  id: string,
+): Promise<ActionResult> {
+  return kind === "taak" ? restoreTask(id) : restoreNote(id);
 }
 
 // Zet een taak om naar een notitie (inhoud verhuist; de taak verdwijnt).

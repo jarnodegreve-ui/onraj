@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeftRight, Check, FileText, ListTodo } from "lucide-react";
+import { ArrowLeftRight, Check, FileText, ListTodo, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,13 @@ import {
   clearInbox,
   convertNoteToTask,
   convertTaskToNote,
+  deleteInboxItem,
+  restoreInboxItem,
 } from "@/lib/actions/inbox";
 import { setNoteCategory } from "@/lib/actions/notes";
 import { setTaskCategory } from "@/lib/actions/tasks";
 import type { ActionResult } from "@/lib/actions/result";
 import type { InboxItem } from "@/lib/data/inbox";
-import { cn } from "@/lib/utils";
 
 export function InboxManager({
   items,
@@ -45,6 +46,33 @@ export function InboxManager({
         router.refresh();
       } else {
         toast.error("Mislukt", { description: result.error });
+      }
+    });
+  }
+
+  // Per ongeluk toegevoegd? Soft-delete naar de prullenbak, met undo.
+  function remove(item: InboxItem) {
+    const key = `${item.kind}-${item.id}`;
+    setBusy(key);
+    startTransition(async () => {
+      const result = await deleteInboxItem(item.kind, item.id);
+      setBusy(null);
+      if (result.ok) {
+        toast.success("Naar prullenbak", {
+          action: {
+            label: "Ongedaan maken",
+            onClick: () =>
+              startTransition(async () => {
+                const r = await restoreInboxItem(item.kind, item.id);
+                if (r.ok) router.refresh();
+                else
+                  toast.error("Terugzetten mislukt", { description: r.error });
+              }),
+          },
+        });
+        router.refresh();
+      } else {
+        toast.error("Verwijderen mislukt", { description: result.error });
       }
     });
   }
@@ -137,16 +165,27 @@ export function InboxManager({
                     {item.kind === "taak" ? "→ Notitie" : "→ Taak"}
                   </Button>
 
-                  <Button
-                    size="sm"
-                    className={cn("ml-auto")}
-                    disabled={disabled}
-                    onClick={() =>
-                      run(key, () => clearInbox(item.kind, item.id), "Verwerkt")
-                    }
-                  >
-                    <Check className="size-4" /> Verwerkt
-                  </Button>
+                  <div className="ml-auto flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 text-muted-foreground hover:text-destructive"
+                      disabled={disabled}
+                      aria-label="Verwijderen"
+                      onClick={() => remove(item)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={disabled}
+                      onClick={() =>
+                        run(key, () => clearInbox(item.kind, item.id), "Verwerkt")
+                      }
+                    >
+                      <Check className="size-4" /> Verwerkt
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
