@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { isMissingColumn } from "@/lib/data/safe";
 import { currentMonthKey } from "@/lib/month";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "./result";
@@ -14,6 +15,12 @@ const recurringInput = z.object({
   description: z.string().trim().max(200),
   account: z.string().trim().max(60),
   dayOfMonth: z.number().int().min(1).max(28),
+  // Einddatum 'YYYY-MM' (laatste maand) of null = doorlopend.
+  endMonth: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/u, "Ongeldige maand.")
+    .nullable()
+    .optional(),
 });
 
 export type RecurringInput = z.infer<typeof recurringInput>;
@@ -39,7 +46,7 @@ export async function createRecurring(
   if (!parsed.ok) return parsed;
 
   const supabase = await createClient();
-  const { error } = await supabase.from("recurring_transactions").insert({
+  const base = {
     amount: parsed.data.amount,
     direction: parsed.data.direction,
     category: parsed.data.category,
@@ -47,7 +54,14 @@ export async function createRecurring(
     account: parsed.data.account || null,
     day_of_month: parsed.data.dayOfMonth,
     start_month: currentMonthKey(),
-  });
+  };
+  let { error } = await supabase
+    .from("recurring_transactions")
+    .insert({ ...base, end_month: parsed.data.endMonth ?? null });
+  if (error && isMissingColumn(error)) {
+    // Vóór migratie 0019: zonder end_month opslaan.
+    ({ error } = await supabase.from("recurring_transactions").insert(base));
+  }
   if (error) return { ok: false, error: error.message };
 
   revalidateFinance();
@@ -62,17 +76,25 @@ export async function updateRecurring(
   if (!parsed.ok) return parsed;
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const base = {
+    amount: parsed.data.amount,
+    direction: parsed.data.direction,
+    category: parsed.data.category,
+    description: parsed.data.description,
+    account: parsed.data.account || null,
+    day_of_month: parsed.data.dayOfMonth,
+  };
+  let { error } = await supabase
     .from("recurring_transactions")
-    .update({
-      amount: parsed.data.amount,
-      direction: parsed.data.direction,
-      category: parsed.data.category,
-      description: parsed.data.description,
-      account: parsed.data.account || null,
-      day_of_month: parsed.data.dayOfMonth,
-    })
+    .update({ ...base, end_month: parsed.data.endMonth ?? null })
     .eq("id", id);
+  if (error && isMissingColumn(error)) {
+    // Vóór migratie 0019: zonder end_month bijwerken.
+    ({ error } = await supabase
+      .from("recurring_transactions")
+      .update(base)
+      .eq("id", id));
+  }
   if (error) return { ok: false, error: error.message };
 
   revalidateFinance();

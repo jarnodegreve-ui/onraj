@@ -112,6 +112,7 @@ export function toRecurringTransaction(
     dayOfMonth: row.day_of_month,
     active: row.active,
     startMonth: row.start_month,
+    endMonth: row.end_month ?? null,
     lastGeneratedMonth: row.last_generated_month,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

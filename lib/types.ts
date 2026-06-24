@@ -185,6 +185,7 @@ export interface RecurringTransaction {
   dayOfMonth: number;
   active: boolean;
   startMonth: string; // 'YYYY-MM'
+  endMonth: string | null; // 'YYYY-MM' — laatste maand, of null = doorlopend
   lastGeneratedMonth: string | null;
   createdAt: string;
   updatedAt: string;
@@ -201,6 +202,7 @@ export interface RecurringTransactionRow {
   day_of_month: number;
   active: boolean;
   start_month: string;
+  end_month?: string | null;
   last_generated_month: string | null;
   created_at: string;
   updated_at: string;

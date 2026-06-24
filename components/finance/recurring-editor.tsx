@@ -72,6 +72,7 @@ function RecurringForm({
   const [dayOfMonth, setDayOfMonth] = useState(
     String(recurring?.dayOfMonth ?? 1),
   );
+  const [endMonth, setEndMonth] = useState(recurring?.endMonth ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
@@ -93,6 +94,7 @@ function RecurringForm({
         description,
         account,
         dayOfMonth: day,
+        endMonth: endMonth || null,
       };
       const result = recurring
         ? await updateRecurring(recurring.id, input)
@@ -186,6 +188,19 @@ function RecurringForm({
             onChange={(e) => setAccount(e.target.value)}
             placeholder="Optioneel"
           />
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="rec-end">Einddatum (optioneel)</Label>
+          <Input
+            id="rec-end"
+            type="month"
+            value={endMonth}
+            onChange={(e) => setEndMonth(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Laatste maand dat deze post terugkeert. Leeg = blijft doorlopen.
+          </p>
         </div>
       </div>
 

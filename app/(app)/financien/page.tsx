@@ -1,4 +1,5 @@
 import { AccountsPanel } from "@/components/finance/accounts-panel";
+import { CashflowOutlook } from "@/components/finance/cashflow-outlook";
 import { FinanceGate } from "@/components/finance/finance-gate";
 import { FinanceLockButton } from "@/components/finance/finance-lock-button";
 import { FinanceView } from "@/components/finance/finance-view";
@@ -10,7 +11,7 @@ import {
 } from "@/lib/data/recurring";
 import { listSavingsGoals } from "@/lib/data/savings";
 import { listTransactions } from "@/lib/data/transactions";
-import { currentMonthKey } from "@/lib/finance";
+import { currentMonthKey, projectCashflow } from "@/lib/finance";
 import { financeLockState } from "@/lib/finance-lock";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
@@ -49,11 +50,22 @@ export default async function FinancienPage() {
       listAccountBalances(),
     ]);
 
+  // Vooruitblik op de vaste posten voor deze maand (Brusselse dag van de maand).
+  const monthKey = currentMonthKey();
+  const todayDay = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Brussels",
+      day: "numeric",
+    }).format(new Date()),
+  );
+  const outlook = projectCashflow(recurring, monthKey, todayDay);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
         <FinanceLockButton pinSet={pinSet} />
       </div>
+      <CashflowOutlook outlook={outlook} monthKey={monthKey} />
       <FinanceView
         transactions={transactions}
         budgets={budgets}

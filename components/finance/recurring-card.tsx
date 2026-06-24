@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { deleteRecurring, setRecurringActive } from "@/lib/actions/recurring";
 import { formatEuro } from "@/lib/format";
+import { monthLabel } from "@/lib/month";
 import type { RecurringTransaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -126,6 +127,7 @@ function RecurringRow({
         <p className="text-xs text-muted-foreground">
           Elke maand · dag {recurring.dayOfMonth}
           {recurring.category && ` · ${recurring.category}`}
+          {recurring.endMonth && ` · t/m ${monthLabel(recurring.endMonth, "MMM yyyy")}`}
           {!recurring.active && " · gepauzeerd"}
         </p>
       </div>

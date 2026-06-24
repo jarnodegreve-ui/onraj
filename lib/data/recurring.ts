@@ -47,11 +47,16 @@ export async function ensureRecurringTransactions(): Promise<number> {
     if (template.lastGeneratedMonth && template.lastGeneratedMonth >= month) {
       month = shiftMonth(template.lastGeneratedMonth, 1);
     }
-    if (month > current) continue;
+    // Niet voorbij de huidige maand, en niet voorbij een eventuele einddatum.
+    const limit =
+      template.endMonth && template.endMonth < current
+        ? template.endMonth
+        : current;
+    if (month > limit) continue;
 
     const day = String(template.dayOfMonth).padStart(2, "0");
     const rows: Array<Record<string, unknown>> = [];
-    while (month <= current) {
+    while (month <= limit) {
       rows.push({
         occurred_on: `${month}-${day}`,
         amount: template.amount,
@@ -72,7 +77,7 @@ export async function ensureRecurringTransactions(): Promise<number> {
 
     const { error: updateError } = await supabase
       .from("recurring_transactions")
-      .update({ last_generated_month: current })
+      .update({ last_generated_month: limit })
       .eq("id", template.id);
     if (updateError) throw new Error(updateError.message);
 

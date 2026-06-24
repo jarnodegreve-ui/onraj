@@ -1,5 +1,9 @@
 import { monthKeyOf, monthLabel, shiftMonth } from "./month";
-import type { Transaction } from "./types";
+import type {
+  RecurringTransaction,
+  TransactieRichting,
+  Transaction,
+} from "./types";
 
 // Generieke maand-helpers wonen in ./month; hier her-geëxporteerd voor gemak.
 export {
@@ -57,6 +61,81 @@ export interface TrendPoint {
   label: string;
   inkomst: number;
   uitgave: number;
+}
+
+export interface CashflowItem {
+  description: string;
+  category: string;
+  amount: number;
+  direction: TransactieRichting;
+  dayOfMonth: number;
+  upcoming: boolean; // dag valt vandaag of later deze maand
+}
+
+export interface CashflowOutlook {
+  inkomstenTotaal: number;
+  uitgavenTotaal: number;
+  nettoMaand: number;
+  komendeInkomsten: number;
+  komendeUitgaven: number;
+  komendNetto: number;
+  items: CashflowItem[];
+}
+
+/**
+ * Projecteert de vaste posten (terugkerende sjablonen) voor één maand: het
+ * maandtotaal én wat er deze maand nog moet komen (dag op of na `todayDay`).
+ * Houdt rekening met start- en einddatum van elke post.
+ */
+export function projectCashflow(
+  templates: RecurringTransaction[],
+  monthKey: string,
+  todayDay: number,
+): CashflowOutlook {
+  const items: CashflowItem[] = [];
+  let inkomstenTotaal = 0;
+  let uitgavenTotaal = 0;
+  let komendeInkomsten = 0;
+  let komendeUitgaven = 0;
+
+  for (const t of templates) {
+    if (!t.active) continue;
+    if (t.startMonth > monthKey) continue;
+    if (t.endMonth && t.endMonth < monthKey) continue;
+
+    const upcoming = t.dayOfMonth >= todayDay;
+    items.push({
+      description:
+        t.description ||
+        t.category ||
+        (t.direction === "inkomst" ? "Inkomst" : "Uitgave"),
+      category: t.category,
+      amount: t.amount,
+      direction: t.direction,
+      dayOfMonth: t.dayOfMonth,
+      upcoming,
+    });
+
+    if (t.direction === "inkomst") {
+      inkomstenTotaal += t.amount;
+      if (upcoming) komendeInkomsten += t.amount;
+    } else {
+      uitgavenTotaal += t.amount;
+      if (upcoming) komendeUitgaven += t.amount;
+    }
+  }
+
+  items.sort((a, b) => a.dayOfMonth - b.dayOfMonth);
+
+  return {
+    inkomstenTotaal,
+    uitgavenTotaal,
+    nettoMaand: inkomstenTotaal - uitgavenTotaal,
+    komendeInkomsten,
+    komendeUitgaven,
+    komendNetto: komendeInkomsten - komendeUitgaven,
+    items,
+  };
 }
 
 /** Inkomsten/uitgaven per maand voor de laatste `count` maanden t/m `endKey`. */

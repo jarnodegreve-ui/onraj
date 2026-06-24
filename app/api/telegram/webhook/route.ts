@@ -60,6 +60,7 @@ const HELP = [
   "• /komende — afspraken komende 7 dagen",
   "• /saldo — saldo & rekeningen",
   "• /budget — budgetstatus deze maand",
+  "• /vooruitblik — cashflow: vaste posten deze maand",
   "• /uitgave <bedrag> <tekst> — boek een uitgave (bv. /uitgave 40 tanken)",
   "• /inkomst <bedrag> <tekst> — boek een inkomst",
   "• /taak <tekst> — maak een taak",
@@ -329,6 +330,58 @@ async function handleBudget(admin: Admin, ownerId: string) {
   return lines.join("\n");
 }
 
+// Cashflow-vooruitblik: vaste posten van deze maand + wat er nog moet komen.
+async function handleVooruitblik(admin: Admin, ownerId: string) {
+  const today = brusselsToday(new Date());
+  const monthKey = today.slice(0, 7);
+  const todayDay = Number(today.slice(8, 10));
+
+  const { data } = await admin
+    .from("recurring_transactions")
+    .select("*")
+    .eq("user_id", ownerId)
+    .eq("active", true);
+
+  let inkomsten = 0;
+  let uitgaven = 0;
+  let komendInk = 0;
+  let komendUit = 0;
+  let count = 0;
+  for (const r of data ?? []) {
+    if ((r.start_month as string) > monthKey) continue;
+    if (r.end_month && (r.end_month as string) < monthKey) continue;
+    count += 1;
+    const amount = toNumber(r.amount);
+    const upcoming = (r.day_of_month as number) >= todayDay;
+    if (r.direction === "inkomst") {
+      inkomsten += amount;
+      if (upcoming) komendInk += amount;
+    } else {
+      uitgaven += amount;
+      if (upcoming) komendUit += amount;
+    }
+  }
+
+  if (count === 0) return "Nog geen vaste posten ingesteld.";
+
+  const lines: string[] = [
+    "🔮 Cashflow-vooruitblik",
+    "",
+    "Nog te komen deze maand:",
+    `• Uitgaven: ${euro(komendUit)}`,
+  ];
+  if (komendInk > 0) lines.push(`• Inkomsten: ${euro(komendInk)}`);
+  lines.push(
+    `• Netto: ${euro(komendInk - komendUit)}`,
+    "",
+    "Vaste posten per maand:",
+    `• Inkomsten: ${euro(inkomsten)}`,
+    `• Uitgaven: ${euro(uitgaven)}`,
+    `• Netto: ${euro(inkomsten - uitgaven)}`,
+  );
+  return lines.join("\n");
+}
+
 // Spraakboodschap → transcriptie → taak. Claude doet geen audio, dus de
 // transcriptie loopt via Groq Whisper (zie lib/transcribe.ts).
 async function handleVoice(admin: Admin, ownerId: string, voice: TgVoice) {
@@ -594,6 +647,8 @@ export async function POST(request: Request) {
         else if (cmd === "saldo") reply = await handleSaldo(admin, ownerId);
         else if (cmd === "budget" || cmd === "budgetten")
           reply = await handleBudget(admin, ownerId);
+        else if (cmd === "vooruitblik" || cmd === "cashflow")
+          reply = await handleVooruitblik(admin, ownerId);
         else if (cmd === "uitgave" || cmd === "kost")
           reply = await createTransaction(admin, ownerId, "uitgave", args);
         else if (cmd === "inkomst")
