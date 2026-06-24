@@ -43,6 +43,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
 const MODULE_BESCHRIJVING: Record<string, string> = {
+  "/inbox": "Snelle captures om te triëren.",
   "/taken": "Je to-do's met deadlines.",
   "/notities": "Markdown-notities met tags en zoeken.",
   "/financien": "Inkomsten, uitgaven en maandoverzicht.",

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { buildBackup } from "@/lib/backup";
+import { isMissingColumn } from "@/lib/data/safe";
 import { toNote } from "@/lib/mappers";
 import { secureEquals } from "@/lib/secure";
 import {
@@ -47,6 +48,48 @@ interface TgUpdate {
 }
 
 type Admin = ReturnType<typeof createAdminClient>;
+
+// Captures via Telegram krijgen een inbox-vlag (slimme inbox). Vóór migratie
+// 0020 vallen ze terug op een insert zonder die vlag.
+async function insertCapturedTask(
+  admin: Admin,
+  ownerId: string,
+  fields: Record<string, unknown>,
+) {
+  let result = await admin
+    .from("tasks")
+    .insert({ ...fields, user_id: ownerId, inbox: true })
+    .select("id")
+    .single();
+  if (result.error && isMissingColumn(result.error)) {
+    result = await admin
+      .from("tasks")
+      .insert({ ...fields, user_id: ownerId })
+      .select("id")
+      .single();
+  }
+  return result;
+}
+
+async function insertCapturedNote(
+  admin: Admin,
+  ownerId: string,
+  fields: Record<string, unknown>,
+) {
+  let result = await admin
+    .from("notes")
+    .insert({ ...fields, user_id: ownerId, inbox: true })
+    .select("*")
+    .single();
+  if (result.error && isMissingColumn(result.error)) {
+    result = await admin
+      .from("notes")
+      .insert({ ...fields, user_id: ownerId })
+      .select("*")
+      .single();
+  }
+  return result;
+}
 
 const HELP = [
   "🤖 ONRAJ-bot",
@@ -399,9 +442,7 @@ async function handleVoice(admin: Admin, ownerId: string, voice: TgVoice) {
   if (!text) return "Kon de spraakboodschap niet omzetten naar tekst 😕";
 
   const title = text.slice(0, 200);
-  const { error } = await admin
-    .from("tasks")
-    .insert({ user_id: ownerId, title });
+  const { error } = await insertCapturedTask(admin, ownerId, { title });
   if (error) return "Taak opslaan mislukt 😕";
 
   revalidatePath("/taken");
@@ -427,9 +468,7 @@ async function handleBackup(
 async function createTask(admin: Admin, ownerId: string, title: string) {
   const clean = title.trim().slice(0, 200);
   if (!clean) return "Gebruik: /taak <omschrijving>";
-  const { error } = await admin
-    .from("tasks")
-    .insert({ user_id: ownerId, title: clean });
+  const { error } = await insertCapturedTask(admin, ownerId, { title: clean });
   if (error) return "Taak opslaan mislukt 😕";
   revalidatePath("/taken");
   revalidatePath("/dashboard");
@@ -440,18 +479,13 @@ async function createNoteFromText(admin: Admin, ownerId: string, text: string) {
   const trimmed = text.trim();
   if (!trimmed) return "Gebruik: /notitie <tekst>";
   const title = trimmed.split("\n")[0].slice(0, 80);
-  const { data, error } = await admin
-    .from("notes")
-    .insert({
-      user_id: ownerId,
-      title,
-      body: trimmed,
-      tags: ["telegram"],
-      pinned: false,
-    })
-    .select("*")
-    .single();
-  if (error) return "Opslaan mislukt 😕";
+  const { data, error } = await insertCapturedNote(admin, ownerId, {
+    title,
+    body: trimmed,
+    tags: ["telegram"],
+    pinned: false,
+  });
+  if (error || !data) return "Opslaan mislukt 😕";
   await syncNoteFile(toNote(data), null);
   revalidatePath("/notities");
   revalidatePath("/dashboard");
@@ -491,17 +525,12 @@ async function handlePhoto(
   if (asNote) {
     entityType = "note";
     const title = body.trim().split("\n")[0].slice(0, 80) || "Foto van Telegram";
-    const { data, error } = await admin
-      .from("notes")
-      .insert({
-        user_id: ownerId,
-        title,
-        body: body.trim(),
-        tags: ["telegram"],
-        pinned: false,
-      })
-      .select("*")
-      .single();
+    const { data, error } = await insertCapturedNote(admin, ownerId, {
+      title,
+      body: body.trim(),
+      tags: ["telegram"],
+      pinned: false,
+    });
     if (error || !data) return "Notitie aanmaken mislukt 😕";
     entityId = data.id as string;
     label = `Notitie met foto toegevoegd ✅\n"${title}"`;
@@ -511,11 +540,7 @@ async function handlePhoto(
   } else {
     entityType = "task";
     const title = body.trim().slice(0, 200) || "Foto van Telegram";
-    const { data, error } = await admin
-      .from("tasks")
-      .insert({ user_id: ownerId, title })
-      .select("id")
-      .single();
+    const { data, error } = await insertCapturedTask(admin, ownerId, { title });
     if (error || !data) return "Taak aanmaken mislukt 😕";
     entityId = data.id as string;
     label = `Taak met foto toegevoegd ✅\n"${title}"`;
