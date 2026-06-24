@@ -34,7 +34,7 @@ export default async function InboxPage() {
     <div className="space-y-6">
       <PageHeader
         title="Inbox"
-        description="Snelle captures via Telegram (spraak, foto, tekst) — categoriseer, zet om naar taak/notitie, of vink af als verwerkt."
+        description="Snelle captures via Telegram (foto, tekst) — categoriseer, zet om naar taak/notitie, of vink af als verwerkt."
       />
       <InboxManager
         items={items}

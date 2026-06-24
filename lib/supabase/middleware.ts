@@ -29,6 +29,13 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // /auth-routes (callback + signout) beheren hun eigen sessie en cookies. De
+  // proxy-sessieverversing hier overslaan voorkomt cookie-races — o.a. de
+  // uitlog-fout waarbij getUser() en signOut() om dezelfde cookies vochten.
+  if (request.nextUrl.pathname.startsWith("/auth")) {
+    return NextResponse.next({ request });
+  }
+
   // Een auth-/reset-code die niet op de callback binnenkomt (bv. wanneer
   // Supabase terugvalt op de Site-URL en de code op "/" plakt) → doorsturen
   // naar de callback die 'm inwisselt voor een sessie.

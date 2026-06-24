@@ -8,7 +8,8 @@ function safeNext(value: string | undefined): string {
     !value ||
     !value.startsWith("/") ||
     value.startsWith("//") ||
-    value.startsWith("/\\")
+    value.startsWith("/\\") ||
+    value.startsWith("/mfa") // geen terugkeer naar de codestap zelf
   ) {
     return "/dashboard";
   }

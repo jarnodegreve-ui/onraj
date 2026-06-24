@@ -60,6 +60,13 @@ export function TaskItem({
   const [leaving, setLeaving] = useState(false);
   const [open, setOpen] = useState(false);
   const [optimisticDone, setOptimisticDone] = useState<boolean | null>(null);
+  // Wis de optimistische status zodra de server de echte waarde levert, zodat de
+  // rij niet vasthangt aan een oude optimistische staat (bv. in filter "Alles").
+  const [prevDone, setPrevDone] = useState(task.done);
+  if (prevDone !== task.done) {
+    setPrevDone(task.done);
+    setOptimisticDone(null);
+  }
   const shownDone = optimisticDone ?? task.done;
   const overdue = !shownDone && !!task.dueOn && task.dueOn < todayKey;
   const meta = priorityMeta(task.priority);

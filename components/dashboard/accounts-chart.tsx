@@ -21,15 +21,18 @@ function shortEuro(value: number) {
 
 export function AccountsChart({ data }: { data: Datum[] }) {
   const sorted = [...data].sort((a, b) => b.amount - a.amount);
-  const max = Math.max(...sorted.map((d) => d.amount), 0);
+  // Op absolute waarde schalen zodat ook een negatief saldo (schuld) een balk
+  // krijgt; negatieve saldo's kleuren rood ter onderscheid.
+  const maxAbs = Math.max(...sorted.map((d) => Math.abs(d.amount)), 0);
 
   return (
     <div className="space-y-2.5">
       {sorted.map((entry, index) => {
-        const ratio = max > 0 ? entry.amount / max : 0;
+        const ratio = maxAbs > 0 ? Math.abs(entry.amount) / maxAbs : 0;
         const width =
-          entry.amount > 0 ? Math.max(ratio * MAX_BAR, MIN_BAR) : 0;
-        const color = COLORS[index % COLORS.length];
+          entry.amount !== 0 ? Math.max(ratio * MAX_BAR, MIN_BAR) : 0;
+        const color =
+          entry.amount < 0 ? "#f43f5e" : COLORS[index % COLORS.length];
         return (
           <div key={entry.account} className="flex items-center gap-3">
             <span className="w-24 shrink-0 truncate text-right text-xs text-muted-foreground">
