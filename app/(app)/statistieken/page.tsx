@@ -183,7 +183,7 @@ export default async function StatistiekenPage() {
       </SectionCard>
 
       {/* Notities */}
-      <SectionCard title="Notities" icon={NotebookPen} accent="#3d5afe">
+      <SectionCard title="Notities" icon={NotebookPen} accent="#c2f04d">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <MiniStat label="Actief" value={nStats.active} />
           <MiniStat label="Vastgemaakt" value={nStats.pinned} />
@@ -201,7 +201,7 @@ export default async function StatistiekenPage() {
           <Block title="Aangemaakt per maand">
             <MonthlyBars
               data={nStats.perMonth}
-              color="#3d5afe"
+              color="#c2f04d"
               noun={["notitie", "notities"]}
             />
           </Block>

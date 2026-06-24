@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Settings } from "lucide-react";
 
+import { BrandLockup } from "@/components/brand-lockup";
 import { BrandMark } from "@/components/brand-mark";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -39,17 +40,11 @@ export function AppSidebar({
           href="/dashboard"
           onClick={() => setOpenMobile(false)}
           aria-label="Naar dashboard"
-          className="flex items-center gap-2.5 rounded-md px-1 py-2 transition-colors hover:bg-sidebar-accent/50 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+          className="flex items-center rounded-md px-2 py-2 transition-colors hover:bg-sidebar-accent/50 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
         >
-          <BrandMark className="size-12 shrink-0 group-data-[collapsible=icon]:size-8" />
-          <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-            <span className="truncate text-base font-semibold tracking-tight">
-              ONRAJ
-            </span>
-            <span className="truncate text-[11px] tracking-wide text-sidebar-foreground/55">
-              Overzicht
-            </span>
-          </div>
+          {/* Ingeklapt: compact icoon. Uitgeklapt: de wordmark `❯ onraj▌`. */}
+          <BrandMark className="hidden size-8 shrink-0 group-data-[collapsible=icon]:block" />
+          <BrandLockup className="text-[22px] text-[#f4f4f2] group-data-[collapsible=icon]:hidden" />
         </Link>
       </SidebarHeader>
 

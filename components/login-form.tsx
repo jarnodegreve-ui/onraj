@@ -4,14 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, LogIn } from "lucide-react";
 
-import { BrandMark } from "@/components/brand-mark";
+import { BrandLockup } from "@/components/brand-lockup";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,10 +92,9 @@ export function LoginForm({ error }: { error?: string }) {
   return (
     <Card className="w-full max-w-sm shadow-xl">
       <CardHeader className="items-center text-center">
-        <BrandMark className="mx-auto mb-1 size-12" />
-        <CardTitle className="text-xl">ONRAJ</CardTitle>
-        <CardDescription>
-          Meld je aan met je e-mailadres en wachtwoord.
+        <BrandLockup className="mb-2 text-[34px] text-foreground" />
+        <CardDescription className="font-mono text-xs tracking-wide">
+          je persoonlijke portaal
         </CardDescription>
       </CardHeader>
       <CardContent>

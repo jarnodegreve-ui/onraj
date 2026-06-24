@@ -12,7 +12,7 @@ import type { CalendarEvent } from "./types";
 
 /** Vaste kleurkeuzes voor afspraken (hex-waarden in de DB). */
 export const EVENT_COLORS = [
-  { name: "Blauw", value: "#3d5afe" },
+  { name: "Blauw", value: "#c2f04d" },
   { name: "Groen", value: "#16a34a" },
   { name: "Amber", value: "#d97706" },
   { name: "Violet", value: "#7c3aed" },

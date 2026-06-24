@@ -57,7 +57,7 @@ export function TodayTimeline({
                   <li key={event.id} className="relative">
                     <span
                       className="absolute top-1 -left-[1.32rem] size-2.5 rounded-full ring-2 ring-card"
-                      style={{ backgroundColor: event.color ?? "#3d5afe" }}
+                      style={{ backgroundColor: event.color ?? "#c2f04d" }}
                     />
                     <div className="flex items-baseline gap-2">
                       <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
