@@ -68,7 +68,7 @@ export function NavUser({ email }: { email: string | null }) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              render={<a href="/auth/signout" />}
+              onClick={() => window.location.assign("/auth/signout")}
               disabled={!supabaseConfigured}
               variant="destructive"
             >
