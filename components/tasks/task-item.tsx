@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Attachments } from "@/components/attachments";
 import { CategoryBadge } from "@/components/category-badge";
 import { SubtaskList } from "@/components/tasks/subtask-list";
+import { SwipeRow } from "@/components/tasks/swipe-row";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -98,8 +99,8 @@ export function TaskItem({
     }
   }
 
-  function remove() {
-    if (!window.confirm("Deze taak verwijderen?")) return;
+  // Verwijderen → prullenbak met undo-toast (geen bevestiging; undo vangt op).
+  function doRemove() {
     startTransition(async () => {
       const result = await deleteTask(task.id);
       if (result.ok)
@@ -118,6 +119,12 @@ export function TaskItem({
     });
   }
 
+  // Vanuit het menu: wél een bevestiging (bewuste klik).
+  function remove() {
+    if (!window.confirm("Deze taak verwijderen?")) return;
+    doRemove();
+  }
+
   return (
     <li
       ref={setNodeRef}
@@ -128,6 +135,7 @@ export function TaskItem({
         leaving && "pointer-events-none translate-x-12 scale-95 opacity-0",
       )}
     >
+      <SwipeRow onComplete={toggle} onDelete={doRemove}>
       <div className="flex items-center gap-3 py-3">
         {draggable && (
           <button
@@ -243,6 +251,7 @@ export function TaskItem({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      </SwipeRow>
 
       {open && (
         <div className="space-y-3 border-t px-3 py-3 pl-9">
