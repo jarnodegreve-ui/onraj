@@ -1,3 +1,4 @@
+import { TerminalCursor } from "@/components/terminal-cursor";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,10 +20,7 @@ export function BrandLockup({ className }: { className?: string }) {
         ❯
       </span>
       <span aria-hidden>onraj</span>
-      <span
-        aria-hidden
-        className="cursor-blink ml-[0.04em] inline-block h-[0.82em] w-[0.16em] bg-primary"
-      />
+      <TerminalCursor className="ml-[0.04em] h-[0.82em] w-[0.16em]" />
     </span>
   );
 }

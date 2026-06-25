@@ -24,13 +24,6 @@ export function NavUser({ email }: { email: string | null }) {
   const { setTheme } = useTheme();
   const initials = (email?.[0] ?? "J").toUpperCase();
 
-  // Afmelden via de server-route (onder /auth → buiten de MFA-proxy). Een harde
-  // navigatie vermijdt race-condities met de sessie-verversing.
-  function handleSignOut() {
-    if (!supabaseConfigured) return;
-    window.location.href = "/auth/signout";
-  }
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -75,7 +68,7 @@ export function NavUser({ email }: { email: string | null }) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={handleSignOut}
+              render={<a href="/auth/signout" />}
               disabled={!supabaseConfigured}
               variant="destructive"
             >

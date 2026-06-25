@@ -1,8 +1,17 @@
+import { LogOut } from "lucide-react";
+
 import { PageHeader } from "@/components/page-header";
 import { CategoryManager } from "@/components/settings/category-manager";
 import { MfaManager } from "@/components/settings/mfa-manager";
 import { TrashManager } from "@/components/settings/trash-manager";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { listCategories } from "@/lib/data/categories";
 import { listTrashed } from "@/lib/data/trash";
 import { supabaseConfigured } from "@/lib/supabase/env";
@@ -56,6 +65,20 @@ export default async function InstellingenPage() {
         <MfaManager />
       </div>
       <TrashManager items={trashed} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Sessie</CardTitle>
+          <CardDescription>Meld je af op dit toestel.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Echte link naar de server-route (onder /auth → buiten de proxy):
+              wist de cookies en stuurt door naar de login. Altijd betrouwbaar. */}
+          <Button variant="outline" render={<a href="/auth/signout" />}>
+            <LogOut className="size-4" /> Afmelden
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

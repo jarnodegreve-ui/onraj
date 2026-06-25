@@ -1,5 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 
+import { TerminalCursor } from "@/components/terminal-cursor";
+
 export function EmptyState({
   icon: Icon,
   title,
@@ -23,10 +25,7 @@ export function EmptyState({
           ❯
         </span>
         {title}
-        <span
-          aria-hidden
-          className="cursor-blink inline-block h-[1.05em] w-[0.5ch] bg-primary"
-        />
+        <TerminalCursor className="h-[1.05em] w-[0.5ch]" />
       </h3>
       {description && (
         <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">

@@ -17,6 +17,7 @@ import { DashboardTasks } from "@/components/dashboard/tasks-list";
 import { TodayTimeline } from "@/components/dashboard/today-timeline";
 import { DashboardUpcoming } from "@/components/dashboard/upcoming-list";
 import { PushToggle } from "@/components/push/push-toggle";
+import { TerminalCursor } from "@/components/terminal-cursor";
 import {
   Card,
   CardContent,
@@ -178,10 +179,7 @@ function Greeting({ name }: { name: string }) {
           ❯
         </span>
         welkom terug, {name}
-        <span
-          aria-hidden
-          className="cursor-blink inline-block h-[0.9em] w-[0.5ch] bg-primary"
-        />
+        <TerminalCursor className="h-[0.9em] w-[0.5ch]" />
       </h2>
       <p className="font-mono text-xs tracking-wide text-muted-foreground first-letter:uppercase">
         {formatDate(currentDayKey(), "EEEE d MMMM")}

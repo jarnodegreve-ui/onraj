@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarClock, MapPin } from "lucide-react";
 
+import { TerminalCursor } from "@/components/terminal-cursor";
 import {
   Card,
   CardContent,
@@ -50,10 +51,7 @@ export function TodayTimeline({
                 ❯
               </span>
               niets op de planning
-              <span
-                aria-hidden
-                className="cursor-blink inline-block h-[1.05em] w-[0.5ch] bg-primary"
-              />
+              <TerminalCursor className="h-[1.05em] w-[0.5ch]" />
             </p>
           </div>
         ) : (
