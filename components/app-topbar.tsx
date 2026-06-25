@@ -19,7 +19,7 @@ export function AppTopbar() {
 
   return (
     <header
-      className="sticky top-0 z-10 shrink-0 border-b bg-background/80 backdrop-blur-sm"
+      className="sticky top-0 z-10 shrink-0 border-b bg-background md:bg-background/80 md:backdrop-blur-sm"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="flex h-14 items-center gap-2 px-4">

@@ -130,7 +130,7 @@ export function TaskItem({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "transition-all duration-300 ease-out",
+        "transition-[transform,opacity] duration-300 ease-out",
         isDragging && "opacity-0",
         leaving && "pointer-events-none translate-x-12 scale-95 opacity-0",
       )}

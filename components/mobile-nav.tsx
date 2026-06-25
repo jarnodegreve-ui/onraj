@@ -17,7 +17,7 @@ export function MobileNav() {
       className="fixed inset-x-0 bottom-0 z-30 md:hidden"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
     >
-      <div className="mx-3 flex items-center gap-1 rounded-2xl border bg-background/90 p-1 shadow-xl backdrop-blur-md">
+      <div className="mx-3 flex items-center gap-1 rounded-2xl border bg-background/95 p-1 shadow-lg">
         {items.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);

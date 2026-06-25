@@ -28,7 +28,7 @@ export function InstallHint() {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-40 flex items-center gap-3 rounded-2xl border bg-card/95 p-3 shadow-xl backdrop-blur-md md:hidden">
+    <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-40 flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-xl md:hidden">
       <span className="font-heading text-lg leading-none text-primary" aria-hidden>
         ❯
       </span>
