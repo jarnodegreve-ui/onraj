@@ -174,9 +174,16 @@ function Greeting({ name }: { name: string }) {
   return (
     <div className="space-y-1">
       <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-        Welkom terug, {name}! <span aria-hidden>👋</span>
+        <span className="text-primary" aria-hidden>
+          ❯
+        </span>
+        welkom terug, {name}
+        <span
+          aria-hidden
+          className="cursor-blink inline-block h-[0.9em] w-[0.5ch] bg-primary"
+        />
       </h2>
-      <p className="text-sm text-muted-foreground first-letter:uppercase">
+      <p className="font-mono text-xs tracking-wide text-muted-foreground first-letter:uppercase">
         {formatDate(currentDayKey(), "EEEE d MMMM")}
       </p>
     </div>
@@ -212,7 +219,7 @@ function SaldoCard({
         </div>
         {locked ? (
           <>
-            <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">
+            <p className="mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums">
               •••
             </p>
             <p className="text-xs text-muted-foreground">vergrendeld</p>
@@ -221,7 +228,7 @@ function SaldoCard({
           <>
             <p
               className={cn(
-                "mt-2 text-2xl font-semibold tracking-tight tabular-nums",
+                "mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums",
                 saldo >= 0
                   ? "text-emerald-600 dark:text-emerald-400"
                   : "text-rose-600 dark:text-rose-400",
@@ -229,7 +236,7 @@ function SaldoCard({
             >
               {formatEuro(saldo)}
             </p>
-            <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="mt-3 flex items-center gap-4 font-mono text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <TrendingUp className="size-3.5 text-emerald-500" />
                 {formatEuro(inkomsten)}
@@ -274,7 +281,7 @@ function StatTile({
         >
           <Icon className="size-5" />
         </div>
-        <p className="text-2xl font-semibold tracking-tight tabular-nums">
+        <p className="font-mono text-2xl font-semibold tracking-tight tabular-nums">
           {value}
         </p>
         <p className="truncate text-xs text-muted-foreground">{label}</p>

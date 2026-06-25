@@ -45,8 +45,15 @@ export function TodayTimeline({
         {leeg ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 py-8 text-center">
             <CalendarClock className="size-9 text-muted-foreground/30" />
-            <p className="text-sm text-muted-foreground">
-              Niets op de planning vandaag — geniet ervan! 🎉
+            <p className="flex items-center gap-1.5 font-mono text-sm text-muted-foreground">
+              <span className="text-primary" aria-hidden>
+                ❯
+              </span>
+              niets op de planning
+              <span
+                aria-hidden
+                className="cursor-blink inline-block h-[1.05em] w-[0.5ch] bg-primary"
+              />
             </p>
           </div>
         ) : (
