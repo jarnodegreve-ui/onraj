@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
+import { InstallHint } from "@/components/install-hint";
 import { MobileNav } from "@/components/mobile-nav";
 import { QuickAddFab } from "@/components/quick-add";
 import { PreviewBanner } from "@/components/preview-banner";
@@ -57,12 +58,13 @@ export default async function AppLayout({
         <SidebarInset>
           <AppTopbar />
           {!supabaseConfigured && <PreviewBanner />}
-          <main className="flex-1 p-4 pb-24 md:p-6">
+          <main className="flex-1 p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
             <div className="mx-auto w-full max-w-7xl">{children}</div>
           </main>
         </SidebarInset>
         <MobileNav />
         {supabaseConfigured && <QuickAddFab />}
+        <InstallHint />
       </SidebarProvider>
     </TooltipProvider>
   );

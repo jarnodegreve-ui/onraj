@@ -15,22 +15,27 @@ export function AppTopbar() {
   const current = activeNavItem(pathname);
   const title =
     current?.title ??
-    (pathname.startsWith("/instellingen") ? "Instellingen" : "ONRAJ");
+    (pathname.startsWith("/instellingen") ? "Instellingen" : "onraj");
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur-sm">
-      <SidebarTrigger className="-ml-1" />
-      <h1 className="ml-1 text-sm font-semibold">{title}</h1>
-      <div className="ml-auto flex items-center gap-2">
-        <QuickAdd />
-        <CommandPalette />
-        <Link
-          href="/instellingen"
-          aria-label="Instellingen"
-          className={buttonVariants({ variant: "ghost", size: "icon" })}
-        >
-          <Settings className="size-4" />
-        </Link>
+    <header
+      className="sticky top-0 z-10 shrink-0 border-b bg-background/80 backdrop-blur-sm"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      <div className="flex h-14 items-center gap-2 px-4">
+        <SidebarTrigger className="-ml-1" />
+        <h1 className="ml-1 text-sm font-semibold">{title}</h1>
+        <div className="ml-auto flex items-center gap-2">
+          <QuickAdd />
+          <CommandPalette />
+          <Link
+            href="/instellingen"
+            aria-label="Instellingen"
+            className={buttonVariants({ variant: "ghost", size: "icon" })}
+          >
+            <Settings className="size-4" />
+          </Link>
+        </div>
       </div>
     </header>
   );
