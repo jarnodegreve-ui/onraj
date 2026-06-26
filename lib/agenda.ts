@@ -15,9 +15,9 @@ export const EVENT_COLORS = [
   { name: "Denim", value: "#3d68be" },
   { name: "Teal", value: "#4f9e8f" },
   { name: "Amber", value: "#c98a3d" },
-  { name: "Groen", value: "#16a34a" },
-  { name: "Rood", value: "#e11d48" },
-  { name: "Grijs", value: "#475569" },
+  { name: "Groen", value: "#5b8c5a" },
+  { name: "Rood", value: "#c0566b" },
+  { name: "Grijs", value: "#6b7280" },
 ] as const;
 
 export const DEFAULT_EVENT_COLOR = EVENT_COLORS[0].value;

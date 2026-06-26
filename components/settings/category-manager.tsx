@@ -49,18 +49,18 @@ import {
 import type { Category, CategoryScope } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-// Vaste kleurkeuzes (huisstijlpalet).
+// Vaste kleurkeuzes — warm huisstijlpalet rond denim.
 const PALETTE = [
-  "#3d68be",
-  "#22d3ee",
-  "#06b6d4",
-  "#14b8a6",
-  "#22c55e",
-  "#eab308",
-  "#f59e0b",
-  "#ef4444",
-  "#ec4899",
-  "#64748b",
+  "#3d68be", // denim
+  "#be5b3c", // terracotta
+  "#c98a3d", // warme amber
+  "#5b8c5a", // salie-groen
+  "#4f9e8f", // teal
+  "#c0566b", // rozerood
+  "#7a6cae", // violet
+  "#b5618a", // mauve
+  "#6b7280", // leigrijs
+  "#2c3346", // inkt-slate
 ];
 
 export function CategoryManager({

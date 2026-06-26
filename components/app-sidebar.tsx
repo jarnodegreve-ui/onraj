@@ -42,7 +42,7 @@ export function AppSidebar({
           aria-label="Naar dashboard"
           className="flex items-center rounded-md px-2 py-2 transition-colors hover:bg-sidebar-accent/50 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
         >
-          {/* Ingeklapt: compact icoon. Uitgeklapt: de wordmark `❯ onraj▌`. */}
+          {/* Ingeklapt: compact icoon. Uitgeklapt: de wordmark `ONRAJ●`. */}
           <BrandMark className="hidden size-8 shrink-0 group-data-[collapsible=icon]:block" />
           <BrandLockup className="text-[21px] text-sidebar-foreground group-data-[collapsible=icon]:hidden" />
         </Link>

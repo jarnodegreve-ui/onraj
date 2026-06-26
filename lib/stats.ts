@@ -53,9 +53,9 @@ export interface TaskStats {
 }
 
 const PRIORITY_META: { key: TaskPriority; label: string; color: string }[] = [
-  { key: "hoog", label: "Hoog", color: "#e11d48" },
-  { key: "middel", label: "Middel", color: "#f59e0b" },
-  { key: "laag", label: "Laag", color: "#14b8a6" },
+  { key: "hoog", label: "Hoog", color: "#c0566b" },
+  { key: "middel", label: "Middel", color: "#c98a3d" },
+  { key: "laag", label: "Laag", color: "#6b7280" },
 ];
 
 export function taskStats(tasks: Task[], todayKey: string): TaskStats {

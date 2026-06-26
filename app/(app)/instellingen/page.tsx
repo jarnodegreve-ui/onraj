@@ -51,7 +51,7 @@ export default async function InstellingenPage() {
         <CategoryManager
           scope="task"
           title="Taken-categorieën"
-          accent="#14b8a6"
+          accent="#4f9e8f"
           categories={taskCategories}
         />
         <CategoryManager

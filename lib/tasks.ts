@@ -9,9 +9,9 @@ export interface PriorityMeta {
 
 // Hoog eerst (order 0) bij sorteren op prioriteit.
 export const TASK_PRIORITIES: PriorityMeta[] = [
-  { value: "hoog", label: "Hoog", color: "#e11d48", order: 0 },
-  { value: "middel", label: "Middel", color: "#d97706", order: 1 },
-  { value: "laag", label: "Laag", color: "#475569", order: 2 },
+  { value: "hoog", label: "Hoog", color: "#c0566b", order: 0 },
+  { value: "middel", label: "Middel", color: "#c98a3d", order: 1 },
+  { value: "laag", label: "Laag", color: "#6b7280", order: 2 },
 ];
 
 export function priorityMeta(priority: TaskPriority): PriorityMeta {

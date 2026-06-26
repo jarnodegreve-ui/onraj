@@ -10,7 +10,7 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 // Huisstijl 2026: Hanken Grotesk (body), Schibsted Grotesk (wordmark/koppen),
-// Instrument Serif (warme begroeting-hero), JetBrains Mono (meta/labels).
+// JetBrains Mono (cijfers/labels).
 const sans = Hanken_Grotesk({
   variable: "--font-sans",
   subsets: ["latin"],

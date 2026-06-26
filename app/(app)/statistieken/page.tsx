@@ -99,7 +99,7 @@ export default async function StatistiekenPage() {
     .map((slice) => ({
       label: slice.category,
       value: slice.amount,
-      color: "#e11d48",
+      color: "#c0566b",
     }));
   const networthData = netWorthByMonth(accountBalances);
 
@@ -139,14 +139,14 @@ export default async function StatistiekenPage() {
       </div>
 
       {/* Taken */}
-      <SectionCard title="Taken" icon={ListTodo} accent="#14b8a6">
+      <SectionCard title="Taken" icon={ListTodo} accent="#4f9e8f">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <MiniStat label="Openstaand" value={tStats.open} />
           <MiniStat label="Voltooid" value={`${tStats.done}/${tStats.total}`} />
           <MiniStat
             label="Achterstallig"
             value={tStats.overdue}
-            accent={tStats.overdue > 0 ? "#e11d48" : undefined}
+            accent={tStats.overdue > 0 ? "#c0566b" : undefined}
           />
           <MiniStat label="Vandaag te doen" value={tStats.dueToday} />
         </div>
@@ -223,7 +223,7 @@ export default async function StatistiekenPage() {
       </SectionCard>
 
       {/* Agenda */}
-      <SectionCard title="Agenda" icon={CalendarDays} accent="#a855f7">
+      <SectionCard title="Agenda" icon={CalendarDays} accent="#7a6cae">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <MiniStat label="Vandaag" value={eStats.today} />
           <MiniStat label="Komende 7 dagen" value={eStats.next7} />
@@ -236,7 +236,7 @@ export default async function StatistiekenPage() {
       <SectionCard
         title="Financiën"
         icon={Wallet}
-        accent="#22c55e"
+        accent="#5b8c5a"
         action={
           financeLocked ? (
             <Badge variant="outline" className="gap-1">
@@ -268,17 +268,17 @@ export default async function StatistiekenPage() {
               <MiniStat
                 label="Inkomsten (maand)"
                 value={formatEuro(finance.inkomsten)}
-                accent="#22c55e"
+                accent="#5b8c5a"
               />
               <MiniStat
                 label="Uitgaven (maand)"
                 value={formatEuro(finance.uitgaven)}
-                accent="#e11d48"
+                accent="#c0566b"
               />
               <MiniStat
                 label="Saldo (maand)"
                 value={formatEuro(finance.saldo)}
-                accent={finance.saldo >= 0 ? "#22c55e" : "#e11d48"}
+                accent={finance.saldo >= 0 ? "#5b8c5a" : "#c0566b"}
               />
             </div>
 

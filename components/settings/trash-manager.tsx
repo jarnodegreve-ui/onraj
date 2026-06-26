@@ -25,10 +25,10 @@ const TYPE_LABEL: Record<TrashType, string> = {
 };
 
 const TYPE_COLOR: Record<TrashType, string> = {
-  taak: "#f59e0b",
+  taak: "#c98a3d",
   notitie: "#3d68be",
-  transactie: "#22c55e",
-  afspraak: "#22d3ee",
+  transactie: "#5b8c5a",
+  afspraak: "#be5b3c",
 };
 
 export function TrashManager({ items }: { items: TrashItem[] }) {

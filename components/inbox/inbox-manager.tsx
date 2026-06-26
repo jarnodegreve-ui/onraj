@@ -95,7 +95,7 @@ export function InboxManager({
         const key = `${item.kind}-${item.id}`;
         const Icon = item.kind === "taak" ? ListTodo : FileText;
         const disabled = pending && busy === key;
-        const accent = item.kind === "taak" ? "#f59e0b" : "#3d68be";
+        const accent = item.kind === "taak" ? "#c98a3d" : "#3d68be";
 
         return (
           <li key={key}>

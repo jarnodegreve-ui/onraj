@@ -170,7 +170,7 @@ export default async function DashboardPage() {
             icon={ListTodo}
             label="Open taken"
             value={openTasks.length}
-            accent="#f59e0b"
+            accent="#c98a3d"
             className="order-1 lg:order-2"
           />
           <StatTile
@@ -245,7 +245,7 @@ function SaldoCard({
     <Link href="/financien" className={cn("group block", className)}>
       <div
         data-slot="card"
-        className="h-full rounded-xl border bg-card p-5 transition-colors group-hover:border-primary/30"
+        className="h-full rounded-2xl border bg-card p-5 transition-colors group-hover:border-primary/30"
       >
         <div className="flex items-center justify-between">
           <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -309,7 +309,7 @@ function StatTile({
     <Link href={href} className={cn("group block", className)}>
       <div
         data-slot="card"
-        className="flex h-full flex-col gap-2 rounded-xl border bg-card p-4 transition-colors group-hover:border-primary/30"
+        className="flex h-full flex-col gap-2 rounded-2xl border bg-card p-4 transition-colors group-hover:border-primary/30"
       >
         <div
           className="flex size-9 items-center justify-center rounded-lg"

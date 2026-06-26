@@ -4,7 +4,7 @@
 // groot verschil (bv. één spaarrekening die de rest plat drukt) werden kleine
 // rekeningen onzichtbaar. Hier krijgt elke rekening met saldo een leesbare balk
 // (minimumbreedte) en de grootste balk is afgetopt zodat het bedrag ernaast past.
-const COLORS = ["#3d68be", "#8a8f98", "#22d3ee", "#22c55e", "#f59e0b", "#f43f5e"];
+const COLORS = ["#3d68be", "#c98a3d", "#4f9e8f", "#c0566b", "#7a6cae", "#be5b3c"];
 
 const MAX_BAR = 80; // % — grootste balk; laat ruimte voor het bedrag.
 const MIN_BAR = 4; // % — kleinste zichtbare balk voor een saldo > 0.
@@ -32,7 +32,7 @@ export function AccountsChart({ data }: { data: Datum[] }) {
         const width =
           entry.amount !== 0 ? Math.max(ratio * MAX_BAR, MIN_BAR) : 0;
         const color =
-          entry.amount < 0 ? "#f43f5e" : COLORS[index % COLORS.length];
+          entry.amount < 0 ? "#c0566b" : COLORS[index % COLORS.length];
         return (
           <div key={entry.account} className="flex items-center gap-3">
             <span className="w-24 shrink-0 truncate text-right text-xs text-muted-foreground">

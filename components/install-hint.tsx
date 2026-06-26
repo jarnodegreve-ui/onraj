@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Share, X } from "lucide-react";
 
+import { BrandMark } from "@/components/brand-mark";
+
 const KEY = "onraj-install-hint-dismissed";
 
 /**
@@ -29,9 +31,7 @@ export function InstallHint() {
 
   return (
     <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-40 flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-xl md:hidden">
-      <span className="font-heading text-lg leading-none text-primary" aria-hidden>
-        ❯
-      </span>
+      <BrandMark className="size-7 shrink-0" />
       <p className="flex-1 text-xs leading-snug">
         Zet <span className="font-medium">onraj</span> op je beginscherm: tik op
         deel{" "}

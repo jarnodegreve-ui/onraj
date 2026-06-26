@@ -39,14 +39,14 @@ export const navItems: NavItem[] = [
     title: "Agenda",
     href: "/agenda",
     icon: CalendarDays,
-    accent: "#a855f7",
+    accent: "#3d68be",
     bottomBar: false,
   },
   {
     title: "Statistieken",
     href: "/statistieken",
     icon: ChartColumn,
-    accent: "#06b6d4",
+    accent: "#3d68be",
     bottomBar: false,
   },
 ];
