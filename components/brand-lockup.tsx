@@ -1,26 +1,24 @@
-import { TerminalCursor } from "@/components/terminal-cursor";
 import { cn } from "@/lib/utils";
 
 /**
- * ONRAJ-wordmark (terminal-stijl): `❯ onraj▌` — prompt-chevron (lime) +
- * wordmark in Archivo + knipperende lime cursor. Alles in `em`, dus het hele
- * logo schaalt mee met de font-size van de meegegeven className. De wordmark
- * erft de tekstkleur (text-current), zodat hij past op elke (donkere) drager.
+ * ONRAJ-wordmark: `ONRAJ●` — Schibsted Grotesk (extrabold, uppercase) met een
+ * kleine denim-dot als accent. Schaalt mee met de font-size van className en
+ * erft de tekstkleur (text-current), zodat hij op elke drager past.
  */
 export function BrandLockup({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-[0.26em] font-heading leading-none font-bold tracking-[-0.015em]",
+        "inline-flex items-end font-heading leading-none font-extrabold tracking-[-0.02em]",
         className,
       )}
-      aria-label="onraj"
+      aria-label="ONRAJ"
     >
-      <span className="text-primary" aria-hidden>
-        ❯
-      </span>
-      <span aria-hidden>onraj</span>
-      <TerminalCursor className="ml-[0.04em] h-[0.82em] w-[0.16em]" />
+      <span aria-hidden>ONRAJ</span>
+      <span
+        aria-hidden
+        className="mb-[0.1em] ml-[0.14em] inline-block size-[0.19em] rounded-full bg-primary"
+      />
     </span>
   );
 }

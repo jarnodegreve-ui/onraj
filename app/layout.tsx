@@ -1,26 +1,39 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import {
+  Hanken_Grotesk,
+  Instrument_Serif,
+  JetBrains_Mono,
+  Schibsted_Grotesk,
+} from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-// Terminal-huisstijl: Hanken Grotesk (body), Archivo (wordmark/koppen),
-// IBM Plex Mono (meta/labels).
+// Huisstijl 2026: Hanken Grotesk (body), Schibsted Grotesk (wordmark/koppen),
+// Instrument Serif (warme begroeting-hero), JetBrains Mono (meta/labels).
 const sans = Hanken_Grotesk({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
 });
 
-const heading = Archivo({
+const heading = Schibsted_Grotesk({
   variable: "--font-heading",
   weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
   display: "swap",
 });
 
-const mono = IBM_Plex_Mono({
+const serif = Instrument_Serif({
+  variable: "--font-serif",
+  weight: ["400"],
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
   variable: "--font-mono",
   weight: ["400", "500", "600"],
   subsets: ["latin"],
@@ -80,7 +93,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#08090a",
+  themeColor: "#141416",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -95,7 +108,7 @@ export default function RootLayout({
     <html
       lang="nl"
       suppressHydrationWarning
-      className={`${sans.variable} ${heading.variable} ${mono.variable} h-full antialiased`}
+      className={`${sans.variable} ${heading.variable} ${serif.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         <ThemeProvider

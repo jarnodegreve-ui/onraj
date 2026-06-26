@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { CalendarClock, MapPin } from "lucide-react";
 
-import { TerminalCursor } from "@/components/terminal-cursor";
 import {
   Card,
   CardContent,
@@ -46,12 +45,8 @@ export function TodayTimeline({
         {leeg ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 py-8 text-center">
             <CalendarClock className="size-9 text-muted-foreground/30" />
-            <p className="flex items-center gap-1.5 font-mono text-sm text-muted-foreground">
-              <span className="text-primary" aria-hidden>
-                ❯
-              </span>
-              niets op de planning
-              <TerminalCursor className="h-[1.05em] w-[0.5ch]" />
+            <p className="text-sm text-muted-foreground">
+              Niets op de planning vandaag.
             </p>
           </div>
         ) : (
@@ -62,7 +57,7 @@ export function TodayTimeline({
                   <li key={event.id} className="relative">
                     <span
                       className="absolute top-1 -left-[1.32rem] size-2.5 rounded-full ring-2 ring-card"
-                      style={{ backgroundColor: event.color ?? "#c2f04d" }}
+                      style={{ backgroundColor: event.color ?? "#3d68be" }}
                     />
                     <div className="flex items-baseline gap-2">
                       <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">

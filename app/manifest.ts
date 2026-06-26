@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Persoonlijk portaal: taken, notities, financiën en agenda.",
     start_url: "/dashboard",
     display: "standalone",
-    background_color: "#08090a",
-    theme_color: "#08090a",
+    background_color: "#141416",
+    theme_color: "#141416",
     orientation: "portrait",
     share_target: {
       action: "/api/share",

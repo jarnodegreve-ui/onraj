@@ -26,7 +26,7 @@ const TYPE_LABEL: Record<TrashType, string> = {
 
 const TYPE_COLOR: Record<TrashType, string> = {
   taak: "#f59e0b",
-  notitie: "#c2f04d",
+  notitie: "#3d68be",
   transactie: "#22c55e",
   afspraak: "#22d3ee",
 };

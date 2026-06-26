@@ -44,7 +44,7 @@ export function AppSidebar({
         >
           {/* Ingeklapt: compact icoon. Uitgeklapt: de wordmark `❯ onraj▌`. */}
           <BrandMark className="hidden size-8 shrink-0 group-data-[collapsible=icon]:block" />
-          <BrandLockup className="text-[22px] text-[#f4f4f2] group-data-[collapsible=icon]:hidden" />
+          <BrandLockup className="text-[21px] text-sidebar-foreground group-data-[collapsible=icon]:hidden" />
         </Link>
       </SidebarHeader>
 

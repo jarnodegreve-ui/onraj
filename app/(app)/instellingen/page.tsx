@@ -57,7 +57,7 @@ export default async function InstellingenPage() {
         <CategoryManager
           scope="note"
           title="Notitie-categorieën"
-          accent="#c2f04d"
+          accent="#3d68be"
           categories={noteCategories}
         />
       </div>

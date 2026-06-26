@@ -30,7 +30,7 @@ function ChartTooltip({
 /** Compacte maand-staafdiagram voor tellingen (notities/afspraken per maand). */
 export function MonthlyBars({
   data,
-  color = "#c2f04d",
+  color = "#3d68be",
   noun = ["item", "items"],
 }: {
   data: MonthCount[];

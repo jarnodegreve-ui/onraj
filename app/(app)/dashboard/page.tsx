@@ -17,7 +17,6 @@ import { DashboardTasks } from "@/components/dashboard/tasks-list";
 import { TodayTimeline } from "@/components/dashboard/today-timeline";
 import { DashboardUpcoming } from "@/components/dashboard/upcoming-list";
 import { PushToggle } from "@/components/push/push-toggle";
-import { TerminalCursor } from "@/components/terminal-cursor";
 import {
   Card,
   CardContent,
@@ -135,7 +134,7 @@ export default async function DashboardPage() {
             icon={NotebookPen}
             label="Notities"
             value={notes.length}
-            accent="#c2f04d"
+            accent="#3d68be"
             className="order-1 lg:order-2"
           />
         </div>
@@ -173,17 +172,13 @@ export default async function DashboardPage() {
 
 function Greeting({ name }: { name: string }) {
   return (
-    <div className="space-y-1">
-      <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-        <span className="text-primary" aria-hidden>
-          ❯
-        </span>
-        welkom terug, {name}
-        <TerminalCursor className="h-[0.9em] w-[0.5ch]" />
-      </h2>
+    <div className="space-y-1.5">
       <p className="font-mono text-xs tracking-wide text-muted-foreground first-letter:uppercase">
         {formatDate(currentDayKey(), "EEEE d MMMM")}
       </p>
+      <h2 className="font-serif text-4xl leading-[1.05] tracking-tight text-balance">
+        Fijn dat je er bent, {name}.
+      </h2>
     </div>
   );
 }
