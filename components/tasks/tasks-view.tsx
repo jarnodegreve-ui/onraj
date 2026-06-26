@@ -102,7 +102,7 @@ export function TasksView({
   recurringTasks?: RecurringTask[];
 }) {
   const [filter, setFilter] = useState<Filter>("open");
-  const [sort, setSort] = useState<Sort>("prioriteit");
+  const [sort, setSort] = useState<Sort>("deadline");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [localOrder, setLocalOrder] = useState<string[]>([]);
   const [cardOrder, setCardOrder] = useState<string[] | null>(null);
@@ -190,7 +190,12 @@ export function TasksView({
         return dueCompare(a, b);
       }
       if (sort === "deadline") {
-        return dueCompare(a, b);
+        const d = dueCompare(a, b);
+        if (d !== 0) return d;
+        const diff =
+          priorityMeta(a.priority).order - priorityMeta(b.priority).order;
+        if (diff !== 0) return diff;
+        return a.title.localeCompare(b.title, "nl");
       }
       // handmatig: optimistische volgorde, anders de bewaarde position.
       const ai = idx.get(a.id) ?? 1e6 + a.position;
