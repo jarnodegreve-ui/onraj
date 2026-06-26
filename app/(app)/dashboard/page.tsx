@@ -15,7 +15,6 @@ import { NetWorthChart } from "@/components/dashboard/networth-chart";
 import { NextUp } from "@/components/dashboard/next-up";
 import { TaskTabs } from "@/components/dashboard/task-tabs";
 import { RecentNotes } from "@/components/dashboard/recent-notes";
-import { DashboardTasks } from "@/components/dashboard/tasks-list";
 import { TodayTimeline } from "@/components/dashboard/today-timeline";
 import { DashboardUpcoming } from "@/components/dashboard/upcoming-list";
 import { PushToggle } from "@/components/push/push-toggle";
@@ -46,7 +45,9 @@ import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 // Groepeer openstaande taken per categorie (meeste eerst, "Overig" achteraan),
-// elk gesorteerd op deadline → titel. Voor de veegbare tab-kaart.
+// elk gesorteerd op deadline → prioriteit → titel. Voor de veegbare tab-kaart.
+const PRIO_RANK: Record<Task["priority"], number> = { hoog: 0, middel: 1, laag: 2 };
+
 function buildTaskGroups(tasks: Task[]): { name: string; tasks: Task[] }[] {
   const map = new Map<string, Task[]>();
   for (const task of tasks) {
@@ -57,9 +58,15 @@ function buildTaskGroups(tasks: Task[]): { name: string; tasks: Task[] }[] {
   }
   for (const list of map.values()) {
     list.sort((a, b) => {
-      if (a.dueOn && b.dueOn) return a.dueOn.localeCompare(b.dueOn);
-      if (a.dueOn) return -1;
-      if (b.dueOn) return 1;
+      // 1. deadline — vroegste eerst, taken zonder deadline achteraan
+      if (a.dueOn && b.dueOn && a.dueOn !== b.dueOn)
+        return a.dueOn.localeCompare(b.dueOn);
+      if (a.dueOn && !b.dueOn) return -1;
+      if (!a.dueOn && b.dueOn) return 1;
+      // 2. prioriteit — hoog eerst
+      const prio = PRIO_RANK[a.priority] - PRIO_RANK[b.priority];
+      if (prio !== 0) return prio;
+      // 3. titel
       return a.title.localeCompare(b.title, "nl");
     });
   }
@@ -198,8 +205,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <DashboardTasks tasks={openTasks.slice(0, 5)} todayKey={todayKey} />
+      <div className="grid gap-4 md:grid-cols-2">
         <RecentNotes notes={notes.slice(0, 4)} />
         <DashboardUpcoming events={upcoming} />
       </div>
