@@ -176,7 +176,7 @@ function Greeting({ name }: { name: string }) {
       <p className="font-mono text-xs tracking-wide text-muted-foreground first-letter:uppercase">
         {formatDate(currentDayKey(), "EEEE d MMMM")}
       </p>
-      <h2 className="font-serif text-4xl leading-[1.05] tracking-tight text-balance">
+      <h2 className="text-3xl leading-[1.1] font-bold tracking-[-0.02em] text-balance">
         Fijn dat je er bent, {name}.
       </h2>
     </div>

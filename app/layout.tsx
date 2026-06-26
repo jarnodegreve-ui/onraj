@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import {
   Hanken_Grotesk,
-  Instrument_Serif,
   JetBrains_Mono,
   Schibsted_Grotesk,
 } from "next/font/google";
@@ -21,14 +20,6 @@ const sans = Hanken_Grotesk({
 const heading = Schibsted_Grotesk({
   variable: "--font-heading",
   weight: ["400", "500", "600", "700", "800"],
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const serif = Instrument_Serif({
-  variable: "--font-serif",
-  weight: ["400"],
-  style: ["normal", "italic"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -108,7 +99,7 @@ export default function RootLayout({
     <html
       lang="nl"
       suppressHydrationWarning
-      className={`${sans.variable} ${heading.variable} ${serif.variable} ${mono.variable} h-full antialiased`}
+      className={`${sans.variable} ${heading.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         <ThemeProvider
