@@ -12,6 +12,7 @@ import {
 
 import { AccountsChart } from "@/components/dashboard/accounts-chart";
 import { NetWorthChart } from "@/components/dashboard/networth-chart";
+import { NextUp } from "@/components/dashboard/next-up";
 import { RecentNotes } from "@/components/dashboard/recent-notes";
 import { DashboardTasks } from "@/components/dashboard/tasks-list";
 import { TodayTimeline } from "@/components/dashboard/today-timeline";
@@ -100,6 +101,9 @@ export default async function DashboardPage() {
         <Greeting name={name} />
         <PushToggle />
       </div>
+
+      {/* "HIERNA" — de eerstvolgende afspraak als hero (denim). */}
+      <NextUp event={upcoming[0] ?? null} />
 
       {/* Bento — bovenste band: 'Vandaag' als blikvanger + een rail met saldo en tegels.
           Geen items-start: 'Vandaag' vult de rijhoogte zodat een lege dag geen gat laat. */}

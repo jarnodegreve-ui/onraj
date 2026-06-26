@@ -19,17 +19,22 @@ export type NavItem = {
 
 /** De modules van het portaal — gedeeld door de sidebar, topbar en dashboard. */
 export const navItems: NavItem[] = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, accent: "#002fa7" },
+  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, accent: "#3d68be" },
+  { title: "Taken", href: "/taken", icon: ListTodo, accent: "#3d68be" },
   {
     title: "Inbox",
     href: "/inbox",
     icon: Inbox,
-    accent: "#f43f5e",
+    accent: "#3d68be",
+  },
+  {
+    title: "Notities",
+    href: "/notities",
+    icon: NotebookPen,
+    accent: "#3d68be",
     bottomBar: false,
   },
-  { title: "Taken", href: "/taken", icon: ListTodo, accent: "#14b8a6" },
-  { title: "Notities", href: "/notities", icon: NotebookPen, accent: "#002fa7" },
-  { title: "Financiën", href: "/financien", icon: Wallet, accent: "#14b8a6" },
+  { title: "Financiën", href: "/financien", icon: Wallet, accent: "#3d68be" },
   {
     title: "Agenda",
     href: "/agenda",

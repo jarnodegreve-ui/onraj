@@ -4,7 +4,6 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
 import { InstallHint } from "@/components/install-hint";
 import { MobileNav } from "@/components/mobile-nav";
-import { QuickAddFab } from "@/components/quick-add";
 import { PreviewBanner } from "@/components/preview-banner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -63,7 +62,6 @@ export default async function AppLayout({
           </main>
         </SidebarInset>
         <MobileNav />
-        {supabaseConfigured && <QuickAddFab />}
         <InstallHint />
       </SidebarProvider>
     </TooltipProvider>
