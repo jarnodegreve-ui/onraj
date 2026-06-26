@@ -13,6 +13,7 @@ import {
 import { AccountsChart } from "@/components/dashboard/accounts-chart";
 import { NetWorthChart } from "@/components/dashboard/networth-chart";
 import { NextUp } from "@/components/dashboard/next-up";
+import { TaskTabs } from "@/components/dashboard/task-tabs";
 import { RecentNotes } from "@/components/dashboard/recent-notes";
 import { DashboardTasks } from "@/components/dashboard/tasks-list";
 import { TodayTimeline } from "@/components/dashboard/today-timeline";
@@ -41,7 +42,35 @@ import { displayName, formatDate, formatEuro } from "@/lib/format";
 import { navItems } from "@/lib/nav";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+// Groepeer openstaande taken per categorie (meeste eerst, "Overig" achteraan),
+// elk gesorteerd op deadline → titel. Voor de veegbare tab-kaart.
+function buildTaskGroups(tasks: Task[]): { name: string; tasks: Task[] }[] {
+  const map = new Map<string, Task[]>();
+  for (const task of tasks) {
+    const key = task.category || "Overig";
+    const list = map.get(key);
+    if (list) list.push(task);
+    else map.set(key, [task]);
+  }
+  for (const list of map.values()) {
+    list.sort((a, b) => {
+      if (a.dueOn && b.dueOn) return a.dueOn.localeCompare(b.dueOn);
+      if (a.dueOn) return -1;
+      if (b.dueOn) return 1;
+      return a.title.localeCompare(b.title, "nl");
+    });
+  }
+  return [...map.entries()]
+    .map(([name, tasks]) => ({ name, tasks }))
+    .sort((a, b) => {
+      if (a.name === "Overig") return 1;
+      if (b.name === "Overig") return -1;
+      return b.tasks.length - a.tasks.length;
+    });
+}
 
 const MODULE_BESCHRIJVING: Record<string, string> = {
   "/inbox": "Snelle captures om te triëren.",
@@ -78,6 +107,7 @@ export default async function DashboardPage() {
   const summary = summariseMonth(transactions, currentMonthKey());
   const upcoming = upcomingEvents(events, new Date(), 5);
   const openTasks = tasks.filter((task) => !task.done);
+  const taskGroups = buildTaskGroups(openTasks);
   const eventsToday = events
     .filter((event) => eventDayKey(event) === todayKey)
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
@@ -104,6 +134,9 @@ export default async function DashboardPage() {
 
       {/* "HIERNA" — de eerstvolgende afspraak als hero (denim). */}
       <NextUp event={upcoming[0] ?? null} />
+
+      {/* Veegbare taken per categorie. */}
+      {taskGroups.length > 0 && <TaskTabs groups={taskGroups} />}
 
       {/* Bento — bovenste band: 'Vandaag' als blikvanger + een rail met saldo en tegels.
           Geen items-start: 'Vandaag' vult de rijhoogte zodat een lege dag geen gat laat. */}
