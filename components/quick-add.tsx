@@ -19,7 +19,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createNote } from "@/lib/actions/notes";
 import { createTask } from "@/lib/actions/tasks";
-import { haptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
 type Mode = "note" | "task";
@@ -148,7 +147,6 @@ function QuickForm({
             });
 
       if (result.ok) {
-        haptic("light");
         toast.success(mode === "note" ? "Notitie toegevoegd" : "Taak toegevoegd");
         onClose();
         router.refresh();

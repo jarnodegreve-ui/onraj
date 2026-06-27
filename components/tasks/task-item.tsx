@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { deleteTask, restoreTask, setTaskDone } from "@/lib/actions/tasks";
 import { formatDate } from "@/lib/format";
-import { haptic } from "@/lib/haptics";
 import { priorityMeta } from "@/lib/tasks";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -83,7 +82,6 @@ export function TaskItem({
     if (pending || leaving) return;
     const next = !task.done;
     setOptimisticDone(next);
-    haptic(next ? "success" : "light");
     const commit = () =>
       startTransition(async () => {
         const result = await setTaskDone(task.id, next);

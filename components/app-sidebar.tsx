@@ -22,6 +22,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { navItems } from "@/lib/nav";
+import { cn } from "@/lib/utils";
 
 export function AppSidebar({
   email,
@@ -31,7 +32,11 @@ export function AppSidebar({
   inboxCount?: number;
 }) {
   const pathname = usePathname();
-  const { setOpenMobile } = useSidebar();
+  const { setOpenMobile, state, isMobile } = useSidebar();
+  // Alleen op desktop kan de balk inklappen tot iconen; in de mobiele Sheet is
+  // hij altijd volledig. Expliciet beslissen i.p.v. via group-data-CSS, want die
+  // valt in de mobiele Sheet verkeerd uit (mark én wordmark over elkaar).
+  const collapsed = !isMobile && state === "collapsed";
 
   return (
     <Sidebar collapsible="icon">
@@ -40,11 +45,17 @@ export function AppSidebar({
           href="/dashboard"
           onClick={() => setOpenMobile(false)}
           aria-label="Naar dashboard"
-          className="flex items-center rounded-md px-2 py-2 transition-colors hover:bg-sidebar-accent/50 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+          className={cn(
+            "flex items-center rounded-md px-2 py-2 transition-colors hover:bg-sidebar-accent/50",
+            collapsed && "justify-center px-0",
+          )}
         >
-          {/* Ingeklapt: compact icoon. Uitgeklapt: de wordmark `ONRAJ●`. */}
-          <BrandMark className="hidden size-8 shrink-0 group-data-[collapsible=icon]:block" />
-          <BrandLockup className="text-[21px] text-sidebar-foreground group-data-[collapsible=icon]:hidden" />
+          {/* Ingeklapt (desktop): compact icoon. Anders (incl. mobiel): wordmark. */}
+          {collapsed ? (
+            <BrandMark className="size-8 shrink-0" />
+          ) : (
+            <BrandLockup className="text-[21px] text-sidebar-foreground" />
+          )}
         </Link>
       </SidebarHeader>
 

@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
 
 import { QuickAddDialog } from "@/components/quick-add";
-import { haptic } from "@/lib/haptics";
 import { navItems } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
@@ -48,10 +47,7 @@ export function MobileNav() {
           {left.map(renderLink)}
           <button
             type="button"
-            onClick={() => {
-              haptic("light");
-              setAddOpen(true);
-            }}
+            onClick={() => setAddOpen(true)}
             aria-label="Snel toevoegen"
             className="-mt-1 flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 transition-transform active:scale-95"
           >

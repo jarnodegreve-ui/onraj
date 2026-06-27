@@ -3,8 +3,6 @@
 import { useRef } from "react";
 import { Check, Trash2 } from "lucide-react";
 
-import { haptic } from "@/lib/haptics";
-
 const THRESHOLD = 76; // px om een actie te triggeren
 const MAX = 132; // px maximale uitslag
 
@@ -78,14 +76,8 @@ export function SwipeRow({
       paint(0, true);
       return;
     }
-    if (s.dx >= THRESHOLD && onComplete) {
-      // Geen haptiek hier: de onComplete-callback (toggle) levert die al;
-      // anders zou een veeg-afvink dubbel trillen.
-      onComplete();
-    } else if (s.dx <= -THRESHOLD && onDelete) {
-      haptic("warning");
-      onDelete();
-    }
+    if (s.dx >= THRESHOLD && onComplete) onComplete();
+    else if (s.dx <= -THRESHOLD && onDelete) onDelete();
     paint(0, true);
   }
 

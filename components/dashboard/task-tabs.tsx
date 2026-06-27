@@ -6,7 +6,6 @@ import { Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { setTaskDone } from "@/lib/actions/tasks";
-import { haptic } from "@/lib/haptics";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -114,7 +113,6 @@ function TabRow({ task }: { task: Task }) {
 
   function complete() {
     setDone(true);
-    haptic("success");
     startTransition(async () => {
       const result = await setTaskDone(task.id, true);
       if (!result.ok) {
