@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
+import { CountUp } from "@/components/count-up";
 import { EmptyState } from "@/components/empty-state";
 import { BudgetsCard } from "@/components/finance/budgets-card";
 import { FinanceCharts } from "@/components/finance/finance-charts";
@@ -28,7 +29,6 @@ import {
   monthlyTrend,
   summariseMonth,
 } from "@/lib/finance";
-import { formatEuro } from "@/lib/format";
 import type {
   Budget,
   RecurringTransaction,
@@ -134,7 +134,7 @@ export function FinanceView({
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="Saldo"
-          value={formatEuro(summary.saldo)}
+          value={<CountUp value={summary.saldo} format="euro" />}
           icon={Wallet}
           hint={monthLabel(month)}
           valueClassName={
@@ -143,13 +143,13 @@ export function FinanceView({
         />
         <StatCard
           label="Inkomsten"
-          value={formatEuro(summary.inkomsten)}
+          value={<CountUp value={summary.inkomsten} format="euro" />}
           icon={TrendingUp}
           valueClassName="text-emerald-600 dark:text-emerald-400"
         />
         <StatCard
           label="Uitgaven"
-          value={formatEuro(summary.uitgaven)}
+          value={<CountUp value={summary.uitgaven} format="euro" />}
           icon={TrendingDown}
         />
       </div>

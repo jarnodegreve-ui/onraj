@@ -99,6 +99,10 @@ export default function RootLayout({
     <html
       lang="nl"
       suppressHydrationWarning
+      // Harde donkere basis: de allereerste paint bij cold-start (PWA) is meteen
+      // near-black i.p.v. een witte/crème flash vóór next-themes z'n .dark zet.
+      // In licht thema dekt de body deze achtergrond af.
+      style={{ backgroundColor: "#141416" }}
       className={`${sans.variable} ${heading.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full">

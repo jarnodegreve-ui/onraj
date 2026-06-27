@@ -4,7 +4,10 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
 import { InstallHint } from "@/components/install-hint";
 import { MobileNav } from "@/components/mobile-nav";
+import { PageTransition } from "@/components/page-transition";
 import { PreviewBanner } from "@/components/preview-banner";
+import { PullToRefresh } from "@/components/pull-to-refresh";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { countInbox } from "@/lib/data/inbox";
@@ -55,10 +58,14 @@ export default async function AppLayout({
       <SidebarProvider>
         <AppSidebar email={email} inboxCount={inboxCount} />
         <SidebarInset>
+          <ServiceWorkerRegister />
+          <PullToRefresh />
           <AppTopbar />
           {!supabaseConfigured && <PreviewBanner />}
           <main className="flex-1 p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
-            <div className="mx-auto w-full max-w-7xl">{children}</div>
+            <div className="mx-auto w-full max-w-7xl">
+              <PageTransition>{children}</PageTransition>
+            </div>
           </main>
         </SidebarInset>
         <MobileNav />

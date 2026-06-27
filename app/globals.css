@@ -55,6 +55,7 @@
    Instrument Serif, wordmark in Schibsted Grotesk, meta in JetBrains Mono.
    Primaire knoppen = denim-blauw met witte tekst. */
 :root {
+  color-scheme: light; /* native controls/scrollbars volgen het thema */
   --background: #f0e4d6; /* warme zand-crème */
   --foreground: #2c3346; /* slate */
   --card: #fbf7f0;
@@ -95,6 +96,7 @@
 }
 
 .dark {
+  color-scheme: dark; /* native controls/scrollbars in donker */
   --background: #141416; /* warm near-black */
   --foreground: #ece7df; /* crème */
   --card: #1e1e22;

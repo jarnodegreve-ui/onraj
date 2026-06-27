@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { CountUp } from "@/components/count-up";
 import { AccountsChart } from "@/components/dashboard/accounts-chart";
 import { NetWorthChart } from "@/components/dashboard/networth-chart";
 import { NextUp } from "@/components/dashboard/next-up";
@@ -37,7 +38,7 @@ import { listTasks } from "@/lib/data/tasks";
 import { listTransactions } from "@/lib/data/transactions";
 import { currentMonthKey, summariseMonth } from "@/lib/finance";
 import { isFinanceLocked } from "@/lib/finance-lock";
-import { displayName, formatDate, formatEuro } from "@/lib/format";
+import { displayName, formatDate } from "@/lib/format";
 import { navItems } from "@/lib/nav";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -270,16 +271,16 @@ function SaldoCard({
                   : "text-rose-600 dark:text-rose-400",
               )}
             >
-              {formatEuro(saldo)}
+              <CountUp value={saldo} format="euro" />
             </p>
             <div className="mt-3 flex items-center gap-4 font-mono text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <TrendingUp className="size-3.5 text-emerald-500" />
-                {formatEuro(inkomsten)}
+                <CountUp value={inkomsten} format="euro" />
               </span>
               <span className="flex items-center gap-1">
                 <TrendingDown className="size-3.5 text-rose-500" />
-                {formatEuro(uitgaven)}
+                <CountUp value={uitgaven} format="euro" />
               </span>
             </div>
           </>
@@ -318,7 +319,7 @@ function StatTile({
           <Icon className="size-5" />
         </div>
         <p className="font-mono text-2xl font-semibold tracking-tight tabular-nums">
-          {value}
+          <CountUp value={value} format="integer" />
         </p>
         <p className="truncate text-xs text-muted-foreground">{label}</p>
       </div>

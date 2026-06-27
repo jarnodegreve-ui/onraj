@@ -5,6 +5,7 @@ import { Check, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { updateSubtasks } from "@/lib/actions/tasks";
+import { haptic } from "@/lib/haptics";
 import type { Subtask } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,7 @@ export function SubtaskList({
   }
 
   function toggle(id: string) {
+    haptic("light"); // licht tikje: bij snel afvinken niet te opdringerig
     persist(
       items.map((s) => (s.id === id ? { ...s, done: !s.done } : s)),
       items,
@@ -52,6 +54,7 @@ export function SubtaskList({
   }
 
   function remove(id: string) {
+    haptic("warning");
     persist(
       items.filter((s) => s.id !== id),
       items,

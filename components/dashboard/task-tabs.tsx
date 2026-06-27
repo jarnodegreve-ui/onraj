@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { setTaskDone } from "@/lib/actions/tasks";
+import { haptic } from "@/lib/haptics";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -113,11 +114,29 @@ function TabRow({ task }: { task: Task }) {
 
   function complete() {
     setDone(true);
+    haptic("success");
     startTransition(async () => {
       const result = await setTaskDone(task.id, true);
       if (!result.ok) {
         setDone(false);
         toast.error("Mislukt", { description: result.error });
+      } else {
+        // Bevestiging mét undo: tik om de taak weer open te zetten.
+        toast.success("Taak voltooid", {
+          action: {
+            label: "Ongedaan maken",
+            onClick: () => {
+              setDone(false);
+              startTransition(async () => {
+                const undo = await setTaskDone(task.id, false);
+                if (!undo.ok)
+                  toast.error("Terugzetten mislukt", {
+                    description: undo.error,
+                  });
+              });
+            },
+          },
+        });
       }
     });
   }

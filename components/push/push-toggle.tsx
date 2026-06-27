@@ -30,8 +30,11 @@ export function PushToggle() {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
       return;
     }
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
+    // getRegistration() i.p.v. .ready: lost meteen op (undefined als er geen SW
+    // is), terwijl .ready blijft hangen tot er ooit een SW de pagina bestuurt.
+    navigator.serviceWorker
+      .getRegistration()
+      .then((reg) => reg?.pushManager.getSubscription())
       .then((sub) => setEnabled(!!sub))
       .catch(() => {});
   }, []);
@@ -47,6 +50,12 @@ export function PushToggle() {
         description:
           "Op iPhone: voeg ONRAJ eerst toe aan je beginscherm en open het zo.",
       });
+      return;
+    }
+    // De service worker draait alleen in productie (zie ServiceWorkerRegister);
+    // in dev installeren we 'm bewust niet, om stale caches te vermijden.
+    if (process.env.NODE_ENV !== "production") {
+      toast.error("Meldingen werken alleen in de geïnstalleerde app");
       return;
     }
     setBusy(true);
