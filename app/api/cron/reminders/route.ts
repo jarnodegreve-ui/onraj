@@ -50,13 +50,11 @@ export async function GET(request: Request) {
   const now = new Date();
 
   let taskCount = 0;
-  let eventCount = 0;
   let sent = 0;
 
   // 1) Dagelijkse ochtend-digest via web-push.
   if (pushConfigured) {
     const todayKey = todayKeyBrussels(now);
-    const in24h = new Date(now.getTime() + 24 * 3600 * 1000).toISOString();
 
     const { data: tasks } = await admin
       .from("tasks")
@@ -67,26 +65,13 @@ export async function GET(request: Request) {
       .not("due_on", "is", null)
       .lte("due_on", todayKey);
 
-    const { data: events } = await admin
-      .from("events")
-      .select("id")
-      .eq("user_id", ownerId)
-      .is("deleted_at", null)
-      .gte("starts_at", now.toISOString())
-      .lte("starts_at", in24h);
-
     taskCount = tasks?.length ?? 0;
-    eventCount = events?.length ?? 0;
 
     const taskPart =
       taskCount === 0
         ? "geen taken"
         : `${taskCount} ${taskCount === 1 ? "taak" : "taken"}`;
-    const eventPart =
-      eventCount === 0
-        ? "geen afspraken"
-        : `${eventCount} ${eventCount === 1 ? "afspraak" : "afspraken"}`;
-    const body = `Vandaag: ${taskPart} te doen · ${eventPart} de komende 24u.`;
+    const body = `Vandaag: ${taskPart} te doen.`;
 
     const { data: subs } = await admin
       .from("push_subscriptions")
@@ -132,6 +117,7 @@ export async function GET(request: Request) {
   // zitten, definitief weggooien (vault-bestanden van notities zijn al weg).
   const cutoff = new Date(now.getTime() - 30 * 24 * 3600 * 1000).toISOString();
   let purged = 0;
+  // events blijft erbij: de prullenbak kan nog oude afspraken bevatten.
   for (const table of ["tasks", "notes", "transactions", "events"] as const) {
     const { data: gone } = await admin
       .from(table)
@@ -145,7 +131,6 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     taskCount,
-    eventCount,
     sent,
     backup,
     purged,

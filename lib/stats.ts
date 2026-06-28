@@ -1,11 +1,8 @@
 // Pure statistiek-berekeningen over de reeds opgehaalde domeinobjecten.
 // Geen database-toegang hier — de pagina haalt de data op en voedt deze functies.
 
-import { addDays, parseISO } from "date-fns";
-
-import { dayKey, eventDayKey } from "./agenda";
 import { currentMonthKey, monthKeyOf, monthLabel, shiftMonth } from "./month";
-import type { CalendarEvent, Note, Task, TaskPriority } from "./types";
+import type { Note, Task, TaskPriority } from "./types";
 
 /** Eén regel in een verdelings-staafje (categorie, prioriteit, tag, …). */
 export interface StatItem {
@@ -129,34 +126,6 @@ export function noteStats(allNotes: Note[]): NoteStats {
       currentMonthKey(),
       6,
     ),
-  };
-}
-
-// ─── Agenda ─────────────────────────────────────────────────────────────────
-
-export interface EventStats {
-  total: number;
-  thisMonth: number;
-  next7: number;
-  today: number;
-}
-
-export function eventStats(
-  events: CalendarEvent[],
-  todayKey: string,
-  monthKey: string,
-): EventStats {
-  const endKey = dayKey(addDays(parseISO(todayKey), 7));
-  return {
-    total: events.length,
-    thisMonth: events.filter(
-      (event) => monthKeyOf(eventDayKey(event)) === monthKey,
-    ).length,
-    next7: events.filter((event) => {
-      const key = eventDayKey(event);
-      return key >= todayKey && key <= endKey;
-    }).length,
-    today: events.filter((event) => eventDayKey(event) === todayKey).length,
   };
 }
 
