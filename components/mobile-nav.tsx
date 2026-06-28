@@ -40,10 +40,10 @@ export function MobileNav() {
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 flex justify-center md:hidden"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.6rem)" }}
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center bg-gradient-to-t from-background via-background to-transparent pt-7 md:hidden"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.35rem)" }}
       >
-        <div className="flex h-16 w-[calc(100%-1.5rem)] max-w-md items-center gap-1.5 rounded-[26px] border bg-card/80 px-3 shadow-xl backdrop-blur-xl">
+        <div className="pointer-events-auto flex h-16 w-[calc(100%-1.5rem)] max-w-md items-center gap-1.5 rounded-[26px] border bg-card/80 px-3 shadow-xl backdrop-blur-xl">
           {left.map(renderLink)}
           <button
             type="button"

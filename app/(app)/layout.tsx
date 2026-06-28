@@ -63,7 +63,7 @@ export default async function AppLayout({
           <AppTopbar />
           {!supabaseConfigured && <PreviewBanner />}
           <main className="flex-1 p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
-            <div className="mx-auto w-full max-w-7xl">
+            <div className="mx-auto w-full max-w-3xl">
               <PageTransition>{children}</PageTransition>
             </div>
           </main>

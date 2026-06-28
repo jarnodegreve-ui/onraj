@@ -105,7 +105,7 @@ export default async function DashboardPage() {
   const networthData = netWorthByMonth(accountBalances);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <Clock />
         <PushToggle />
