@@ -22,6 +22,7 @@ import {
   netWorthByMonth,
 } from "@/lib/data/accounts";
 import { listCategories } from "@/lib/data/categories";
+import { listHoldingPrices, listHoldings } from "@/lib/data/investments";
 import { listNotes } from "@/lib/data/notes";
 import { listTasks } from "@/lib/data/tasks";
 import { listTransactions } from "@/lib/data/transactions";
@@ -32,6 +33,7 @@ import {
 } from "@/lib/finance";
 import { isFinanceLocked } from "@/lib/finance-lock";
 import { formatEuro } from "@/lib/format";
+import { addInvestmentsToNetWorth, portfolioValue } from "@/lib/investments";
 import { noteStats, taskStats } from "@/lib/stats";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
@@ -65,9 +67,14 @@ export default async function StatistiekenPage() {
     listCategories("note"),
   ]);
   // Financiële data niet ophalen wanneer het slot dichtstaat.
-  const [transactions, accountBalances] = financeLocked
-    ? [[], []]
-    : await Promise.all([listTransactions(), listAccountBalances()]);
+  const [transactions, accountBalances, holdings, holdingPrices] = financeLocked
+    ? [[], [], [], []]
+    : await Promise.all([
+        listTransactions(),
+        listAccountBalances(),
+        listHoldings(),
+        listHoldingPrices(),
+      ]);
 
   const tStats = taskStats(tasks, todayKey);
   const nStats = noteStats(allNotes);
@@ -84,10 +91,11 @@ export default async function StatistiekenPage() {
     color: noteColor.get(item.label) ?? undefined,
   }));
 
-  const totalNetWorth = latestPerAccount(accountBalances).reduce(
-    (sum, balance) => sum + balance.amount,
-    0,
-  );
+  const totalNetWorth =
+    latestPerAccount(accountBalances).reduce(
+      (sum, balance) => sum + balance.amount,
+      0,
+    ) + portfolioValue(holdings, holdingPrices);
   const finance = summariseMonth(transactions, monthKey);
   const topExpenses = expensesByCategory(transactions, monthKey)
     .slice(0, 6)
@@ -96,7 +104,11 @@ export default async function StatistiekenPage() {
       value: slice.amount,
       color: "#c0566b",
     }));
-  const networthData = netWorthByMonth(accountBalances);
+  const networthData = addInvestmentsToNetWorth(
+    netWorthByMonth(accountBalances),
+    holdings,
+    holdingPrices,
+  );
 
   return (
     <div className="space-y-8">
@@ -123,7 +135,13 @@ export default async function StatistiekenPage() {
           icon={Wallet}
           label="Vermogen"
           value={financeLocked ? "•••" : formatEuro(totalNetWorth)}
-          hint={financeLocked ? "vergrendeld" : "totaal saldo"}
+          hint={
+            financeLocked
+              ? "vergrendeld"
+              : holdings.length > 0
+                ? "rekeningen + beleggingen"
+                : "totaal saldo"
+          }
         />
       </div>
 

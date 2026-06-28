@@ -29,11 +29,13 @@ import {
   listAccountBalances,
   netWorthByMonth,
 } from "@/lib/data/accounts";
+import { listHoldingPrices, listHoldings } from "@/lib/data/investments";
 import { listNotes } from "@/lib/data/notes";
 import { listTasks } from "@/lib/data/tasks";
 import { listTransactions } from "@/lib/data/transactions";
 import { currentMonthKey, summariseMonth } from "@/lib/finance";
 import { isFinanceLocked } from "@/lib/finance-lock";
+import { addInvestmentsToNetWorth } from "@/lib/investments";
 import { navItems } from "@/lib/nav";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import type { Task } from "@/lib/types";
@@ -90,9 +92,14 @@ export default async function DashboardPage() {
   const financeLocked = await isFinanceLocked();
   const [notes, tasks] = await Promise.all([listNotes(), listTasks()]);
   // Financiële data niet ophalen wanneer het slot dichtstaat (privacy + minder werk).
-  const [transactions, accountBalances] = financeLocked
-    ? [[], []]
-    : await Promise.all([listTransactions(), listAccountBalances()]);
+  const [transactions, accountBalances, holdings, holdingPrices] = financeLocked
+    ? [[], [], [], []]
+    : await Promise.all([
+        listTransactions(),
+        listAccountBalances(),
+        listHoldings(),
+        listHoldingPrices(),
+      ]);
 
   const summary = summariseMonth(transactions, currentMonthKey());
   const openTasks = tasks.filter((task) => !task.done);
@@ -102,7 +109,12 @@ export default async function DashboardPage() {
     account: balance.account,
     amount: balance.amount,
   }));
-  const networthData = netWorthByMonth(accountBalances);
+  // Vermogen incl. beleggingen (carry-forward koers per maand).
+  const networthData = addInvestmentsToNetWorth(
+    netWorthByMonth(accountBalances),
+    holdings,
+    holdingPrices,
+  );
 
   return (
     <div className="space-y-6">

@@ -117,6 +117,67 @@ export function portfolioHistory(
   });
 }
 
+/** Huidige totale portefeuillewaarde (som van aantal × laatste koers). */
+export function portfolioValue(
+  holdings: Holding[],
+  prices: HoldingPrice[],
+): number {
+  return round2(
+    holdingValues(holdings, prices).reduce((sum, item) => sum + item.value, 0),
+  );
+}
+
+/**
+ * Portefeuillewaarde op een datum: per positie de laatst bekende koers op of
+ * vóór `dateISO` (carry-forward), maal het aantal. 0 als er nog geen koers is.
+ */
+export function portfolioValueOn(
+  holdings: Holding[],
+  prices: HoldingPrice[],
+  dateISO: string,
+): number {
+  const byHolding = new Map<string, HoldingPrice[]>();
+  for (const price of prices) {
+    const arr = byHolding.get(price.holdingId);
+    if (arr) arr.push(price);
+    else byHolding.set(price.holdingId, [price]);
+  }
+
+  let value = 0;
+  for (const holding of holdings) {
+    const arr = byHolding.get(holding.id);
+    if (!arr) continue;
+    let price: number | null = null;
+    let best = "";
+    for (const snapshot of arr) {
+      if (snapshot.recordedOn <= dateISO && snapshot.recordedOn >= best) {
+        price = snapshot.price;
+        best = snapshot.recordedOn;
+      }
+    }
+    if (price != null) value += holding.quantity * price;
+  }
+  return round2(value);
+}
+
+/**
+ * Tel de portefeuillewaarde per maand op bij een vermogensreeks ({month,total}).
+ * Voor elke maand wordt de waarde aan het einde van die maand genomen
+ * (carry-forward), zodat het totale vermogen ook beleggingen meeneemt.
+ */
+export function addInvestmentsToNetWorth(
+  series: { month: string; total: number }[],
+  holdings: Holding[],
+  prices: HoldingPrice[],
+): { month: string; total: number }[] {
+  if (holdings.length === 0 || prices.length === 0) return series;
+  // `${month}-31` is een veilige bovengrens voor stringvergelijking van datums.
+  return series.map(({ month, total }) => ({
+    month,
+    total: round2(total + portfolioValueOn(holdings, prices, `${month}-31`)),
+  }));
+}
+
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
