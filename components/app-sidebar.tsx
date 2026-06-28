@@ -40,7 +40,9 @@ export function AppSidebar({
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
+      {/* Safe-area bovenaan: anders tekent de wordmark op mobiel onder de
+          (black-translucent) statusbalk en overlapt hij de OS-klok. */}
+      <SidebarHeader className="pt-[calc(env(safe-area-inset-top)+0.5rem)]">
         <Link
           href="/dashboard"
           onClick={() => setOpenMobile(false)}
