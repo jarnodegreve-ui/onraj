@@ -89,20 +89,11 @@ export function QuickAddDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Mobiel: hoger ankeren (gecentreerd boven het toetsenbord); desktop: centraal. */}
-      <DialogContent className="top-[8%] max-h-[88dvh] translate-y-0 overflow-y-auto sm:top-1/2 sm:max-w-md sm:-translate-y-1/2">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Snel toevoegen</DialogTitle>
           <DialogDescription>
-            Maak snel een notitie of taak aan. Tip: druk op{" "}
-            <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">
-              n
-            </kbd>{" "}
-            of{" "}
-            <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">
-              t
-            </kbd>
-            .
+            Maak snel een notitie of taak aan.
           </DialogDescription>
         </DialogHeader>
         <QuickForm
