@@ -145,16 +145,36 @@ function TaskForm({
           <Label htmlFor="task-category">Categorie (optioneel)</Label>
           <Input
             id="task-category"
-            list="task-categories"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             placeholder="Bv. Werk, Privé…"
           />
-          <datalist id="task-categories">
-            {categories.map((name) => (
-              <option key={name} value={name} />
-            ))}
-          </datalist>
+          {/* Tik een bestaande categorie om 'm meteen te kiezen (nog eens tikken
+              wist de keuze); het veld hierboven blijft voor een nieuwe categorie. */}
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {categories.map((name) => {
+                const active =
+                  category.trim().toLowerCase() === name.toLowerCase();
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => setCategory(active ? "" : name)}
+                    aria-pressed={active}
+                    className={cn(
+                      "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-secondary text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
         <div className="grid gap-2">
           <Label htmlFor="task-notes">Notities (optioneel)</Label>
