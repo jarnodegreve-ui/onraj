@@ -25,6 +25,9 @@ import { upsertAccountBalance } from "@/lib/actions/accounts";
 import { formatEuro } from "@/lib/format";
 import type { AccountBalance } from "@/lib/types";
 
+// Snelle suggesties om als rekening toe te voegen aan je vermogen (één tik).
+const ACCOUNT_SUGGESTIONS = ["Cash"];
+
 function fmtMonth(monthKey: string) {
   return new Intl.DateTimeFormat("nl-BE", {
     month: "short",
@@ -247,18 +250,37 @@ export function AccountsPanel({ balances }: { balances: AccountBalance[] }) {
                 />
               </div>
             ))}
-            <div className="grid grid-cols-[1fr_8rem] items-center gap-2 border-t pt-3">
-              <Input
-                placeholder="Nieuwe rekening"
-                value={newAccount}
-                onChange={(event) => setNewAccount(event.target.value)}
-              />
-              <Input
-                inputMode="decimal"
-                placeholder="0,00"
-                value={newAmount}
-                onChange={(event) => setNewAmount(event.target.value)}
-              />
+            <div className="space-y-2 border-t pt-3">
+              {ACCOUNT_SUGGESTIONS.filter((name) => !accounts.includes(name))
+                .length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {ACCOUNT_SUGGESTIONS.filter(
+                    (name) => !accounts.includes(name),
+                  ).map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => setNewAccount(name)}
+                      className="rounded-full border bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      + {name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="grid grid-cols-[1fr_8rem] items-center gap-2">
+                <Input
+                  placeholder="Nieuwe rekening"
+                  value={newAccount}
+                  onChange={(event) => setNewAccount(event.target.value)}
+                />
+                <Input
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={newAmount}
+                  onChange={(event) => setNewAmount(event.target.value)}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

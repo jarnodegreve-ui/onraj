@@ -26,7 +26,10 @@ export function AppTopbar() {
         <SidebarTrigger className="-ml-1" />
         <h1 className="ml-1 text-sm font-semibold">{title}</h1>
         <div className="ml-auto flex items-center gap-2">
-          <QuickAdd />
+          {/* Op mobiel overbodig: de + zit al in het dock. Alleen op desktop. */}
+          <div className="hidden md:block">
+            <QuickAdd />
+          </div>
           <CommandPalette />
           <Link
             href="/instellingen"

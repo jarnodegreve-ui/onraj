@@ -8,7 +8,11 @@ import {
   getOwnerUserId,
 } from "@/lib/supabase/admin";
 import { pushConfigured, sendPush, type PushSub } from "@/lib/push";
-import { sendTelegramDocument, telegramConfigured } from "@/lib/telegram";
+import {
+  sendTelegramDocument,
+  sendTelegramMessage,
+  telegramConfigured,
+} from "@/lib/telegram";
 
 const cronSecret = process.env.CRON_SECRET ?? "";
 const telegramChatId = process.env.TELEGRAM_ALLOWED_USER_ID ?? "";
@@ -95,6 +99,40 @@ export async function GET(request: Request) {
           .from("push_subscriptions")
           .delete()
           .eq("endpoint", row.endpoint);
+      }
+    }
+  }
+
+  // 1b) Wekelijkse herinnering (zondag) om de beleggingskoersen bij te werken.
+  if (weekdayBrussels(now) === "Sun") {
+    const { data: heldHoldings } = await admin
+      .from("holdings")
+      .select("id")
+      .eq("user_id", ownerId)
+      .limit(1);
+    if (heldHoldings && heldHoldings.length > 0) {
+      if (telegramConfigured && telegramChatId) {
+        await sendTelegramMessage(
+          telegramChatId,
+          "📈 Het is zondag — vergeet je beleggingskoersen niet bij te werken in ONRAJ (Financiën).",
+        );
+      }
+      if (pushConfigured) {
+        const { data: priceSubs } = await admin
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth")
+          .eq("user_id", ownerId);
+        for (const row of priceSubs ?? []) {
+          const sub: PushSub = {
+            endpoint: row.endpoint,
+            keys: { p256dh: row.p256dh, auth: row.auth },
+          };
+          await sendPush(sub, {
+            title: "📈 Koersen bijwerken",
+            body: "Het is zondag — werk je beleggingskoersen bij.",
+            url: "/financien",
+          });
+        }
       }
     }
   }
