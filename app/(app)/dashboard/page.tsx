@@ -12,6 +12,7 @@ import {
 
 import { CountUp } from "@/components/count-up";
 import { AccountsChart } from "@/components/dashboard/accounts-chart";
+import { Clock } from "@/components/dashboard/clock";
 import { NetWorthChart } from "@/components/dashboard/networth-chart";
 import { NextUp } from "@/components/dashboard/next-up";
 import { TaskTabs } from "@/components/dashboard/task-tabs";
@@ -38,10 +39,8 @@ import { listTasks } from "@/lib/data/tasks";
 import { listTransactions } from "@/lib/data/transactions";
 import { currentMonthKey, summariseMonth } from "@/lib/finance";
 import { isFinanceLocked } from "@/lib/finance-lock";
-import { displayName, formatDate } from "@/lib/format";
 import { navItems } from "@/lib/nav";
 import { supabaseConfigured } from "@/lib/supabase/env";
-import { createClient } from "@/lib/supabase/server";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -94,11 +93,6 @@ export default async function DashboardPage() {
     return <PreviewDashboard />;
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const financeLocked = await isFinanceLocked();
   const [notes, events, tasks] = await Promise.all([
     listNotes(),
@@ -110,7 +104,6 @@ export default async function DashboardPage() {
     ? [[], []]
     : await Promise.all([listTransactions(), listAccountBalances()]);
 
-  const name = displayName(user?.email);
   const todayKey = currentDayKey();
   const summary = summariseMonth(transactions, currentMonthKey());
   const upcoming = upcomingEvents(events, new Date(), 5);
@@ -136,7 +129,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
-        <Greeting name={name} />
+        <Clock />
         <PushToggle />
       </div>
 
@@ -210,19 +203,6 @@ export default async function DashboardPage() {
         <RecentNotes notes={notes.slice(0, 4)} />
         <DashboardUpcoming events={upcoming} />
       </div>
-    </div>
-  );
-}
-
-function Greeting({ name }: { name: string }) {
-  return (
-    <div className="space-y-1.5">
-      <p className="font-mono text-xs tracking-wide text-muted-foreground first-letter:uppercase">
-        {formatDate(currentDayKey(), "EEEE d MMMM")}
-      </p>
-      <h2 className="text-3xl leading-[1.1] font-bold tracking-[-0.02em] text-balance">
-        Fijn dat je er bent, {name}.
-      </h2>
     </div>
   );
 }
@@ -331,7 +311,7 @@ function PreviewDashboard() {
   const modules = navItems.filter((item) => item.href !== "/dashboard");
   return (
     <div className="space-y-8">
-      <Greeting name="Jarno" />
+      <Clock />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map((item) => (
           <Link key={item.href} href={item.href} className="group">

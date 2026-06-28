@@ -28,7 +28,7 @@ export function MobileNav() {
         href={item.href}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "min-w-0 flex-1 truncate text-center text-[12.5px] font-semibold transition-colors",
+          "min-w-0 flex-1 truncate text-center text-[11.5px] font-semibold tracking-[-0.01em] transition-colors",
           active ? "text-primary" : "text-muted-foreground",
         )}
       >
@@ -43,7 +43,7 @@ export function MobileNav() {
         className="fixed inset-x-0 bottom-0 z-30 flex justify-center md:hidden"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.6rem)" }}
       >
-        <div className="flex h-16 w-[calc(100%-2.5rem)] max-w-md items-center gap-2 rounded-[26px] border bg-card/80 px-5 shadow-xl backdrop-blur-xl">
+        <div className="flex h-16 w-[calc(100%-1.5rem)] max-w-md items-center gap-1.5 rounded-[26px] border bg-card/80 px-3 shadow-xl backdrop-blur-xl">
           {left.map(renderLink)}
           <button
             type="button"
