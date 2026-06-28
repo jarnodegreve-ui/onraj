@@ -20,6 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { listTaskCategoryNames } from "@/lib/actions/categories";
 import { createNote } from "@/lib/actions/notes";
 import { createTask } from "@/lib/actions/tasks";
+import { TASK_PRIORITIES } from "@/lib/tasks";
+import type { TaskPriority } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Mode = "note" | "task";
@@ -126,6 +128,7 @@ function QuickForm({
   const [dueOn, setDueOn] = useState("");
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
+  const [priority, setPriority] = useState<TaskPriority>("middel");
   const [pending, startTransition] = useTransition();
 
   // Beheerde taak-categorieën lazy laden voor de snelkeuze-chips.
@@ -153,7 +156,7 @@ function QuickForm({
               title,
               dueOn: dueOn || null,
               notes: body,
-              priority: "middel",
+              priority,
               category: category.trim() || null,
             });
 
@@ -213,6 +216,32 @@ function QuickForm({
                 value={dueOn}
                 onChange={(event) => setDueOn(event.target.value)}
               />
+            </div>
+            <div className="grid gap-2">
+              <Label>Prioriteit</Label>
+              <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+                {[...TASK_PRIORITIES]
+                  .sort((a, b) => b.order - a.order)
+                  .map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setPriority(option.value)}
+                      className={cn(
+                        "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors",
+                        priority === option.value
+                          ? "bg-background shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <span
+                        className="size-2 rounded-full"
+                        style={{ backgroundColor: option.color }}
+                      />
+                      {option.label}
+                    </button>
+                  ))}
+              </div>
             </div>
             {categories.length > 0 && (
               <div className="grid gap-2">
