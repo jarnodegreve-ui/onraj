@@ -17,7 +17,7 @@ export function BrandLockup({ className }: { className?: string }) {
       <span aria-hidden>ONRAJ</span>
       <span
         aria-hidden
-        className="mb-[0.22em] ml-[0.14em] inline-block size-[0.19em] rounded-full bg-primary"
+        className="mb-[0.42em] ml-[0.14em] inline-block size-[0.19em] rounded-full bg-primary"
       />
     </span>
   );

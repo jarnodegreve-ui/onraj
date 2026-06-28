@@ -89,7 +89,9 @@ export function QuickAddDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      {/* Mobiel: bovenaan ankeren (niet bottom-sheet) zodat het volledige
+          formulier boven het toetsenbord blijft; desktop: gecentreerd. */}
+      <DialogContent className="!bottom-auto top-[calc(env(safe-area-inset-top)+0.75rem)] max-h-[86dvh] rounded-b-2xl sm:top-1/2 sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Snel toevoegen</DialogTitle>
           <DialogDescription>
@@ -188,6 +190,7 @@ function QuickForm({
           <Input
             id="qa-title"
             autoFocus
+            autoComplete="off"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder={
