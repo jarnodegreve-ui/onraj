@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { CalendarDays, Flag, Plus, Tag } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { listTaskCategoryNames } from "@/lib/actions/categories";
 import { createNote } from "@/lib/actions/notes";
 import { createTask } from "@/lib/actions/tasks";
-import { TASK_PRIORITIES } from "@/lib/tasks";
+import { formatDate } from "@/lib/format";
+import { TASK_PRIORITIES, priorityMeta } from "@/lib/tasks";
 import type { TaskPriority } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -129,6 +130,9 @@ function QuickForm({
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [priority, setPriority] = useState<TaskPriority>("middel");
+  const [expanded, setExpanded] = useState<
+    "date" | "priority" | "category" | null
+  >(null);
   const [pending, startTransition] = useTransition();
 
   // Beheerde taak-categorieën lazy laden voor de snelkeuze-chips.
@@ -170,6 +174,12 @@ function QuickForm({
     });
   }
 
+  const prio = priorityMeta(priority);
+
+  function toggleField(field: "date" | "priority" | "category") {
+    setExpanded((current) => (current === field ? null : field));
+  }
+
   return (
     <>
       <div className="grid gap-4">
@@ -208,17 +218,65 @@ function QuickForm({
           </div>
         ) : (
           <>
-            <div className="grid gap-2">
-              <Label htmlFor="qa-due">Deadline (optioneel)</Label>
+            <Textarea
+              id="qa-notes"
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+              placeholder="Omschrijving (optioneel)"
+              className="min-h-16"
+            />
+
+            {/* Compacte balk: tik een icoon om deadline, prioriteit of
+                categorie uit te klappen — i.p.v. gestapelde velden. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <FieldToggle
+                label="Deadline"
+                active={expanded === "date"}
+                set={!!dueOn}
+                onClick={() => toggleField("date")}
+              >
+                <CalendarDays className="size-4" />
+                {dueOn && (
+                  <span className="tabular-nums">
+                    {formatDate(dueOn, "d MMM")}
+                  </span>
+                )}
+              </FieldToggle>
+              <FieldToggle
+                label="Prioriteit"
+                active={expanded === "priority"}
+                set={priority !== "middel"}
+                onClick={() => toggleField("priority")}
+              >
+                <Flag className="size-4" style={{ color: prio.color }} />
+                {priority !== "middel" && <span>{prio.label}</span>}
+              </FieldToggle>
+              {categories.length > 0 && (
+                <FieldToggle
+                  label="Categorie"
+                  active={expanded === "category"}
+                  set={!!category}
+                  onClick={() => toggleField("category")}
+                >
+                  <Tag className="size-4" />
+                  {category && (
+                    <span className="max-w-28 truncate">{category}</span>
+                  )}
+                </FieldToggle>
+              )}
+            </div>
+
+            {expanded === "date" && (
               <Input
                 id="qa-due"
                 type="date"
+                autoFocus
                 value={dueOn}
                 onChange={(event) => setDueOn(event.target.value)}
               />
-            </div>
-            <div className="grid gap-2">
-              <Label>Prioriteit</Label>
+            )}
+
+            {expanded === "priority" && (
               <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
                 {[...TASK_PRIORITIES]
                   .sort((a, b) => b.order - a.order)
@@ -242,43 +300,31 @@ function QuickForm({
                     </button>
                   ))}
               </div>
-            </div>
-            {categories.length > 0 && (
-              <div className="grid gap-2">
-                <Label>Categorie (optioneel)</Label>
-                <div className="flex flex-wrap gap-1.5">
-                  {categories.map((name) => {
-                    const active = category === name;
-                    return (
-                      <button
-                        key={name}
-                        type="button"
-                        onClick={() => setCategory(active ? "" : name)}
-                        aria-pressed={active}
-                        className={cn(
-                          "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-                          active
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-secondary text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        {name}
-                      </button>
-                    );
-                  })}
-                </div>
+            )}
+
+            {expanded === "category" && categories.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {categories.map((name) => {
+                  const active = category === name;
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => setCategory(active ? "" : name)}
+                      aria-pressed={active}
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                        active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-secondary text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {name}
+                    </button>
+                  );
+                })}
               </div>
             )}
-            <div className="grid gap-2">
-              <Label htmlFor="qa-notes">Omschrijving (optioneel)</Label>
-              <Textarea
-                id="qa-notes"
-                value={body}
-                onChange={(event) => setBody(event.target.value)}
-                placeholder="Optioneel"
-                className="min-h-20"
-              />
-            </div>
           </>
         )}
       </div>
@@ -292,6 +338,41 @@ function QuickForm({
         </Button>
       </DialogFooter>
     </>
+  );
+}
+
+// Compacte icoon-pil die een veld uitklapt; toont de gekozen waarde inline en
+// licht op zodra er iets is ingevuld (denim) of de pil openstaat.
+function FieldToggle({
+  label,
+  active,
+  set,
+  onClick,
+  children,
+}: {
+  label: string;
+  active: boolean;
+  set: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors",
+        active
+          ? "border-primary text-primary"
+          : set
+            ? "border-primary/40 bg-primary/10 text-foreground"
+            : "border-border bg-secondary text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
