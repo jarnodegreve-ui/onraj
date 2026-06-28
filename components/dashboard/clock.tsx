@@ -29,11 +29,11 @@ export function Clock() {
       <p className="font-mono text-xs tracking-wide text-muted-foreground first-letter:uppercase">
         {now ? format(now, "EEEE d MMMM", { locale: nl }) : " "}
       </p>
-      <p className="font-mono text-4xl font-bold tracking-tight tabular-nums">
+      <p className="font-mono text-2xl font-semibold tracking-tight tabular-nums">
         {now ? (
           <>
             {format(now, "HH:mm")}
-            <span className="text-xl font-medium text-muted-foreground">
+            <span className="text-sm font-normal text-muted-foreground">
               :{format(now, "ss")}
             </span>
           </>
