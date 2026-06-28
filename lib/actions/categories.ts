@@ -38,6 +38,18 @@ function revalidate(scope: CategoryScope) {
 
 const MIGRATIE_HINT = "Draai eerst migratie 0014 om categorieën te beheren.";
 
+/** Namen van de beheerde taak-categorieën (voor snelkeuze in dialogen). */
+export async function listTaskCategoryNames(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("name")
+    .eq("scope", "task")
+    .order("position", { ascending: true });
+  if (error || !data) return [];
+  return data.map((row) => row.name as string);
+}
+
 export async function createCategory(input: {
   scope: CategoryScope;
   name: string;

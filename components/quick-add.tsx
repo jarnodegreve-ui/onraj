@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { listTaskCategoryNames } from "@/lib/actions/categories";
 import { createNote } from "@/lib/actions/notes";
 import { createTask } from "@/lib/actions/tasks";
 import { cn } from "@/lib/utils";
@@ -123,7 +124,16 @@ function QuickForm({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [dueOn, setDueOn] = useState("");
+  const [category, setCategory] = useState("");
+  const [categories, setCategories] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
+
+  // Beheerde taak-categorieën lazy laden voor de snelkeuze-chips.
+  useEffect(() => {
+    listTaskCategoryNames()
+      .then(setCategories)
+      .catch(() => {});
+  }, []);
 
   function save() {
     if (mode === "task" && !title.trim()) {
@@ -144,6 +154,7 @@ function QuickForm({
               dueOn: dueOn || null,
               notes: body,
               priority: "middel",
+              category: category.trim() || null,
             });
 
       if (result.ok) {
@@ -203,6 +214,32 @@ function QuickForm({
                 onChange={(event) => setDueOn(event.target.value)}
               />
             </div>
+            {categories.length > 0 && (
+              <div className="grid gap-2">
+                <Label>Categorie (optioneel)</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {categories.map((name) => {
+                    const active = category === name;
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => setCategory(active ? "" : name)}
+                        aria-pressed={active}
+                        className={cn(
+                          "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                          active
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-secondary text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="qa-notes">Omschrijving (optioneel)</Label>
               <Textarea
