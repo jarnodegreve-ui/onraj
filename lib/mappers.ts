@@ -7,6 +7,10 @@ import type {
   Category,
   CategoryRow,
   EventRow,
+  Holding,
+  HoldingPrice,
+  HoldingPriceRow,
+  HoldingRow,
   Note,
   NoteRow,
   RecurringTask,
@@ -183,6 +187,30 @@ export function toAccountBalance(row: AccountBalanceRow): AccountBalance {
     account: row.account,
     month: row.month,
     amount: toNumber(row.amount),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function toHolding(row: HoldingRow): Holding {
+  return {
+    id: row.id,
+    name: row.name,
+    ticker: row.ticker,
+    quantity: toNumber(row.quantity),
+    costBasis: row.cost_basis === null ? null : toNumber(row.cost_basis),
+    note: row.note,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function toHoldingPrice(row: HoldingPriceRow): HoldingPrice {
+  return {
+    id: row.id,
+    holdingId: row.holding_id,
+    price: toNumber(row.price),
+    recordedOn: row.recorded_on,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

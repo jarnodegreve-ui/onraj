@@ -261,6 +261,50 @@ export interface AccountBalanceRow {
   updated_at: string;
 }
 
+// ─── Beleggingen ─────────────────────────────────────────────────────────────
+
+export interface Holding {
+  id: string;
+  name: string;
+  ticker: string | null;
+  quantity: number;
+  costBasis: number | null; // totale inleg in € (optioneel, voor rendement)
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HoldingRow {
+  id: string;
+  user_id: string;
+  name: string;
+  ticker: string | null;
+  quantity: number | string;
+  cost_basis: number | string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HoldingPrice {
+  id: string;
+  holdingId: string;
+  price: number;
+  recordedOn: string; // 'YYYY-MM-DD'
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HoldingPriceRow {
+  id: string;
+  user_id: string;
+  holding_id: string;
+  price: number | string;
+  recorded_on: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // ─── Categorieën (beheerbaar) ────────────────────────────────────────────────
 
 export type CategoryScope = "task" | "note";

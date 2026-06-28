@@ -3,8 +3,10 @@ import { CashflowOutlook } from "@/components/finance/cashflow-outlook";
 import { FinanceGate } from "@/components/finance/finance-gate";
 import { FinanceLockButton } from "@/components/finance/finance-lock-button";
 import { FinanceView } from "@/components/finance/finance-view";
+import { InvestmentsCard } from "@/components/finance/investments-card";
 import { listAccountBalances } from "@/lib/data/accounts";
 import { listBudgets } from "@/lib/data/budgets";
+import { listHoldingPrices, listHoldings } from "@/lib/data/investments";
 import {
   ensureRecurringTransactions,
   listRecurring,
@@ -41,14 +43,23 @@ export default async function FinancienPage() {
     // Mag de pagina nooit breken.
   }
 
-  const [transactions, budgets, recurring, savings, accountBalances] =
-    await Promise.all([
-      listTransactions(),
-      listBudgets(),
-      listRecurring(),
-      listSavingsGoals(),
-      listAccountBalances(),
-    ]);
+  const [
+    transactions,
+    budgets,
+    recurring,
+    savings,
+    accountBalances,
+    holdings,
+    holdingPrices,
+  ] = await Promise.all([
+    listTransactions(),
+    listBudgets(),
+    listRecurring(),
+    listSavingsGoals(),
+    listAccountBalances(),
+    listHoldings(),
+    listHoldingPrices(),
+  ]);
 
   // Vooruitblik op de vaste posten voor deze maand (Brusselse dag van de maand).
   const monthKey = currentMonthKey();
@@ -75,6 +86,7 @@ export default async function FinancienPage() {
         preview={false}
       />
       <AccountsPanel balances={accountBalances} />
+      <InvestmentsCard holdings={holdings} prices={holdingPrices} />
     </div>
   );
 }
