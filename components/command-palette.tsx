@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CalendarDays,
   ListTodo,
   NotebookPen,
   Search,
@@ -30,10 +29,9 @@ const TYPE_META: Record<SearchType, { label: string; icon: LucideIcon }> = {
   taak: { label: "Taken", icon: ListTodo },
   notitie: { label: "Notities", icon: NotebookPen },
   transactie: { label: "Transacties", icon: Wallet },
-  afspraak: { label: "Afspraken", icon: CalendarDays },
 };
 
-const TYPE_ORDER: SearchType[] = ["taak", "notitie", "transactie", "afspraak"];
+const TYPE_ORDER: SearchType[] = ["taak", "notitie", "transactie"];
 
 export function CommandPalette() {
   const router = useRouter();
@@ -101,7 +99,7 @@ export function CommandPalette() {
           if (next) void ensureIndex();
         }}
         title="Snelzoeken"
-        description="Zoek in notities, transacties, afspraken en taken."
+        description="Zoek in notities, transacties en taken."
       >
         <Command>
           <CommandInput placeholder="Zoek in alles…" />

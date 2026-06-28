@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  CalendarDays,
   ListTodo,
   Lock,
   NotebookPen,
@@ -23,7 +22,6 @@ import {
   netWorthByMonth,
 } from "@/lib/data/accounts";
 import { listCategories } from "@/lib/data/categories";
-import { listEvents } from "@/lib/data/events";
 import { listNotes } from "@/lib/data/notes";
 import { listTasks } from "@/lib/data/tasks";
 import { listTransactions } from "@/lib/data/transactions";
@@ -34,7 +32,7 @@ import {
 } from "@/lib/finance";
 import { isFinanceLocked } from "@/lib/finance-lock";
 import { formatEuro } from "@/lib/format";
-import { eventStats, noteStats, taskStats } from "@/lib/stats";
+import { noteStats, taskStats } from "@/lib/stats";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
 export const metadata = { title: "Statistieken · onraj" };
@@ -45,7 +43,7 @@ export default async function StatistiekenPage() {
       <div>
         <PageHeader
           title="Statistieken"
-          description="Inzicht in je taken, notities, agenda en financiën."
+          description="Inzicht in je taken, notities en financiën."
         />
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
@@ -60,14 +58,12 @@ export default async function StatistiekenPage() {
   const monthKey = currentMonthKey();
 
   const financeLocked = await isFinanceLocked();
-  const [tasks, allNotes, events, taskCategories, noteCategories] =
-    await Promise.all([
-      listTasks(),
-      listNotes(true),
-      listEvents(),
-      listCategories("task"),
-      listCategories("note"),
-    ]);
+  const [tasks, allNotes, taskCategories, noteCategories] = await Promise.all([
+    listTasks(),
+    listNotes(true),
+    listCategories("task"),
+    listCategories("note"),
+  ]);
   // Financiële data niet ophalen wanneer het slot dichtstaat.
   const [transactions, accountBalances] = financeLocked
     ? [[], []]
@@ -75,7 +71,6 @@ export default async function StatistiekenPage() {
 
   const tStats = taskStats(tasks, todayKey);
   const nStats = noteStats(allNotes);
-  const eStats = eventStats(events, todayKey, monthKey);
 
   // Categoriekleuren toepassen op de verdeelstaafjes.
   const taskColor = new Map(taskCategories.map((c) => [c.name, c.color]));
@@ -107,11 +102,11 @@ export default async function StatistiekenPage() {
     <div className="space-y-8">
       <PageHeader
         title="Statistieken"
-        description="Een blik op je taken, notities, agenda en financiën."
+        description="Een blik op je taken, notities en financiën."
       />
 
       {/* Overzicht — kerncijfers per module */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           icon={ListTodo}
           label="Openstaande taken"
@@ -123,12 +118,6 @@ export default async function StatistiekenPage() {
           label="Actieve notities"
           value={nStats.active}
           hint={`${nStats.pinned} vastgemaakt`}
-        />
-        <StatCard
-          icon={CalendarDays}
-          label="Afspraken deze maand"
-          value={eStats.thisMonth}
-          hint={`${eStats.next7} komende 7 dagen`}
         />
         <StatCard
           icon={Wallet}
@@ -220,16 +209,6 @@ export default async function StatistiekenPage() {
             </div>
           </Block>
         )}
-      </SectionCard>
-
-      {/* Agenda */}
-      <SectionCard title="Agenda" icon={CalendarDays} accent="#7a6cae">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MiniStat label="Vandaag" value={eStats.today} />
-          <MiniStat label="Komende 7 dagen" value={eStats.next7} />
-          <MiniStat label="Deze maand" value={eStats.thisMonth} />
-          <MiniStat label="Totaal" value={eStats.total} />
-        </div>
       </SectionCard>
 
       {/* Financiën — respecteert het pincode-slot */}

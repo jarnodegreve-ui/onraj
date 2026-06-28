@@ -4,7 +4,7 @@ import { formatDate, formatEuro } from "@/lib/format";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-export type SearchType = "notitie" | "transactie" | "afspraak" | "taak";
+export type SearchType = "notitie" | "transactie" | "taak";
 
 export interface SearchItem {
   id: string;
@@ -22,7 +22,7 @@ export async function loadSearchIndex(): Promise<SearchItem[]> {
   if (!supabaseConfigured) return [];
   const supabase = await createClient();
 
-  const [notes, transactions, events, tasks] = await Promise.all([
+  const [notes, transactions, tasks] = await Promise.all([
     supabase
       .from("notes")
       .select("id,title,tags")
@@ -34,12 +34,6 @@ export async function loadSearchIndex(): Promise<SearchItem[]> {
       .select("id,description,category,amount,direction")
       .is("deleted_at", null)
       .order("occurred_on", { ascending: false })
-      .limit(100),
-    supabase
-      .from("events")
-      .select("id,title,location,starts_at")
-      .is("deleted_at", null)
-      .order("starts_at", { ascending: false })
       .limit(100),
     supabase
       .from("tasks")
@@ -74,18 +68,6 @@ export async function loadSearchIndex(): Promise<SearchItem[]> {
         (tx.direction === "inkomst" ? "Inkomst" : "Uitgave"),
       sublabel: `${sign} ${formatEuro(amount)}${tx.category ? ` · ${tx.category}` : ""}`,
       href: "/financien",
-    });
-  }
-
-  for (const event of events.data ?? []) {
-    items.push({
-      id: `ev-${event.id}`,
-      type: "afspraak",
-      label: event.title,
-      sublabel: [formatDate(event.starts_at), event.location]
-        .filter(Boolean)
-        .join(" · "),
-      href: "/agenda",
     });
   }
 

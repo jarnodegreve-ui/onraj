@@ -14,11 +14,8 @@ import { CountUp } from "@/components/count-up";
 import { AccountsChart } from "@/components/dashboard/accounts-chart";
 import { Clock } from "@/components/dashboard/clock";
 import { NetWorthChart } from "@/components/dashboard/networth-chart";
-import { NextUp } from "@/components/dashboard/next-up";
 import { TaskTabs } from "@/components/dashboard/task-tabs";
 import { RecentNotes } from "@/components/dashboard/recent-notes";
-import { TodayTimeline } from "@/components/dashboard/today-timeline";
-import { DashboardUpcoming } from "@/components/dashboard/upcoming-list";
 import { PushToggle } from "@/components/push/push-toggle";
 import {
   Card,
@@ -27,13 +24,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { currentDayKey, eventDayKey, upcomingEvents } from "@/lib/agenda";
 import {
   latestPerAccount,
   listAccountBalances,
   netWorthByMonth,
 } from "@/lib/data/accounts";
-import { listEvents } from "@/lib/data/events";
 import { listNotes } from "@/lib/data/notes";
 import { listTasks } from "@/lib/data/tasks";
 import { listTransactions } from "@/lib/data/transactions";
@@ -84,7 +79,6 @@ const MODULE_BESCHRIJVING: Record<string, string> = {
   "/taken": "Je to-do's met deadlines.",
   "/notities": "Markdown-notities met tags en zoeken.",
   "/financien": "Inkomsten, uitgaven en maandoverzicht.",
-  "/agenda": "Je afspraken en komende activiteiten.",
   "/statistieken": "Cijfers en trends over al je modules.",
 };
 
@@ -94,31 +88,15 @@ export default async function DashboardPage() {
   }
 
   const financeLocked = await isFinanceLocked();
-  const [notes, events, tasks] = await Promise.all([
-    listNotes(),
-    listEvents(),
-    listTasks(),
-  ]);
+  const [notes, tasks] = await Promise.all([listNotes(), listTasks()]);
   // Financiële data niet ophalen wanneer het slot dichtstaat (privacy + minder werk).
   const [transactions, accountBalances] = financeLocked
     ? [[], []]
     : await Promise.all([listTransactions(), listAccountBalances()]);
 
-  const todayKey = currentDayKey();
   const summary = summariseMonth(transactions, currentMonthKey());
-  const upcoming = upcomingEvents(events, new Date(), 5);
   const openTasks = tasks.filter((task) => !task.done);
   const taskGroups = buildTaskGroups(openTasks);
-  const eventsToday = events
-    .filter((event) => eventDayKey(event) === todayKey)
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-  // Taken voor vandaag: vandaag te doen of al te laat, hoogste prioriteit eerst.
-  const tasksToday = openTasks
-    .filter((task) => task.dueOn !== null && task.dueOn <= todayKey)
-    .sort((a, b) => {
-      const due = (a.dueOn ?? "").localeCompare(b.dueOn ?? "");
-      return due !== 0 ? due : a.title.localeCompare(b.title, "nl");
-    });
 
   const accountChart = latestPerAccount(accountBalances).map((balance) => ({
     account: balance.account,
@@ -133,49 +111,32 @@ export default async function DashboardPage() {
         <PushToggle />
       </div>
 
-      {/* "HIERNA" — de eerstvolgende afspraak als hero (denim). */}
-      <NextUp event={upcoming[0] ?? null} />
-
       {/* Veegbare taken per categorie. */}
       {taskGroups.length > 0 && <TaskTabs groups={taskGroups} />}
 
-      {/* Bento — bovenste band: 'Vandaag' als blikvanger + een rail met saldo en tegels.
-          Geen items-start: 'Vandaag' vult de rijhoogte zodat een lege dag geen gat laat. */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <TodayTimeline
-            events={eventsToday}
-            tasks={tasksToday}
-            todayKey={todayKey}
-            className="h-full"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          {/* Mobiel: tegels boven het saldo (duidelijker); desktop: saldo bovenaan de rail. */}
-          <SaldoCard
-            className="order-2 col-span-2 lg:order-1"
-            locked={financeLocked}
-            inkomsten={summary.inkomsten}
-            uitgaven={summary.uitgaven}
-            saldo={summary.saldo}
-          />
-          <StatTile
-            href="/taken"
-            icon={ListTodo}
-            label="Open taken"
-            value={openTasks.length}
-            accent="#c98a3d"
-            className="order-1 lg:order-2"
-          />
-          <StatTile
-            href="/notities"
-            icon={NotebookPen}
-            label="Notities"
-            value={notes.length}
-            accent="#3d68be"
-            className="order-1 lg:order-2"
-          />
-        </div>
+      {/* Saldo deze maand + kerntegels. */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SaldoCard
+          className="sm:col-span-2"
+          locked={financeLocked}
+          inkomsten={summary.inkomsten}
+          uitgaven={summary.uitgaven}
+          saldo={summary.saldo}
+        />
+        <StatTile
+          href="/taken"
+          icon={ListTodo}
+          label="Open taken"
+          value={openTasks.length}
+          accent="#c98a3d"
+        />
+        <StatTile
+          href="/notities"
+          icon={NotebookPen}
+          label="Notities"
+          value={notes.length}
+          accent="#3d68be"
+        />
       </div>
 
       {!financeLocked && accountChart.length > 0 && (
@@ -199,10 +160,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <RecentNotes notes={notes.slice(0, 4)} />
-        <DashboardUpcoming events={upcoming} />
-      </div>
+      <RecentNotes notes={notes.slice(0, 4)} />
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import {
-  CalendarDays,
   ChartColumn,
   Inbox,
   LayoutDashboard,
@@ -35,13 +34,6 @@ export const navItems: NavItem[] = [
     bottomBar: false,
   },
   { title: "Financiën", href: "/financien", icon: Wallet, accent: "#3d68be" },
-  {
-    title: "Agenda",
-    href: "/agenda",
-    icon: CalendarDays,
-    accent: "#3d68be",
-    bottomBar: false,
-  },
   {
     title: "Statistieken",
     href: "/statistieken",
