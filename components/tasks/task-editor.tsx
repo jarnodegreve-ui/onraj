@@ -107,12 +107,25 @@ function TaskForm({
         </div>
         <div className="grid gap-2">
           <Label htmlFor="task-due">Deadline (optioneel)</Label>
-          <Input
-            id="task-due"
-            type="date"
-            value={dueOn}
-            onChange={(e) => setDueOn(e.target.value)}
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              id="task-due"
+              type="date"
+              value={dueOn}
+              onChange={(e) => setDueOn(e.target.value)}
+              className="flex-1"
+            />
+            {dueOn && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setDueOn("")}
+              >
+                Wissen
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid gap-2">

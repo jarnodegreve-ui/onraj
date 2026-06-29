@@ -137,6 +137,41 @@ export async function GET(request: Request) {
     }
   }
 
+  // 1c) Maandelijkse herinnering (1e van de maand) om de rekeningstanden bij te
+  // werken, zodat het vermogen actueel blijft.
+  if (todayKeyBrussels(now).slice(8, 10) === "01") {
+    const { data: hasAccounts } = await admin
+      .from("account_balances")
+      .select("id")
+      .eq("user_id", ownerId)
+      .limit(1);
+    if (hasAccounts && hasAccounts.length > 0) {
+      if (telegramConfigured && telegramChatId) {
+        await sendTelegramMessage(
+          telegramChatId,
+          "💼 Nieuwe maand — werk je rekeningstanden bij in ONRAJ (Financiën) zodat je vermogen klopt.",
+        );
+      }
+      if (pushConfigured) {
+        const { data: worthSubs } = await admin
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth")
+          .eq("user_id", ownerId);
+        for (const row of worthSubs ?? []) {
+          const sub: PushSub = {
+            endpoint: row.endpoint,
+            keys: { p256dh: row.p256dh, auth: row.auth },
+          };
+          await sendPush(sub, {
+            title: "💼 Vermogen bijwerken",
+            body: "Nieuwe maand — werk je rekeningstanden bij.",
+            url: "/financien",
+          });
+        }
+      }
+    }
+  }
+
   // 2) Wekelijkse backup (zondag) als Telegram-document — buiten Supabase, en
   // zonder een tweede Vercel-cron (Hobby staat er maar één per dag toe).
   let backup: "verstuurd" | "mislukt" | "overgeslagen" = "overgeslagen";

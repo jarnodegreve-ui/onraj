@@ -261,13 +261,26 @@ function QuickForm({
             </div>
 
             {expanded === "date" && (
-              <Input
-                id="qa-due"
-                type="date"
-                autoFocus
-                value={dueOn}
-                onChange={(event) => setDueOn(event.target.value)}
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="qa-due"
+                  type="date"
+                  autoFocus
+                  value={dueOn}
+                  onChange={(event) => setDueOn(event.target.value)}
+                  className="flex-1"
+                />
+                {dueOn && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDueOn("")}
+                  >
+                    Wissen
+                  </Button>
+                )}
+              </div>
             )}
 
             {expanded === "priority" && (
