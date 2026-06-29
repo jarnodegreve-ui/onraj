@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { addMonths, addYears, format, parseISO } from "date-fns";
+
 import { buildBackup } from "@/lib/backup";
 import { formatDate, formatEuro } from "@/lib/format";
 import { secureEquals } from "@/lib/secure";
@@ -29,6 +31,23 @@ function todayKeyBrussels(now: Date) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Brussels",
   }).format(now);
+}
+
+// Schuif een verlopen vervaldatum op naar de eerstvolgende datum ≥ vandaag,
+// per cyclus (maandelijks/jaarlijks).
+function advanceRenewal(
+  dateStr: string,
+  cycle: string,
+  todayKey: string,
+): string {
+  let date = parseISO(dateStr);
+  const step = cycle === "jaarlijks" ? addYears : addMonths;
+  let guard = 0;
+  while (format(date, "yyyy-MM-dd") < todayKey && guard < 600) {
+    date = step(date, 1);
+    guard += 1;
+  }
+  return format(date, "yyyy-MM-dd");
 }
 
 // Dagelijkse ochtend-digest: telt openstaande taken (vandaag/te laat) en
@@ -193,6 +212,26 @@ export async function GET(request: Request) {
         telegramChatId,
         `🔔 ${sub.name} verlengt op ${formatDate(sub.next_renewal)} — ${formatEuro(amount)} (${sub.cycle}).`,
       );
+    }
+  }
+
+  // 1e) Verlopen vervaldatums automatisch doorschuiven naar de volgende cyclus,
+  // zodat de reminders zonder onderhoud blijven werken.
+  {
+    const todayKey = todayKeyBrussels(now);
+    const { data: pastSubs } = await admin
+      .from("subscriptions")
+      .select("id, cycle, next_renewal")
+      .eq("user_id", ownerId)
+      .eq("active", true)
+      .not("next_renewal", "is", null)
+      .lt("next_renewal", todayKey);
+    for (const sub of pastSubs ?? []) {
+      const next = advanceRenewal(sub.next_renewal, sub.cycle, todayKey);
+      await admin
+        .from("subscriptions")
+        .update({ next_renewal: next, updated_at: new Date().toISOString() })
+        .eq("id", sub.id);
     }
   }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Download, Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
 import { CountUp } from "@/components/count-up";
 import { EmptyState } from "@/components/empty-state";
@@ -21,6 +21,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   currentMonthKey,
   expensesByCategory,
@@ -126,6 +132,36 @@ export function FinanceView({
         description="Inkomsten, uitgaven en je maandoverzicht."
       >
         <MonthSelector month={month} onChange={setMonth} />
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="outline">
+                <Download className="size-4" /> Exporteer
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              render={
+                <a href={`/api/finance/export?scope=month&month=${month}`} />
+              }
+            >
+              Deze maand (CSV)
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              render={
+                <a
+                  href={`/api/finance/export?scope=year&year=${month.slice(0, 4)}`}
+                />
+              }
+            >
+              Dit jaar (CSV)
+            </DropdownMenuItem>
+            <DropdownMenuItem render={<a href="/api/finance/export?scope=all" />}>
+              Alles (CSV)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button onClick={openNew}>
           <Plus className="size-4" /> Nieuwe transactie
         </Button>
