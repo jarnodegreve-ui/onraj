@@ -239,11 +239,11 @@ function QuickForm({
               <FieldToggle
                 label="Prioriteit"
                 active={expanded === "priority"}
-                set={priority !== "middel"}
+                set={false}
                 onClick={() => toggleField("priority")}
               >
+                {/* Alleen de vlag-kleur als indicator — geen tekstlabel. */}
                 <Flag className="size-4" style={{ color: prio.color }} />
-                {priority !== "middel" && <span>{prio.label}</span>}
               </FieldToggle>
               {categories.length > 0 && (
                 <FieldToggle
