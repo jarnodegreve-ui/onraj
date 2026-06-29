@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { buildBackup } from "@/lib/backup";
 import { isMissingColumn } from "@/lib/data/safe";
+import { pinMatches } from "@/lib/finance-lock";
 import { toNote } from "@/lib/mappers";
 import { secureEquals } from "@/lib/secure";
 import {
@@ -88,11 +89,12 @@ const HELP = [
   "",
   "Stuur gewoon tekst → het wordt een taak (in je inbox).",
   "📷 Stuur een foto → het wordt een taak (bijschrift /notitie = notitie).",
-  "In de inbox kan je alles omzetten naar een notitie of categoriseren.",
   "",
   "Commando's:",
-  "• /vandaag — taken & afspraken van vandaag",
-  "• /komende — afspraken komende 7 dagen",
+  "• /vandaag — taken voor vandaag (& te laat)",
+  "• /saldo — saldo deze maand 🔒",
+  "• /abonnementen — maand-/jaartotaal 🔒",
+  "• /koers <ticker> <prijs> — koers bijwerken 🔒 (bv. /koers VWCE 92,50)",
   "• /uitgave <bedrag> <tekst> — boek een uitgave (bv. /uitgave 40 tanken)",
   "• /inkomst <bedrag> <tekst> — boek een inkomst",
   "• /taak <tekst> — maak een taak",
@@ -100,13 +102,17 @@ const HELP = [
   "• /backup — stuur een backup van al je data",
   "• /setup — toon de commando's in het Telegram-menu",
   "• /help — deze hulp",
+  "",
+  "🔒 = vereist je finance-PIN als die is ingesteld, bv. /saldo 1234",
 ].join("\n");
 
 // De zichtbare commando-lijst (Menu-knop / "/"-suggesties). Geregistreerd via
 // /setup. /setup zelf staat er bewust niet in (eenmalige actie).
 const BOT_COMMANDS = [
-  { command: "vandaag", description: "Taken & afspraken van vandaag" },
-  { command: "komende", description: "Afspraken komende 7 dagen" },
+  { command: "vandaag", description: "Taken voor vandaag" },
+  { command: "saldo", description: "Saldo deze maand (PIN)" },
+  { command: "abonnementen", description: "Abonnementen-totaal (PIN)" },
+  { command: "koers", description: "Koers bijwerken, bv. VWCE 92,50 (PIN)" },
   { command: "uitgave", description: "Boek een uitgave (bv. 40 tanken)" },
   { command: "inkomst", description: "Boek een inkomst (bv. 2400 loon)" },
   { command: "taak", description: "Maak een taak" },
@@ -121,14 +127,6 @@ function brusselsToday(now: Date) {
   }).format(now);
 }
 
-function fmtTime(iso: string) {
-  return new Intl.DateTimeFormat("nl-BE", {
-    timeZone: "Europe/Brussels",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(iso));
-}
-
 function euro(n: number) {
   return new Intl.NumberFormat("nl-BE", {
     style: "currency",
@@ -137,9 +135,7 @@ function euro(n: number) {
 }
 
 async function handleVandaag(admin: Admin, ownerId: string) {
-  const now = new Date();
-  const today = brusselsToday(now);
-  const in24h = new Date(now.getTime() + 24 * 3600 * 1000).toISOString();
+  const today = brusselsToday(new Date());
 
   const { data: tasks } = await admin
     .from("tasks")
@@ -151,34 +147,141 @@ async function handleVandaag(admin: Admin, ownerId: string) {
     .lte("due_on", today)
     .order("due_on");
 
-  const { data: events } = await admin
-    .from("events")
-    .select("title, starts_at, all_day")
-    .eq("user_id", ownerId)
-    .is("deleted_at", null)
-    .gte("starts_at", now.toISOString())
-    .lte("starts_at", in24h)
-    .order("starts_at");
-
-  const lines: string[] = ["📋 Vandaag"];
-  if (tasks && tasks.length > 0) {
-    lines.push("", `✅ Taken (${tasks.length}):`);
-    for (const task of tasks) {
-      const late = (task.due_on as string) < today ? " — te laat" : "";
-      lines.push(`• ${task.title}${late}`);
-    }
+  if (!tasks || tasks.length === 0) {
+    return "📋 Vandaag\n\nGeen taken voor vandaag 🎉";
   }
-  if (events && events.length > 0) {
-    lines.push("", `🗓 Afspraken (komende 24u, ${events.length}):`);
-    for (const event of events) {
-      const when = event.all_day ? "hele dag" : fmtTime(event.starts_at as string);
-      lines.push(`• ${when} — ${event.title}`);
-    }
-  }
-  if ((!tasks || tasks.length === 0) && (!events || events.length === 0)) {
-    lines.push("", "Niets op de planning 🎉");
+  const lines: string[] = ["📋 Vandaag", "", `✅ Taken (${tasks.length}):`];
+  for (const task of tasks) {
+    const late = (task.due_on as string) < today ? " — te laat" : "";
+    lines.push(`• ${task.title}${late}`);
   }
   return lines.join("\n");
+}
+
+// ── PIN-slot voor financiële commando's (hergebruikt de finance-PIN) ─────────
+async function financePinHash(
+  admin: Admin,
+  ownerId: string,
+): Promise<string | null> {
+  const { data, error } = await admin
+    .from("app_settings")
+    .select("finance_pin_hash")
+    .eq("user_id", ownerId)
+    .maybeSingle();
+  if (error) return null;
+  return (data?.finance_pin_hash as string | null) ?? null;
+}
+
+// Geeft een foutmelding terug als geblokkeerd, of null als toegang OK is.
+function pinGate(
+  hash: string | null,
+  pin: string | null,
+  ownerId: string,
+): string | null {
+  if (!hash) return null; // geen PIN ingesteld → geen slot
+  if (!pin) return "🔒 PIN vereist — voeg je finance-PIN toe, bv. /saldo 1234";
+  if (!pinMatches(pin, ownerId, hash)) return "🔒 Onjuiste PIN.";
+  return null;
+}
+
+async function handleSaldo(admin: Admin, ownerId: string) {
+  const month = brusselsToday(new Date()).slice(0, 7); // YYYY-MM
+  const { data: txs } = await admin
+    .from("transactions")
+    .select("amount, direction")
+    .eq("user_id", ownerId)
+    .is("deleted_at", null)
+    .gte("occurred_on", `${month}-01`)
+    .lte("occurred_on", `${month}-31`);
+
+  let inkomsten = 0;
+  let uitgaven = 0;
+  for (const tx of txs ?? []) {
+    const amt =
+      typeof tx.amount === "string" ? Number.parseFloat(tx.amount) : tx.amount;
+    if (tx.direction === "inkomst") inkomsten += amt;
+    else uitgaven += amt;
+  }
+  return [
+    "💰 Saldo deze maand",
+    "",
+    `Inkomsten: ${euro(inkomsten)}`,
+    `Uitgaven: ${euro(uitgaven)}`,
+    `Saldo: ${euro(inkomsten - uitgaven)}`,
+  ].join("\n");
+}
+
+async function handleAbonnementen(admin: Admin, ownerId: string) {
+  const { data: subs } = await admin
+    .from("subscriptions")
+    .select("name, amount, cycle")
+    .eq("user_id", ownerId)
+    .eq("active", true)
+    .order("name");
+
+  if (!subs || subs.length === 0) return "🔁 Geen actieve abonnementen.";
+
+  let perMonth = 0;
+  const lines: string[] = ["🔁 Abonnementen", ""];
+  for (const sub of subs) {
+    const amt =
+      typeof sub.amount === "string"
+        ? Number.parseFloat(sub.amount)
+        : sub.amount;
+    perMonth += sub.cycle === "jaarlijks" ? amt / 12 : amt;
+    lines.push(
+      `• ${sub.name} — ${euro(amt)}/${sub.cycle === "jaarlijks" ? "jaar" : "maand"}`,
+    );
+  }
+  lines.push(
+    "",
+    `Totaal: ${euro(perMonth)}/maand · ${euro(perMonth * 12)}/jaar`,
+  );
+  return lines.join("\n");
+}
+
+async function handleKoers(
+  admin: Admin,
+  ownerId: string,
+  query: string,
+  price: number,
+) {
+  const { data: holdings } = await admin
+    .from("holdings")
+    .select("id, name, ticker, quantity")
+    .eq("user_id", ownerId);
+  if (!holdings || holdings.length === 0) return "Geen beleggingen gevonden.";
+
+  const q = query.toLowerCase();
+  const match =
+    holdings.find((h) => (h.ticker ?? "").toLowerCase() === q) ??
+    holdings.find((h) => (h.name ?? "").toLowerCase() === q) ??
+    holdings.find(
+      (h) =>
+        (h.name ?? "").toLowerCase().includes(q) ||
+        (h.ticker ?? "").toLowerCase().includes(q),
+    );
+  if (!match) return `Geen belegging gevonden voor "${query}".`;
+
+  const { error } = await admin.from("holding_prices").upsert(
+    {
+      user_id: ownerId,
+      holding_id: match.id,
+      price,
+      recorded_on: brusselsToday(new Date()),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,holding_id,recorded_on" },
+  );
+  if (error) return "Koers opslaan mislukt 😕";
+  revalidatePath("/financien");
+  revalidatePath("/dashboard");
+
+  const qty =
+    typeof match.quantity === "string"
+      ? Number.parseFloat(match.quantity)
+      : match.quantity;
+  return `📈 ${match.name}${match.ticker ? ` (${match.ticker})` : ""}: ${euro(price)}\nWaarde positie: ${euro(qty * price)}`;
 }
 
 // Parseert een bedrag uit tekst, robuust voor NL/BE-notatie: "40", "40,50",
@@ -221,41 +324,6 @@ async function createTransaction(
   const emoji = direction === "uitgave" ? "💸" : "💰";
   const label = direction === "uitgave" ? "Uitgave" : "Inkomst";
   return `${emoji} ${label} genoteerd: ${euro(amount)}${description ? ` — ${description}` : ""}`;
-}
-
-async function handleKomende(admin: Admin, ownerId: string) {
-  const now = new Date();
-  const in7d = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString();
-  const { data: events } = await admin
-    .from("events")
-    .select("title, starts_at, all_day, location")
-    .eq("user_id", ownerId)
-    .is("deleted_at", null)
-    .gte("starts_at", now.toISOString())
-    .lte("starts_at", in7d)
-    .order("starts_at");
-
-  if (!events || events.length === 0) {
-    return "Geen afspraken de komende 7 dagen 🌴";
-  }
-  const fmtDay = (iso: string) =>
-    new Intl.DateTimeFormat("nl-BE", {
-      timeZone: "Europe/Brussels",
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    }).format(new Date(iso));
-
-  const lines: string[] = ["🗓 Komende 7 dagen"];
-  for (const event of events) {
-    const day = fmtDay(event.starts_at as string);
-    const when = event.all_day
-      ? day
-      : `${day} ${fmtTime(event.starts_at as string)}`;
-    const loc = event.location ? ` (${event.location})` : "";
-    lines.push(`• ${when} — ${event.title}${loc}`);
-  }
-  return lines.join("\n");
 }
 
 // Registreert de commando-lijst zodat /uitgave, /inkomst … in het Telegram-menu
@@ -500,8 +568,31 @@ export async function POST(request: Request) {
         if (cmd === "start" || cmd === "help") reply = HELP;
         else if (cmd === "vandaag" || cmd === "today")
           reply = await handleVandaag(admin, ownerId);
-        else if (cmd === "komende") reply = await handleKomende(admin, ownerId);
-        else if (cmd === "uitgave" || cmd === "kost")
+        else if (cmd === "saldo") {
+          const hash = await financePinHash(admin, ownerId);
+          reply =
+            pinGate(hash, args.trim() || null, ownerId) ??
+            (await handleSaldo(admin, ownerId));
+        } else if (cmd === "abonnementen" || cmd === "abos") {
+          const hash = await financePinHash(admin, ownerId);
+          reply =
+            pinGate(hash, args.trim() || null, ownerId) ??
+            (await handleAbonnementen(admin, ownerId));
+        } else if (cmd === "koers" || cmd === "prijs") {
+          const hash = await financePinHash(admin, ownerId);
+          const tokens = args.trim().split(/\s+/).filter(Boolean);
+          const pin = hash ? (tokens.pop() ?? null) : null;
+          const priceToken = tokens.pop();
+          const query = tokens.join(" ");
+          const block = pinGate(hash, pin, ownerId);
+          if (block) reply = block;
+          else {
+            const price = priceToken ? parseAmount(priceToken) : null;
+            if (!query || price === null)
+              reply = `Gebruik: /koers <ticker> <prijs>${hash ? " <pin>" : ""}\nBv. /koers VWCE 92,50${hash ? " 1234" : ""}`;
+            else reply = await handleKoers(admin, ownerId, query, price);
+          }
+        } else if (cmd === "uitgave" || cmd === "kost")
           reply = await createTransaction(admin, ownerId, "uitgave", args);
         else if (cmd === "inkomst")
           reply = await createTransaction(admin, ownerId, "inkomst", args);
