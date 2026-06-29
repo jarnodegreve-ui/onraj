@@ -4,9 +4,11 @@ import { FinanceGate } from "@/components/finance/finance-gate";
 import { FinanceLockButton } from "@/components/finance/finance-lock-button";
 import { FinanceView } from "@/components/finance/finance-view";
 import { InvestmentsCard } from "@/components/finance/investments-card";
+import { SubscriptionsCard } from "@/components/finance/subscriptions-card";
 import { listAccountBalances } from "@/lib/data/accounts";
 import { listBudgets } from "@/lib/data/budgets";
 import { listHoldingPrices, listHoldings } from "@/lib/data/investments";
+import { listSubscriptions } from "@/lib/data/subscriptions";
 import {
   ensureRecurringTransactions,
   listRecurring,
@@ -51,6 +53,7 @@ export default async function FinancienPage() {
     accountBalances,
     holdings,
     holdingPrices,
+    subscriptions,
   ] = await Promise.all([
     listTransactions(),
     listBudgets(),
@@ -59,6 +62,7 @@ export default async function FinancienPage() {
     listAccountBalances(),
     listHoldings(),
     listHoldingPrices(),
+    listSubscriptions(),
   ]);
 
   // Vooruitblik op de vaste posten voor deze maand (Brusselse dag van de maand).
@@ -86,6 +90,7 @@ export default async function FinancienPage() {
         preview={false}
       />
       <AccountsPanel balances={accountBalances} />
+      <SubscriptionsCard subscriptions={subscriptions} />
       <InvestmentsCard holdings={holdings} prices={holdingPrices} />
     </div>
   );

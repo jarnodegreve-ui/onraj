@@ -19,6 +19,8 @@ import type {
   RecurringTransactionRow,
   SavingsGoal,
   SavingsGoalRow,
+  Subscription,
+  SubscriptionRow,
   Subtask,
   Task,
   TaskRow,
@@ -199,6 +201,21 @@ export function toHolding(row: HoldingRow): Holding {
     ticker: row.ticker,
     quantity: toNumber(row.quantity),
     costBasis: row.cost_basis === null ? null : toNumber(row.cost_basis),
+    note: row.note,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function toSubscription(row: SubscriptionRow): Subscription {
+  return {
+    id: row.id,
+    name: row.name,
+    amount: toNumber(row.amount),
+    cycle: row.cycle,
+    category: row.category,
+    nextRenewal: row.next_renewal,
+    active: row.active,
     note: row.note,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

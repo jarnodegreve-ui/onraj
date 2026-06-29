@@ -305,6 +305,37 @@ export interface HoldingPriceRow {
   updated_at: string;
 }
 
+// ─── Abonnementen ────────────────────────────────────────────────────────────
+
+export type SubscriptionCycle = "maandelijks" | "jaarlijks";
+
+export interface Subscription {
+  id: string;
+  name: string;
+  amount: number; // bedrag per cyclus
+  cycle: SubscriptionCycle;
+  category: string | null;
+  nextRenewal: string | null; // 'YYYY-MM-DD'
+  active: boolean;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubscriptionRow {
+  id: string;
+  user_id: string;
+  name: string;
+  amount: number | string;
+  cycle: SubscriptionCycle;
+  category: string | null;
+  next_renewal: string | null;
+  active: boolean;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // ─── Categorieën (beheerbaar) ────────────────────────────────────────────────
 
 export type CategoryScope = "task" | "note";
