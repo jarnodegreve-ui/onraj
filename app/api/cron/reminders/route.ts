@@ -74,53 +74,34 @@ export async function GET(request: Request) {
   const now = new Date();
 
   let taskCount = 0;
-  let sent = 0;
 
-  // 1) Dagelijkse ochtend-digest via web-push.
-  if (pushConfigured) {
+  // 1) Dagelijkse ochtend-digest via Telegram: de taken die op datum staan
+  // (vandaag of al te laat), opgesomd.
+  if (telegramConfigured && telegramChatId) {
     const todayKey = todayKeyBrussels(now);
 
     const { data: tasks } = await admin
       .from("tasks")
-      .select("id")
+      .select("title, due_on")
       .eq("user_id", ownerId)
       .is("deleted_at", null)
       .eq("done", false)
       .not("due_on", "is", null)
-      .lte("due_on", todayKey);
+      .lte("due_on", todayKey)
+      .order("due_on");
 
     taskCount = tasks?.length ?? 0;
-
-    const taskPart =
-      taskCount === 0
-        ? "geen taken"
-        : `${taskCount} ${taskCount === 1 ? "taak" : "taken"}`;
-    const body = `Vandaag: ${taskPart} te doen.`;
-
-    const { data: subs } = await admin
-      .from("push_subscriptions")
-      .select("endpoint, p256dh, auth")
-      .eq("user_id", ownerId);
-
-    for (const row of subs ?? []) {
-      const sub: PushSub = {
-        endpoint: row.endpoint,
-        keys: { p256dh: row.p256dh, auth: row.auth },
-      };
-      const result = await sendPush(sub, {
-        title: "Goeiemorgen ☀️",
-        body,
-        url: "/dashboard",
-      });
-      if (result === "ok") {
-        sent += 1;
-      } else if (result === "gone") {
-        await admin
-          .from("push_subscriptions")
-          .delete()
-          .eq("endpoint", row.endpoint);
+    const lines: string[] = ["☀️ Goeiemorgen!"];
+    if (taskCount === 0) {
+      lines.push("", "Geen taken voor vandaag 🎉");
+    } else {
+      lines.push("", `📋 Vandaag (${taskCount}):`);
+      for (const task of tasks ?? []) {
+        const late = (task.due_on as string) < todayKey ? " — te laat" : "";
+        lines.push(`• ${task.title}${late}`);
       }
     }
+    await sendTelegramMessage(telegramChatId, lines.join("\n"));
   }
 
   // 1b) Wekelijkse herinnering (zondag) om de beleggingskoersen bij te werken.
@@ -267,7 +248,6 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     taskCount,
-    sent,
     backup,
     purged,
   });
