@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { buildBackup } from "@/lib/backup";
+import { formatDate, formatEuro } from "@/lib/format";
 import { secureEquals } from "@/lib/secure";
 import {
   adminConfigured,
@@ -169,6 +170,29 @@ export async function GET(request: Request) {
           });
         }
       }
+    }
+  }
+
+  // 1d) Abonnement-vervaldatum-reminders via Telegram (3 dagen vooraf).
+  if (telegramConfigured && telegramChatId) {
+    const inThreeDays = todayKeyBrussels(
+      new Date(now.getTime() + 3 * 24 * 3600 * 1000),
+    );
+    const { data: dueSubs } = await admin
+      .from("subscriptions")
+      .select("name, amount, cycle, next_renewal")
+      .eq("user_id", ownerId)
+      .eq("active", true)
+      .eq("next_renewal", inThreeDays);
+    for (const sub of dueSubs ?? []) {
+      const amount =
+        typeof sub.amount === "string"
+          ? Number.parseFloat(sub.amount)
+          : sub.amount;
+      await sendTelegramMessage(
+        telegramChatId,
+        `🔔 ${sub.name} verlengt op ${formatDate(sub.next_renewal)} — ${formatEuro(amount)} (${sub.cycle}).`,
+      );
     }
   }
 

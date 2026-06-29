@@ -4,7 +4,12 @@ import { formatDate, formatEuro } from "@/lib/format";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-export type SearchType = "notitie" | "transactie" | "taak";
+export type SearchType =
+  | "notitie"
+  | "transactie"
+  | "taak"
+  | "belegging"
+  | "abonnement";
 
 export interface SearchItem {
   id: string;
@@ -22,26 +27,38 @@ export async function loadSearchIndex(): Promise<SearchItem[]> {
   if (!supabaseConfigured) return [];
   const supabase = await createClient();
 
-  const [notes, transactions, tasks] = await Promise.all([
-    supabase
-      .from("notes")
-      .select("id,title,tags")
-      .is("deleted_at", null)
-      .order("updated_at", { ascending: false })
-      .limit(100),
-    supabase
-      .from("transactions")
-      .select("id,description,category,amount,direction")
-      .is("deleted_at", null)
-      .order("occurred_on", { ascending: false })
-      .limit(100),
-    supabase
-      .from("tasks")
-      .select("id,title,due_on,done")
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(100),
-  ]);
+  const [notes, transactions, tasks, holdings, subscriptions] =
+    await Promise.all([
+      supabase
+        .from("notes")
+        .select("id,title,tags")
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("transactions")
+        .select("id,description,category,amount,direction")
+        .is("deleted_at", null)
+        .order("occurred_on", { ascending: false })
+        .limit(100),
+      supabase
+        .from("tasks")
+        .select("id,title,due_on,done")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("holdings")
+        .select("id,name,ticker")
+        .order("created_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("subscriptions")
+        .select("id,name,amount,cycle")
+        .eq("active", true)
+        .order("created_at", { ascending: false })
+        .limit(100),
+    ]);
 
   const items: SearchItem[] = [];
 
@@ -82,6 +99,30 @@ export async function loadSearchIndex(): Promise<SearchItem[]> {
           ? formatDate(task.due_on)
           : "Open",
       href: "/taken",
+    });
+  }
+
+  for (const holding of holdings.data ?? []) {
+    items.push({
+      id: `holding-${holding.id}`,
+      type: "belegging",
+      label: holding.name,
+      sublabel: holding.ticker ?? "",
+      href: "/financien",
+    });
+  }
+
+  for (const sub of subscriptions.data ?? []) {
+    const amount =
+      typeof sub.amount === "string"
+        ? Number.parseFloat(sub.amount)
+        : sub.amount;
+    items.push({
+      id: `sub-${sub.id}`,
+      type: "abonnement",
+      label: sub.name,
+      sublabel: `${formatEuro(amount)} / ${sub.cycle === "jaarlijks" ? "jaar" : "maand"}`,
+      href: "/financien",
     });
   }
 

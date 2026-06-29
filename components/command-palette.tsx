@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   ListTodo,
   NotebookPen,
+  Repeat,
   Search,
+  TrendingUp,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -29,9 +31,17 @@ const TYPE_META: Record<SearchType, { label: string; icon: LucideIcon }> = {
   taak: { label: "Taken", icon: ListTodo },
   notitie: { label: "Notities", icon: NotebookPen },
   transactie: { label: "Transacties", icon: Wallet },
+  belegging: { label: "Beleggingen", icon: TrendingUp },
+  abonnement: { label: "Abonnementen", icon: Repeat },
 };
 
-const TYPE_ORDER: SearchType[] = ["taak", "notitie", "transactie"];
+const TYPE_ORDER: SearchType[] = [
+  "taak",
+  "notitie",
+  "transactie",
+  "belegging",
+  "abonnement",
+];
 
 export function CommandPalette() {
   const router = useRouter();
@@ -99,7 +109,7 @@ export function CommandPalette() {
           if (next) void ensureIndex();
         }}
         title="Snelzoeken"
-        description="Zoek in notities, transacties en taken."
+        description="Zoek in taken, notities, transacties, beleggingen en abonnementen."
       >
         <Command>
           <CommandInput placeholder="Zoek in alles…" />
