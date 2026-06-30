@@ -92,7 +92,7 @@ export async function loadSearchIndex(): Promise<SearchItem[]> {
     items.push({
       id: `task-${task.id}`,
       type: "taak",
-      label: task.title,
+      label: task.title || "Naamloze taak",
       sublabel: task.done
         ? "Afgewerkt"
         : task.due_on

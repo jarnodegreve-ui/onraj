@@ -48,6 +48,7 @@ export function PriceUpdateDialog({
           </DialogDescription>
         </DialogHeader>
         <PriceForm
+          key={open ? "open" : "closed"}
           holdings={holdings}
           prices={prices}
           onClose={() => onOpenChange(false)}

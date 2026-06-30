@@ -91,7 +91,7 @@ export function QuickAddDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Mobiel: bovenaan ankeren (niet bottom-sheet) zodat het volledige
           formulier boven het toetsenbord blijft; desktop: gecentreerd. */}
-      <DialogContent className="!bottom-auto top-[calc(env(safe-area-inset-top)+0.75rem)] max-h-[86dvh] rounded-b-2xl sm:top-1/2 sm:max-w-md">
+      <DialogContent className="!bottom-auto top-[calc(env(safe-area-inset-top)+0.75rem)] max-h-[86dvh] rounded-b-2xl max-sm:data-open:slide-in-from-top-4 max-sm:data-closed:slide-out-to-top-4 sm:top-1/2 sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Snel toevoegen</DialogTitle>
           <DialogDescription>
