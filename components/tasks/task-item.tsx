@@ -205,7 +205,7 @@ export function TaskItem({
                 <span
                   className={cn(
                     overdue
-                      ? "text-rose-600 dark:text-rose-400"
+                      ? "text-neg"
                       : "text-muted-foreground",
                   )}
                 >

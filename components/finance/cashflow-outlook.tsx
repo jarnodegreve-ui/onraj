@@ -49,7 +49,7 @@ export function CashflowOutlook({
               </p>
               <div className="flex items-center justify-between gap-4 text-sm">
                 <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <TrendingDown className="size-4 text-rose-500" /> Uitgaven
+                  <TrendingDown className="size-4 text-neg" /> Uitgaven
                 </span>
                 <span className="font-semibold tabular-nums">
                   {formatEuro(outlook.komendeUitgaven)}
@@ -58,7 +58,7 @@ export function CashflowOutlook({
               {outlook.komendeInkomsten > 0 && (
                 <div className="mt-1.5 flex items-center justify-between gap-4 text-sm">
                   <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <TrendingUp className="size-4 text-emerald-500" /> Inkomsten
+                    <TrendingUp className="size-4 text-pos" /> Inkomsten
                   </span>
                   <span className="font-semibold tabular-nums">
                     {formatEuro(outlook.komendeInkomsten)}
@@ -71,8 +71,8 @@ export function CashflowOutlook({
                   className={cn(
                     "font-semibold tabular-nums",
                     outlook.komendNetto >= 0
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-rose-600 dark:text-rose-400",
+                      ? "text-pos"
+                      : "text-neg",
                   )}
                 >
                   {formatEuro(outlook.komendNetto)}
@@ -85,20 +85,20 @@ export function CashflowOutlook({
               <Stat
                 label="Vaste inkomsten"
                 value={formatEuro(outlook.inkomstenTotaal)}
-                className="text-emerald-600 dark:text-emerald-400"
+                className="text-pos"
               />
               <Stat
                 label="Vaste lasten"
                 value={formatEuro(outlook.uitgavenTotaal)}
-                className="text-rose-600 dark:text-rose-400"
+                className="text-neg"
               />
               <Stat
                 label="Netto/maand"
                 value={formatEuro(outlook.nettoMaand)}
                 className={
                   outlook.nettoMaand >= 0
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-rose-600 dark:text-rose-400"
+                    ? "text-pos"
+                    : "text-neg"
                 }
               />
             </div>
@@ -128,7 +128,7 @@ export function CashflowOutlook({
                     className={cn(
                       "shrink-0 font-medium tabular-nums",
                       item.direction === "inkomst"
-                        ? "text-emerald-600 dark:text-emerald-400"
+                        ? "text-pos"
                         : "text-foreground",
                     )}
                   >

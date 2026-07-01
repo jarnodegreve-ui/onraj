@@ -56,7 +56,7 @@ export function DashboardTasks({
                         className={cn(
                           "shrink-0 text-xs",
                           overdue
-                            ? "text-rose-600 dark:text-rose-400"
+                            ? "text-neg"
                             : "text-muted-foreground",
                         )}
                       >

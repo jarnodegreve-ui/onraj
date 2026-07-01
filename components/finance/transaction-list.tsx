@@ -90,8 +90,8 @@ function TransactionRow({
         className={cn(
           "flex size-9 shrink-0 items-center justify-center rounded-full",
           income
-            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
-            : "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400",
+            ? "bg-pos/10 text-pos"
+            : "bg-neg/10 text-neg",
         )}
       >
         {income ? (
@@ -118,7 +118,7 @@ function TransactionRow({
       <span
         className={cn(
           "shrink-0 text-sm font-semibold tabular-nums",
-          income ? "text-emerald-600 dark:text-emerald-400" : "text-foreground",
+          income ? "text-pos" : "text-foreground",
         )}
       >
         {income ? "+" : "−"} {formatEuro(transaction.amount)}

@@ -172,14 +172,14 @@ export function FinanceView({
           icon={Wallet}
           hint={monthLabel(month)}
           valueClassName={
-            summary.saldo < 0 ? "text-rose-600 dark:text-rose-400" : undefined
+            summary.saldo < 0 ? "text-neg" : undefined
           }
         />
         <StatCard
           label="Inkomsten"
           value={<CountUp value={summary.inkomsten} format="euro" />}
           icon={TrendingUp}
-          valueClassName="text-emerald-600 dark:text-emerald-400"
+          valueClassName="text-pos"
         />
         <StatCard
           label="Uitgaven"

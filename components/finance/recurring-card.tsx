@@ -135,7 +135,7 @@ function RecurringRow({
       <span
         className={cn(
           "shrink-0 text-sm font-semibold tabular-nums",
-          income ? "text-emerald-600 dark:text-emerald-400" : "text-foreground",
+          income ? "text-pos" : "text-foreground",
         )}
       >
         {income ? "+" : "−"} {formatEuro(recurring.amount)}

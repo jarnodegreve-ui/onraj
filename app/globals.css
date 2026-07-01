@@ -11,7 +11,6 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-heading: var(--font-heading);
-  --font-serif: var(--font-serif);
   --color-pos: var(--pos);
   --color-neg: var(--neg);
   --color-warm: var(--warm);
@@ -46,23 +45,24 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  /* Vaste radius-schaal: controls 8-10px · kaarten/velden 14px ·
-     sheets/dialogen 20px · dock/pills full. Geen ad-hoc waarden meer. */
+  /* Vaste radius-schaal: controls 8-10px · kaarten/velden 12px ·
+     sheets/dialogen 16-18px · dock/pills full. Geen ad-hoc waarden meer. */
   --radius-sm: 0.5rem;
   --radius-md: 0.625rem;
   --radius-lg: var(--radius);
-  --radius-xl: 1.125rem;
-  --radius-2xl: 1.25rem;
-  --radius-3xl: 1.5rem;
-  --radius-4xl: 1.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.25rem;
+  --radius-4xl: 1.5rem;
 }
 
-/* ONRAJ-huisstijl "De Editie" — warm & editorial. Crème is de inkt, denim
-   (#3d68be) is de punt: hij verschijnt alleen op interactie (knoppen, actieve
-   staat, de brand-dot). Twee colorways: "Blauw" (licht, zand-crème #F0E4D6 +
-   slate) en "Zwart" (donker, warm near-black #141416 + crème). Stemmen:
-   Instrument Serif (editorial), Schibsted (koppen), Hanken (body), JetBrains
-   Mono (kickers + data). Geld: --pos (flesgroen) / --neg (terracotta). */
+/* ONRAJ-huisstijl "warm precies" — de dichtheid en precisie van Linear op een
+   warme basis. Crème is de inkt; denim (#3d68be) verschijnt alleen op
+   interactie (knoppen, actieve staat, de brand-dot) — max drie momenten per
+   scherm. Twee colorways: "Blauw" (licht, zand-crème #F0E4D6 + slate) en
+   "Zwart" (donker, warm near-black #141416 + crème). Stemmen: Schibsted
+   (koppen/titels), Hanken (body), JetBrains Mono (uitsluitend cijfers/data).
+   Geld: --pos (flesgroen) / --neg (terracotta) — nooit hardcoded groen/rood. */
 :root {
   color-scheme: light; /* native controls/scrollbars volgen het thema */
   --background: #f0e4d6; /* warme zand-crème */
@@ -93,7 +93,7 @@
   --chart-3: #2e7d5b; /* = --pos */
   --chart-4: #b4543e; /* = --neg */
   --chart-5: #7a6cae; /* zacht violet */
-  --radius: 0.875rem; /* 14px — kaarten & velden */
+  --radius: 0.75rem; /* 12px — kaarten & velden */
   --brand-grad-from: #3d68be;
   --brand-grad-to: #3d68be;
   --brand-blue: #3d68be;
@@ -165,8 +165,7 @@
     @apply font-sans;
     -webkit-text-size-adjust: 100%;
   }
-  /* Koppen in Schibsted Grotesk (de wordmark-stijl), met krappe tracking.
-     Kaarttitels zijn hier bewust uit: die zijn mono-kickers (zie ui/card.tsx). */
+  /* Koppen in Schibsted Grotesk (de wordmark-stijl), met krappe tracking. */
   h1,
   h2,
   h3 {
@@ -202,17 +201,7 @@
     );
   }
 
-  /* Editorial kicker: sectielabels/kaarttitels in mono ("VERMOGEN"). */
-  .kicker {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted-foreground);
-  }
-
-  /* Hairline-sectiescheiding op het "vel" (i.p.v. kaart-om-kaart). */
+  /* Hairline-sectiescheiding (i.p.v. kaart-om-kaart). */
   .hairline {
     border-top: 1px solid var(--border);
   }

@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import {
   Hanken_Grotesk,
-  Instrument_Serif,
   JetBrains_Mono,
   Schibsted_Grotesk,
 } from "next/font/google";
@@ -10,19 +9,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-// Huisstijl 2026: Hanken Grotesk (body), Schibsted Grotesk (wordmark/koppen),
-// JetBrains Mono (cijfers/labels), Instrument Serif (editorial accenten:
-// groet, hero-bedragen, lege staten).
+// Huisstijl 2026 "warm precies": Hanken Grotesk (body), Schibsted Grotesk
+// (wordmark/koppen/kaarttitels), JetBrains Mono (uitsluitend cijfers/data).
 const sans = Hanken_Grotesk({
   variable: "--font-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const serif = Instrument_Serif({
-  variable: "--font-serif",
-  weight: "400",
-  style: ["normal", "italic"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -113,7 +103,7 @@ export default function RootLayout({
       // near-black i.p.v. een witte/crème flash vóór next-themes z'n .dark zet.
       // In licht thema dekt de body deze achtergrond af.
       style={{ backgroundColor: "#141416" }}
-      className={`${sans.variable} ${heading.variable} ${mono.variable} ${serif.variable} h-full antialiased`}
+      className={`${sans.variable} ${heading.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         <ThemeProvider

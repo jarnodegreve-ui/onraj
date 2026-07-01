@@ -95,10 +95,10 @@ export function BudgetsCard({
                       className={cn(
                         "h-full rounded-full transition-all",
                         over
-                          ? "bg-rose-500"
+                          ? "bg-neg"
                           : pct > 80
                             ? "bg-amber-500"
-                            : "bg-emerald-500",
+                            : "bg-pos",
                       )}
                       style={{ width: `${over ? 100 : pct}%` }}
                     />
@@ -107,7 +107,7 @@ export function BudgetsCard({
                     className={cn(
                       "mt-0.5 text-xs",
                       over
-                        ? "text-rose-600 dark:text-rose-400"
+                        ? "text-neg"
                         : "text-muted-foreground",
                     )}
                   >

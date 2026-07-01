@@ -120,7 +120,7 @@ export function TrashManager({ items }: { items: TrashItem[] }) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-muted-foreground hover:text-rose-600"
+                  className="text-muted-foreground hover:text-neg"
                   disabled={pending && busyId === item.id}
                   onClick={() => purge(item)}
                   aria-label="Definitief verwijderen"

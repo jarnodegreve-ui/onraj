@@ -172,7 +172,7 @@ export function MfaManager() {
         ) : factorId ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="inline-flex items-center gap-2 text-sm">
-              <span className="inline-flex size-2 rounded-full bg-emerald-500" />
+              <span className="inline-flex size-2 rounded-full bg-pos" />
               Actief — je login is beveiligd met 2FA.
             </p>
             <Button

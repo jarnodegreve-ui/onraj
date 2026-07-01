@@ -26,9 +26,7 @@ export function StatCard({
         </div>
       )}
       <div className="min-w-0">
-        <p className="font-mono text-[11px] font-medium tracking-[0.08em] uppercase text-muted-foreground">
-          {label}
-        </p>
+        <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
         <p
           className={cn(
             "text-2xl font-semibold tracking-tight tabular-nums",

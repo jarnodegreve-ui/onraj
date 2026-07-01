@@ -143,8 +143,8 @@ export function InvestmentsCard({
                         className={cn(
                           "text-xs tabular-nums",
                           item.gain >= 0
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-rose-600 dark:text-rose-400",
+                            ? "text-pos"
+                            : "text-neg",
                         )}
                       >
                         {item.gain >= 0 ? "+" : ""}
@@ -184,8 +184,8 @@ function GainBadge({ gain, pct }: { gain: number; pct: number }) {
       className={cn(
         "flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-medium tabular-nums",
         up
-          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-          : "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+          ? "bg-pos/10 text-pos"
+          : "bg-neg/10 text-neg",
       )}
     >
       <Icon className="size-3.5" />

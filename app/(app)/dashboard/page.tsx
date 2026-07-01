@@ -140,14 +140,12 @@ export default async function DashboardPage() {
           icon={ListTodo}
           label="Open taken"
           value={openTasks.length}
-          accent="#c98a3d"
         />
         <StatTile
           href="/notities"
           icon={NotebookPen}
           label="Notities"
           value={notes.length}
-          accent="#3d68be"
         />
       </div>
 
@@ -196,7 +194,7 @@ function SaldoCard({
     <Link href="/financien" className={cn("group block", className)}>
       <div
         data-slot="card"
-        className="h-full rounded-2xl border bg-card p-5 transition-colors group-hover:border-primary/30"
+        className="h-full rounded-lg bg-card p-4 ring-1 ring-foreground/8 transition-shadow group-hover:ring-foreground/16"
       >
         <div className="flex items-center justify-between">
           <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -217,19 +215,19 @@ function SaldoCard({
               className={cn(
                 "mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums",
                 saldo >= 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-rose-600 dark:text-rose-400",
+                  ? "text-pos"
+                  : "text-neg",
               )}
             >
               <CountUp value={saldo} format="euro" />
             </p>
             <div className="mt-3 flex items-center gap-4 font-mono text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                <TrendingUp className="size-3.5 text-emerald-500" />
+                <TrendingUp className="size-3.5 text-pos" />
                 <CountUp value={inkomsten} format="euro" />
               </span>
               <span className="flex items-center gap-1">
-                <TrendingDown className="size-3.5 text-rose-500" />
+                <TrendingDown className="size-3.5 text-neg" />
                 <CountUp value={uitgaven} format="euro" />
               </span>
             </div>
@@ -240,32 +238,28 @@ function SaldoCard({
   );
 }
 
-// Compacte tegel met een telling, linkt naar de module.
+// Compacte tegel met een telling, linkt naar de module. Bewust kleurloos
+// (muted icoon): denim is gereserveerd voor interactie, niet voor module-verf.
 function StatTile({
   href,
   icon: Icon,
   label,
   value,
-  accent,
   className,
 }: {
   href: string;
   icon: LucideIcon;
   label: string;
   value: number;
-  accent: string;
   className?: string;
 }) {
   return (
     <Link href={href} className={cn("group block", className)}>
       <div
         data-slot="card"
-        className="flex h-full flex-col gap-2 rounded-2xl border bg-card p-4 transition-colors group-hover:border-primary/30"
+        className="flex h-full flex-col gap-2 rounded-lg bg-card p-4 ring-1 ring-foreground/8 transition-shadow group-hover:ring-foreground/16"
       >
-        <div
-          className="flex size-9 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `${accent}1a`, color: accent }}
-        >
+        <div className="flex size-9 items-center justify-center rounded-md bg-secondary text-muted-foreground">
           <Icon className="size-5" />
         </div>
         <p className="font-mono text-2xl font-semibold tracking-tight tabular-nums">

@@ -117,14 +117,14 @@ function RecurringForm({
           <SegButton
             active={direction === "uitgave"}
             onClick={() => setDirection("uitgave")}
-            activeClassName="bg-rose-500/15 text-rose-600 ring-1 ring-inset ring-rose-500/30 dark:text-rose-300"
+            activeClassName="bg-neg/15 text-neg ring-1 ring-inset ring-neg/30"
           >
             Uitgave
           </SegButton>
           <SegButton
             active={direction === "inkomst"}
             onClick={() => setDirection("inkomst")}
-            activeClassName="bg-emerald-500/15 text-emerald-600 ring-1 ring-inset ring-emerald-500/30 dark:text-emerald-300"
+            activeClassName="bg-pos/15 text-pos ring-1 ring-inset ring-pos/30"
           >
             Inkomst
           </SegButton>

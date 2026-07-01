@@ -33,14 +33,14 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-// Kaarttitels zijn editorial kickers: 11px mono uppercase ("VERMOGEN") — de
-// datalaag praat mono, de inhoud praat crème. Zie docs/redesign-voorstel.md.
+// Strakke kaarttitel (Linear-recept): 13px Schibsted medium in rustig grijs —
+// de inhoud (cijfers, namen) is visueel de baas, niet het label.
 function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
       className={cn(
-        "font-mono text-[11px] font-medium tracking-[0.08em] uppercase text-muted-foreground",
+        "font-heading text-[13px] leading-snug font-medium tracking-[-0.01em] text-muted-foreground",
         className
       )}
       {...props}
