@@ -11,7 +11,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,7 +53,7 @@ export function SetPasswordForm() {
     <Card className="w-full max-w-sm shadow-xl">
       <CardHeader className="items-center text-center">
         <BrandMark className="mx-auto mb-1 size-12" />
-        <CardTitle className="text-xl">Wachtwoord instellen</CardTitle>
+        <div className="font-heading text-xl font-semibold tracking-tight">Wachtwoord instellen</div>
         <CardDescription>
           Kies een nieuw wachtwoord voor je account.
         </CardDescription>

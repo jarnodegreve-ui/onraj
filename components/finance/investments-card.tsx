@@ -73,7 +73,7 @@ export function InvestmentsCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Beleggingen</CardTitle>
+        <CardTitle>Beleggingen</CardTitle>
         <CardAction className="flex gap-2">
           {holdings.length > 0 && (
             <Button

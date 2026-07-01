@@ -48,7 +48,7 @@ export function RecurringCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Vaste posten</CardTitle>
+        <CardTitle>Vaste posten</CardTitle>
         <CardAction>
           <Button variant="outline" size="sm" onClick={openNew}>
             <Plus className="size-4" /> Toevoegen

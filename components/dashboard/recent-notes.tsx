@@ -16,7 +16,7 @@ export function RecentNotes({ notes }: { notes: Note[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Recente notities</CardTitle>
+        <CardTitle>Recente notities</CardTitle>
         <CardAction>
           <Link
             href="/notities"

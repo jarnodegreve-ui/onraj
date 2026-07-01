@@ -372,7 +372,6 @@ export function NotesView({
     <div>
       <PageHeader
         title="Notities"
-        description="Je markdown-notities met tags en zoeken."
       >
         {vaultConnected && !preview && notes.length > 0 && (
           <Button variant="outline" onClick={syncToVault} disabled={syncing}>

@@ -119,7 +119,7 @@ export function MfaManager() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-2">
           <ShieldCheck className="size-4" /> Twee-factor-authenticatie
         </CardTitle>
         <CardDescription>

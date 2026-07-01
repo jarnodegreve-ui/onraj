@@ -55,7 +55,7 @@ export function BudgetsCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Budgetten</CardTitle>
+        <CardTitle>Budgetten</CardTitle>
         <CardAction>
           <Button variant="outline" size="sm" onClick={openNew}>
             <Plus className="size-4" /> Budget

@@ -108,7 +108,6 @@ export function FinanceView({
       <div>
         <PageHeader
           title="Financiën"
-          description="Inkomsten, uitgaven en je maandoverzicht."
         >
           <Button disabled>
             <Plus className="size-4" /> Nieuwe transactie
@@ -129,7 +128,6 @@ export function FinanceView({
     <div className="space-y-6">
       <PageHeader
         title="Financiën"
-        description="Inkomsten, uitgaven en je maandoverzicht."
       >
         <MonthSelector month={month} onChange={setMonth} />
         <DropdownMenu>
@@ -204,7 +202,7 @@ export function FinanceView({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base capitalize">
+          <CardTitle className="capitalize">
             Transacties — {monthLabel(month)}
           </CardTitle>
         </CardHeader>

@@ -25,7 +25,6 @@ export default async function InstellingenPage() {
       <div>
         <PageHeader
           title="Instellingen"
-          description="Beheer je categorieën voor taken en notities."
         />
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
@@ -46,7 +45,6 @@ export default async function InstellingenPage() {
     <div className="space-y-8">
       <PageHeader
         title="Instellingen"
-        description="Beheer je categorieën — voeg toe, hernoem, geef een kleur of sleep om te herordenen."
       />
       <div className="grid gap-6 lg:grid-cols-2">
         <CategoryManager
@@ -70,7 +68,7 @@ export default async function InstellingenPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Sessie</CardTitle>
+          <CardTitle>Sessie</CardTitle>
           <CardDescription>Meld je af op dit toestel.</CardDescription>
         </CardHeader>
         <CardContent>

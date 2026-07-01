@@ -369,7 +369,6 @@ export function TasksView({
       <div>
         <PageHeader
           title="Taken"
-          description="Je to-do's met prioriteit en deadlines."
         >
           <Button disabled>
             <Plus className="size-4" /> Nieuwe taak
@@ -388,7 +387,6 @@ export function TasksView({
     <div>
       <PageHeader
         title="Taken"
-        description="Sleep taken tussen categorieën of binnen een kaart om te ordenen."
       >
         <RecurringTasksButton
           recurringTasks={recurringTasks}

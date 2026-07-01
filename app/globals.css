@@ -11,6 +11,12 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-heading: var(--font-heading);
+  --font-serif: var(--font-serif);
+  --color-pos: var(--pos);
+  --color-neg: var(--neg);
+  --color-warm: var(--warm);
+  --color-primary-soft: var(--primary-soft);
+  --color-surface-2: var(--surface-2);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -40,46 +46,54 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  /* Vaste radius-schaal: controls 8-10px · kaarten/velden 14px ·
+     sheets/dialogen 20px · dock/pills full. Geen ad-hoc waarden meer. */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: 1.125rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 1.75rem;
 }
 
-/* ONRAJ-huisstijl 2026 — warm & editorial. Accent: denim-blauw (#3d68be).
-   Twee colorways: "Blauw" (licht, warme zand-crème #F0E4D6 + slate #2c3346) en
-   "Zwart" (donker, warm near-black #141416 + crème #ECE7DF). Begroeting in
-   Instrument Serif, wordmark in Schibsted Grotesk, meta in JetBrains Mono.
-   Primaire knoppen = denim-blauw met witte tekst. */
+/* ONRAJ-huisstijl "De Editie" — warm & editorial. Crème is de inkt, denim
+   (#3d68be) is de punt: hij verschijnt alleen op interactie (knoppen, actieve
+   staat, de brand-dot). Twee colorways: "Blauw" (licht, zand-crème #F0E4D6 +
+   slate) en "Zwart" (donker, warm near-black #141416 + crème). Stemmen:
+   Instrument Serif (editorial), Schibsted (koppen), Hanken (body), JetBrains
+   Mono (kickers + data). Geld: --pos (flesgroen) / --neg (terracotta). */
 :root {
   color-scheme: light; /* native controls/scrollbars volgen het thema */
   --background: #f0e4d6; /* warme zand-crème */
   --foreground: #2c3346; /* slate */
   --card: #fbf7f0;
   --card-foreground: #2c3346;
+  --surface-2: #f4ede2; /* tweede vlakniveau: footers, code, input-bg */
   --popover: #fbf7f0;
   --popover-foreground: #2c3346;
   --primary: #3d68be; /* denim-blauw */
   --primary-foreground: #ffffff;
+  --primary-soft: #34599f; /* links/actieve labels — op licht dónkerder */
   --secondary: #e7dbcb;
   --secondary-foreground: #2c3346;
   --muted: #e7dbcb;
-  --muted-foreground: #7c7884;
+  --muted-foreground: #6e6a75;
   --accent: #e3e9f4; /* zachte blauwe tint */
   --accent-foreground: #2c3346;
-  --destructive: #c0392b;
-  --border: rgb(44 51 70 / 0.1);
+  --destructive: #b4543e; /* = --neg: terracotta i.p.v. koel rood */
+  --pos: #2e7d5b; /* geld + */
+  --neg: #b4543e; /* geld − */
+  --warm: #a6712c; /* deadlines-vandaag, budget-bijna-op */
+  --border: rgb(44 51 70 / 0.12);
   --input: rgb(44 51 70 / 0.12);
   --ring: #3d68be;
   --chart-1: #3d68be; /* denim */
   --chart-2: #c98a3d; /* warme amber */
-  --chart-3: #4f9e8f; /* teal */
-  --chart-4: #c0566b; /* rozerood */
+  --chart-3: #2e7d5b; /* = --pos */
+  --chart-4: #b4543e; /* = --neg */
   --chart-5: #7a6cae; /* zacht violet */
-  --radius: 1rem;
+  --radius: 0.875rem; /* 14px — kaarten & velden */
   --brand-grad-from: #3d68be;
   --brand-grad-to: #3d68be;
   --brand-blue: #3d68be;
@@ -99,26 +113,31 @@
   color-scheme: dark; /* native controls/scrollbars in donker */
   --background: #141416; /* warm near-black */
   --foreground: #ece7df; /* crème */
-  --card: #1e1e22;
+  --card: #1c1c1f; /* één vlakniveau, vlak = premium op near-black */
   --card-foreground: #ece7df;
-  --popover: #1e1e22;
+  --surface-2: #232327;
+  --popover: #1c1c1f;
   --popover-foreground: #ece7df;
-  --primary: #3d68be; /* denim-blauw */
+  --primary: #3d68be; /* denim-blauw — knoppen/vlakken (wit erop) */
   --primary-foreground: #ffffff;
+  --primary-soft: #6d90d8; /* links/actieve labels op donker (≈5,8:1) */
   --secondary: #26262b;
   --secondary-foreground: #ece7df;
   --muted: #26262b;
-  --muted-foreground: #8c8884;
-  --accent: #26262b;
+  --muted-foreground: #9a948b; /* warmer én lichter (contrast) */
+  --accent: rgb(236 231 223 / 0.05); /* crème-waas voor hover/actieve rijen */
   --accent-foreground: #ece7df;
-  --destructive: #f0796b;
-  --border: rgb(236 231 223 / 0.1);
+  --destructive: #e08573; /* = --neg */
+  --pos: #5fae8c; /* geld +, flesgroen */
+  --neg: #e08573; /* geld −, terracotta */
+  --warm: #d6a05a;
+  --border: rgb(236 231 223 / 0.08); /* hairline */
   --input: rgb(236 231 223 / 0.14);
   --ring: #3d68be;
   --chart-1: #5b82d4; /* heldere denim voor donker */
   --chart-2: #d6a05a;
-  --chart-3: #5fb3a3;
-  --chart-4: #d4707f;
+  --chart-3: #5fae8c; /* = --pos */
+  --chart-4: #e08573; /* = --neg */
   --chart-5: #9b8cc9;
   --sidebar: #18181b;
   --sidebar-foreground: #ece7df;
@@ -146,11 +165,11 @@
     @apply font-sans;
     -webkit-text-size-adjust: 100%;
   }
-  /* Koppen in Schibsted Grotesk (de wordmark-stijl), met krappe tracking. */
+  /* Koppen in Schibsted Grotesk (de wordmark-stijl), met krappe tracking.
+     Kaarttitels zijn hier bewust uit: die zijn mono-kickers (zie ui/card.tsx). */
   h1,
   h2,
-  h3,
-  [data-slot="card-title"] {
+  h3 {
     font-family: var(--font-heading);
     letter-spacing: -0.01em;
   }
@@ -159,12 +178,14 @@
     max-height: calc(100svh - 2rem);
     overflow-y: auto;
   }
-  /* Zachte diepte op kaarten — premium SaaS-gevoel. */
+  /* Diepte: alleen in het lichte thema een zweem schaduw; op near-black is
+     vlak = premium. Schaduwen zijn verder exclusief voor zwevende lagen
+     (dock, popovers, dialogen). */
   [data-slot="card"] {
-    box-shadow: 0 1px 3px oklch(0.45 0.03 256 / 0.07);
+    box-shadow: 0 1px 2px rgb(44 51 70 / 0.06);
   }
   .dark [data-slot="card"] {
-    box-shadow: 0 1px 3px oklch(0 0 0 / 0.35);
+    box-shadow: none;
   }
   ::selection {
     background: rgb(61 104 190 / 0.25); /* denim, ~25% */
@@ -179,5 +200,20 @@
       var(--brand-grad-from),
       var(--brand-grad-to)
     );
+  }
+
+  /* Editorial kicker: sectielabels/kaarttitels in mono ("VERMOGEN"). */
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted-foreground);
+  }
+
+  /* Hairline-sectiescheiding op het "vel" (i.p.v. kaart-om-kaart). */
+  .hairline {
+    border-top: 1px solid var(--border);
   }
 }

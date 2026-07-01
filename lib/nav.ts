@@ -12,33 +12,22 @@ export type NavItem = {
   title: string;
   href: string;
   icon: LucideIcon;
-  accent: string; // huisstijl-accentkleur (hex)
   bottomBar?: boolean; // false = niet in de mobiele onderbalk (wel in de zijbalk)
 };
 
-/** De modules van het portaal — gedeeld door de sidebar, topbar en dashboard. */
+/** De modules van het portaal — gedeeld door de sidebar, topbar en dashboard.
+ *  Modules hebben géén eigen accentkleur: identiteit komt van editorial
+ *  kickers, denim is gereserveerd voor interactie. */
 export const navItems: NavItem[] = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, accent: "#3d68be" },
-  { title: "Taken", href: "/taken", icon: ListTodo, accent: "#3d68be" },
-  {
-    title: "Inbox",
-    href: "/inbox",
-    icon: Inbox,
-    accent: "#3d68be",
-  },
-  {
-    title: "Notities",
-    href: "/notities",
-    icon: NotebookPen,
-    accent: "#3d68be",
-    bottomBar: false,
-  },
-  { title: "Financiën", href: "/financien", icon: Wallet, accent: "#3d68be" },
+  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Taken", href: "/taken", icon: ListTodo },
+  { title: "Inbox", href: "/inbox", icon: Inbox },
+  { title: "Notities", href: "/notities", icon: NotebookPen, bottomBar: false },
+  { title: "Financiën", href: "/financien", icon: Wallet },
   {
     title: "Statistieken",
     href: "/statistieken",
     icon: ChartColumn,
-    accent: "#3d68be",
     bottomBar: false,
   },
 ];

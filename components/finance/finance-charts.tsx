@@ -60,7 +60,7 @@ export function FinanceCharts({
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Uitgaven per categorie</CardTitle>
+          <CardTitle>Uitgaven per categorie</CardTitle>
           <CardDescription>Deze maand</CardDescription>
         </CardHeader>
         <CardContent>
@@ -96,7 +96,7 @@ export function FinanceCharts({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Inkomsten vs uitgaven</CardTitle>
+          <CardTitle>Inkomsten vs uitgaven</CardTitle>
           <CardDescription>Laatste 6 maanden</CardDescription>
         </CardHeader>
         <CardContent>

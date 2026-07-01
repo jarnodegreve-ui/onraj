@@ -11,7 +11,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,9 +75,9 @@ export function MfaChallenge({ next }: { next: string }) {
     <Card className="w-full max-w-sm shadow-xl">
       <CardHeader className="items-center text-center">
         <BrandMark className="mx-auto mb-1 size-12" />
-        <CardTitle className="flex items-center justify-center gap-2 text-xl">
+        <div className="font-heading flex items-center justify-center gap-2 text-xl font-semibold tracking-tight">
           <ShieldCheck className="size-5" /> Verificatie
-        </CardTitle>
+        </div>
         <CardDescription>
           Vul de 6-cijferige code uit je authenticator-app in.
         </CardDescription>

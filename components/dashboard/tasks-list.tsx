@@ -22,7 +22,7 @@ export function DashboardTasks({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Openstaande taken</CardTitle>
+        <CardTitle>Openstaande taken</CardTitle>
         <CardAction>
           <Link
             href="/taken"

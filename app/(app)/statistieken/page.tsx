@@ -45,7 +45,6 @@ export default async function StatistiekenPage() {
       <div>
         <PageHeader
           title="Statistieken"
-          description="Inzicht in je taken, notities en financiën."
         />
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
@@ -114,7 +113,6 @@ export default async function StatistiekenPage() {
     <div className="space-y-8">
       <PageHeader
         title="Statistieken"
-        description="Een blik op je taken, notities en financiën."
       />
 
       {/* Overzicht — kerncijfers per module */}

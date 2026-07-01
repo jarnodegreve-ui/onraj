@@ -26,7 +26,7 @@ export function CashflowOutlook({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-2">
           <Wallet className="size-4 text-primary" /> Cashflow-vooruitblik
         </CardTitle>
         <CardDescription className="first-letter:uppercase">

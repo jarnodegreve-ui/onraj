@@ -62,7 +62,7 @@ export function RestoreCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Backup terugzetten</CardTitle>
+        <CardTitle>Backup terugzetten</CardTitle>
         <CardDescription>
           Herstel je data uit een ONRAJ-backup (het JSON-bestand van de
           wekelijkse Telegram-backup of /backup).

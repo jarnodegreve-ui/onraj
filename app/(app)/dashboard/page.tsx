@@ -155,7 +155,7 @@ export default async function DashboardPage() {
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Rekeningen</CardTitle>
+              <CardTitle>Rekeningen</CardTitle>
             </CardHeader>
             <CardContent>
               <AccountsChart data={accountChart} />
@@ -163,7 +163,7 @@ export default async function DashboardPage() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Vermogen</CardTitle>
+              <CardTitle>Vermogen</CardTitle>
             </CardHeader>
             <CardContent>
               <NetWorthChart data={networthData} />
@@ -287,13 +287,7 @@ function PreviewDashboard() {
           <Link key={item.href} href={item.href} className="group">
             <Card className="h-full transition-colors hover:border-primary/40 hover:bg-accent/40">
               <CardHeader>
-                <div
-                  className="mb-2 flex size-10 items-center justify-center rounded-lg"
-                  style={{
-                    backgroundColor: `${item.accent}1a`,
-                    color: item.accent,
-                  }}
-                >
+                <div className="mb-2 flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary-soft">
                   <item.icon className="size-5" />
                 </div>
                 <CardTitle className="flex items-center justify-between">

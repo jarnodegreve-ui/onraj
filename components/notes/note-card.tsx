@@ -23,7 +23,6 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -136,9 +135,9 @@ export function NoteCard({
                 <GripVertical className="size-4" />
               </button>
             )}
-            <CardTitle className="line-clamp-2 text-base">
+            <div className="font-heading line-clamp-2 text-base leading-snug font-medium">
               {note.title || "Naamloos"}
-            </CardTitle>
+            </div>
           </div>
           <div className="-mr-1 flex shrink-0 items-center">
             {!note.archived && (

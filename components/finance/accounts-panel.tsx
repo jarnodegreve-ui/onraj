@@ -140,7 +140,7 @@ export function AccountsPanel({ balances }: { balances: AccountBalance[] }) {
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-2">
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-2">
           <Wallet className="size-4 text-muted-foreground" /> Rekeningen
         </CardTitle>
         <Button size="sm" onClick={openDialog}>

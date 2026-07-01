@@ -13,7 +13,6 @@ export default async function InboxPage() {
       <div>
         <PageHeader
           title="Inbox"
-          description="Snelle captures om te triëren."
         />
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
@@ -34,7 +33,6 @@ export default async function InboxPage() {
     <div className="space-y-6">
       <PageHeader
         title="Inbox"
-        description="Snelle captures via Telegram (foto, tekst) — categoriseer, zet om naar taak/notitie, of vink af als verwerkt."
       />
       <InboxManager
         items={items}

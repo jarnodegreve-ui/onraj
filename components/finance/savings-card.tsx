@@ -41,7 +41,7 @@ export function SavingsCard({ goals }: { goals: SavingsGoal[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Spaardoelen</CardTitle>
+        <CardTitle>Spaardoelen</CardTitle>
         <CardAction>
           <Button variant="outline" size="sm" onClick={openNew}>
             <Plus className="size-4" /> Doel
