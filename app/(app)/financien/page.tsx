@@ -4,8 +4,10 @@ import { FinanceGate } from "@/components/finance/finance-gate";
 import { FinanceLockButton } from "@/components/finance/finance-lock-button";
 import { FinanceView } from "@/components/finance/finance-view";
 import { InvestmentsCard } from "@/components/finance/investments-card";
+import { NetWorthHero } from "@/components/finance/networth-hero";
 import { SubscriptionsCard } from "@/components/finance/subscriptions-card";
-import { listAccountBalances } from "@/lib/data/accounts";
+import { addInvestmentsToNetWorth } from "@/lib/investments";
+import { listAccountBalances, netWorthByMonth } from "@/lib/data/accounts";
 import { listBudgets } from "@/lib/data/budgets";
 import { listHoldingPrices, listHoldings } from "@/lib/data/investments";
 import { listSubscriptions } from "@/lib/data/subscriptions";
@@ -75,11 +77,25 @@ export default async function FinancienPage() {
   );
   const outlook = projectCashflow(recurring, monthKey, todayDay);
 
+  // Vermogen (rekeningen + beleggingen) als hero bovenaan.
+  const networth = addInvestmentsToNetWorth(
+    netWorthByMonth(accountBalances),
+    holdings,
+    holdingPrices,
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <FinanceLockButton pinSet={pinSet} />
-      </div>
+      {networth.length > 0 ? (
+        <NetWorthHero
+          series={networth}
+          action={<FinanceLockButton pinSet={pinSet} />}
+        />
+      ) : (
+        <div className="flex justify-end">
+          <FinanceLockButton pinSet={pinSet} />
+        </div>
+      )}
       <CashflowOutlook outlook={outlook} monthKey={monthKey} />
       <FinanceView
         transactions={transactions}

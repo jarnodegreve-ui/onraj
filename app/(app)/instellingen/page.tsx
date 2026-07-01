@@ -1,6 +1,7 @@
 import { LogOut } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { PushToggle } from "@/components/push/push-toggle";
 import { CategoryManager } from "@/components/settings/category-manager";
 import { MfaManager } from "@/components/settings/mfa-manager";
 import { RestoreCard } from "@/components/settings/restore-card";
@@ -63,6 +64,18 @@ export default async function InstellingenPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <MfaManager />
         <RestoreCard />
+        <Card>
+          <CardHeader>
+            <CardTitle>Meldingen</CardTitle>
+            <CardDescription>
+              Push-meldingen op dit toestel — reminders komen daarnaast ook via
+              Telegram.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PushToggle />
+          </CardContent>
+        </Card>
       </div>
       <TrashManager items={trashed} />
 

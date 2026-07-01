@@ -16,7 +16,6 @@ import { Clock } from "@/components/dashboard/clock";
 import { NetWorthChart } from "@/components/dashboard/networth-chart";
 import { TaskTabs } from "@/components/dashboard/task-tabs";
 import { RecentNotes } from "@/components/dashboard/recent-notes";
-import { PushToggle } from "@/components/push/push-toggle";
 import {
   Card,
   CardContent,
@@ -105,6 +104,15 @@ export default async function DashboardPage() {
   const openTasks = tasks.filter((task) => !task.done);
   const taskGroups = buildTaskGroups(openTasks);
 
+  // Vandaag-strip: één dichte regel met wat er vandaag toe doet.
+  const todayKey = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Brussels",
+  }).format(new Date());
+  const dueToday = openTasks.filter((task) => task.dueOn === todayKey).length;
+  const overdue = openTasks.filter(
+    (task) => task.dueOn && task.dueOn < todayKey,
+  ).length;
+
   const accountChart = latestPerAccount(accountBalances).map((balance) => ({
     account: balance.account,
     amount: balance.amount,
@@ -117,10 +125,31 @@ export default async function DashboardPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-5">
+      <div>
         <Clock />
-        <PushToggle />
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          {dueToday === 0 && overdue === 0 && "Geen taken op datum vandaag"}
+          {dueToday > 0 &&
+            `${dueToday} ${dueToday === 1 ? "taak" : "taken"} vandaag`}
+          {dueToday > 0 && overdue > 0 && " · "}
+          {overdue > 0 && (
+            <span className="text-neg">{overdue} te laat</span>
+          )}
+          {!financeLocked && (
+            <>
+              {" · saldo "}
+              <span
+                className={cn(
+                  "font-mono tabular-nums",
+                  summary.saldo >= 0 ? "text-pos" : "text-neg",
+                )}
+              >
+                <CountUp value={summary.saldo} format="euro" />
+              </span>
+            </>
+          )}
+        </p>
       </div>
 
       {/* Veegbare taken per categorie. */}

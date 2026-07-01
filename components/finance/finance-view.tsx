@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Download, Plus, Wallet } from "lucide-react";
 
 import { CountUp } from "@/components/count-up";
 import { EmptyState } from "@/components/empty-state";
@@ -13,7 +13,6 @@ import { TransactionEditor } from "@/components/finance/transaction-editor";
 import { TransactionList } from "@/components/finance/transaction-list";
 import { MonthSelector } from "@/components/month-selector";
 import { PageHeader } from "@/components/page-header";
-import { StatCard } from "@/components/stat-card";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -41,6 +40,34 @@ import type {
   SavingsGoal,
   Transaction,
 } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+// Eén cel van de maandstrip: klein label boven een mono-bedrag.
+function MonthStat({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="truncate text-xs font-medium text-muted-foreground">
+        {label}
+      </p>
+      <p
+        className={cn(
+          "truncate font-mono text-lg font-semibold tracking-tight tabular-nums",
+          className,
+        )}
+      >
+        {children}
+      </p>
+    </div>
+  );
+}
 
 function todayIso() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -165,28 +192,23 @@ export function FinanceView({
         </Button>
       </PageHeader>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Saldo"
-          value={<CountUp value={summary.saldo} format="euro" />}
-          icon={Wallet}
-          hint={monthLabel(month)}
-          valueClassName={
-            summary.saldo < 0 ? "text-neg" : undefined
-          }
-        />
-        <StatCard
-          label="Inkomsten"
-          value={<CountUp value={summary.inkomsten} format="euro" />}
-          icon={TrendingUp}
-          valueClassName="text-pos"
-        />
-        <StatCard
-          label="Uitgaven"
-          value={<CountUp value={summary.uitgaven} format="euro" />}
-          icon={TrendingDown}
-        />
-      </div>
+      {/* Maandstrip: in/uit/saldo op één dichte regel i.p.v. drie kaarten. */}
+      <Card size="sm">
+        <CardContent className="grid grid-cols-3 gap-2">
+          <MonthStat label="Inkomsten" className="text-pos">
+            <CountUp value={summary.inkomsten} format="euro" />
+          </MonthStat>
+          <MonthStat label="Uitgaven">
+            <CountUp value={summary.uitgaven} format="euro" />
+          </MonthStat>
+          <MonthStat
+            label={`Saldo · ${monthLabel(month)}`}
+            className={summary.saldo < 0 ? "text-neg" : "text-pos"}
+          >
+            <CountUp value={summary.saldo} format="euro" />
+          </MonthStat>
+        </CardContent>
+      </Card>
 
       <FinanceCharts categories={categories} trend={trend} />
 
