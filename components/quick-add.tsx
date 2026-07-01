@@ -120,6 +120,7 @@ function QuickForm({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [dueOn, setDueOn] = useState("");
+  const [dueTime, setDueTime] = useState("");
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [priority, setPriority] = useState<TaskPriority>("middel");
@@ -152,6 +153,7 @@ function QuickForm({
           : await createTask({
               title,
               dueOn: dueOn || null,
+              dueTime: dueTime || null,
               notes: body,
               priority,
               category: category.trim() || null,
@@ -233,6 +235,7 @@ function QuickForm({
                 {dueOn && (
                   <span className="tabular-nums">
                     {formatDate(dueOn, "d MMM")}
+                    {dueTime ? ` ${dueTime}` : ""}
                   </span>
                 )}
               </FieldToggle>
@@ -261,24 +264,44 @@ function QuickForm({
             </div>
 
             {expanded === "date" && (
-              <div className="flex items-center gap-2">
-                <Input
-                  id="qa-due"
-                  type="date"
-                  autoFocus
-                  value={dueOn}
-                  onChange={(event) => setDueOn(event.target.value)}
-                  className="flex-1"
-                />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="qa-due"
+                    type="date"
+                    autoFocus
+                    value={dueOn}
+                    onChange={(event) => setDueOn(event.target.value)}
+                    className="flex-1"
+                  />
+                  {dueOn && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setDueOn("");
+                        setDueTime("");
+                      }}
+                    >
+                      Wissen
+                    </Button>
+                  )}
+                </div>
                 {dueOn && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDueOn("")}
-                  >
-                    Wissen
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="qa-time"
+                      type="time"
+                      value={dueTime}
+                      onChange={(event) => setDueTime(event.target.value)}
+                      className="flex-1"
+                      aria-label="Tijdstip (optioneel)"
+                    />
+                    <span className="w-32 shrink-0 text-xs text-muted-foreground">
+                      {dueTime ? "⏰ Telegram" : "tijd optioneel"}
+                    </span>
+                  </div>
                 )}
               </div>
             )}

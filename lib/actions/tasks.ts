@@ -14,6 +14,11 @@ const taskInput = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Ongeldige datum.")
     .nullable(),
+  dueTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Ongeldig tijdstip.")
+    .nullable()
+    .optional(),
   notes: z.string().trim().max(2000),
   priority: z.enum(["laag", "middel", "hoog"]),
   category: z.string().trim().max(60).nullable().optional(),
@@ -25,6 +30,8 @@ function toRow(input: TaskInput) {
   return {
     title: input.title,
     due_on: input.dueOn,
+    // Een tijd zonder datum heeft geen zin (reminder hangt aan de datum).
+    due_time: input.dueOn ? (input.dueTime ?? null) : null,
     notes: input.notes || null,
     priority: input.priority,
     category: input.category || null,
@@ -33,8 +40,18 @@ function toRow(input: TaskInput) {
 
 type TaskRowInsert = ReturnType<typeof toRow>;
 
-// Progressief vangnet: eerst zonder category (migratie 0011), dan zonder
-// priority (migratie 0004), zodat opslaan altijd lukt vóór een migratie draait.
+// Progressief vangnet: eerst zonder due_time (migratie 0024), dan zonder
+// category (migratie 0011), dan zonder priority (migratie 0004), zodat opslaan
+// altijd lukt vóór een migratie draait.
+function withoutDueTime(row: TaskRowInsert) {
+  return {
+    title: row.title,
+    due_on: row.due_on,
+    notes: row.notes,
+    priority: row.priority,
+    category: row.category,
+  };
+}
 function withoutCategory(row: TaskRowInsert) {
   return {
     title: row.title,
@@ -65,9 +82,12 @@ export async function createTask(input: TaskInput): Promise<ActionResult> {
   const row = toRow(parsed.data);
   let { error } = await supabase.from("tasks").insert(row);
   if (error && isMissingColumn(error)) {
-    ({ error } = await supabase.from("tasks").insert(withoutCategory(row)));
+    ({ error } = await supabase.from("tasks").insert(withoutDueTime(row)));
     if (error && isMissingColumn(error)) {
-      ({ error } = await supabase.from("tasks").insert(minimalRow(row)));
+      ({ error } = await supabase.from("tasks").insert(withoutCategory(row)));
+      if (error && isMissingColumn(error)) {
+        ({ error } = await supabase.from("tasks").insert(minimalRow(row)));
+      }
     }
   }
   if (error) return { ok: false, error: error.message };
@@ -94,13 +114,19 @@ export async function updateTask(
   if (error && isMissingColumn(error)) {
     ({ error } = await supabase
       .from("tasks")
-      .update(withoutCategory(row))
+      .update(withoutDueTime(row))
       .eq("id", id));
     if (error && isMissingColumn(error)) {
       ({ error } = await supabase
         .from("tasks")
-        .update(minimalRow(row))
+        .update(withoutCategory(row))
         .eq("id", id));
+      if (error && isMissingColumn(error)) {
+        ({ error } = await supabase
+          .from("tasks")
+          .update(minimalRow(row))
+          .eq("id", id));
+      }
     }
   }
   if (error) return { ok: false, error: error.message };

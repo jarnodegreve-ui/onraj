@@ -61,6 +61,7 @@ function TaskForm({
 }) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [dueOn, setDueOn] = useState(task?.dueOn ?? "");
+  const [dueTime, setDueTime] = useState(task?.dueTime ?? "");
   const [notes, setNotes] = useState(task?.notes ?? "");
   const [priority, setPriority] = useState<TaskPriority>(
     task?.priority ?? "middel",
@@ -77,6 +78,7 @@ function TaskForm({
       const input = {
         title,
         dueOn: dueOn || null,
+        dueTime: dueTime || null,
         notes,
         priority,
         category: category.trim() || null,
@@ -120,12 +122,40 @@ function TaskForm({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setDueOn("")}
+                onClick={() => {
+                  setDueOn("");
+                  setDueTime("");
+                }}
               >
                 Wissen
               </Button>
             )}
           </div>
+          {dueOn && (
+            <div className="flex items-center gap-2">
+              <Input
+                id="task-time"
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
+                className="flex-1"
+                aria-label="Tijdstip (optioneel)"
+              />
+              <span className="w-40 shrink-0 text-xs text-muted-foreground">
+                {dueTime ? "⏰ ping via Telegram" : "tijd optioneel"}
+              </span>
+              {dueTime && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDueTime("")}
+                >
+                  Wissen
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="grid gap-2">

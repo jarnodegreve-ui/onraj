@@ -102,6 +102,7 @@ export interface Task {
   title: string;
   done: boolean;
   dueOn: string | null; // ISO-datum (YYYY-MM-DD)
+  dueTime: string | null; // 'HH:mm' (Brusselse lokale tijd), optioneel
   notes: string | null;
   priority: TaskPriority;
   category: string | null;
@@ -117,6 +118,7 @@ export interface TaskRow {
   title: string;
   done: boolean;
   due_on: string | null;
+  due_time: string | null;
   notes: string | null;
   priority: TaskPriority;
   category: string | null;
