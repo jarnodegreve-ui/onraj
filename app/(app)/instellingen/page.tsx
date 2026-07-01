@@ -3,6 +3,7 @@ import { LogOut } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { CategoryManager } from "@/components/settings/category-manager";
 import { MfaManager } from "@/components/settings/mfa-manager";
+import { RestoreCard } from "@/components/settings/restore-card";
 import { TrashManager } from "@/components/settings/trash-manager";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,6 +64,7 @@ export default async function InstellingenPage() {
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <MfaManager />
+        <RestoreCard />
       </div>
       <TrashManager items={trashed} />
 

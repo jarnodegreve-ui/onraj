@@ -7,6 +7,7 @@ import { buildBackup } from "@/lib/backup";
 import { isMissingColumn } from "@/lib/data/safe";
 import { pinMatches } from "@/lib/finance-lock";
 import { toNote } from "@/lib/mappers";
+import { shiftMonth } from "@/lib/month";
 import { secureEquals } from "@/lib/secure";
 import {
   adminConfigured,
@@ -186,13 +187,15 @@ function pinGate(
 
 async function handleSaldo(admin: Admin, ownerId: string) {
   const month = brusselsToday(new Date()).slice(0, 7); // YYYY-MM
+  // Maandgrens via "< volgende maand" — `${month}-31` bestaat niet in elke
+  // maand en is fragiel als datumvergelijking.
   const { data: txs } = await admin
     .from("transactions")
     .select("amount, direction")
     .eq("user_id", ownerId)
     .is("deleted_at", null)
     .gte("occurred_on", `${month}-01`)
-    .lte("occurred_on", `${month}-31`);
+    .lt("occurred_on", `${shiftMonth(month, 1)}-01`);
 
   let inkomsten = 0;
   let uitgaven = 0;
@@ -285,7 +288,8 @@ async function handleKoers(
 }
 
 // Parseert een bedrag uit tekst, robuust voor NL/BE-notatie: "40", "40,50",
-// "1.234,56" en "1234.56". Geeft null bij een ongeldig of negatief bedrag.
+// "1.234,56" en "1234.56". Zelfde regels als de web-invoer (zod): strikt
+// positief, met een sanity-bovengrens tegen tikfouten. Geeft null bij ongeldig.
 function parseAmount(token: string): number | null {
   let t = token.trim();
   if (t.includes(".") && t.includes(",")) {
@@ -294,7 +298,7 @@ function parseAmount(token: string): number | null {
     t = t.replace(",", "."); // 40,50 → 40.50
   }
   const n = Number.parseFloat(t);
-  return Number.isFinite(n) && n >= 0 ? n : null;
+  return Number.isFinite(n) && n > 0 && n <= 1_000_000 ? n : null;
 }
 
 async function createTransaction(

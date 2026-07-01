@@ -243,7 +243,8 @@ export async function GET(request: Request) {
 
   // 2) Wekelijkse backup (zondag) als Telegram-document — buiten Supabase, en
   // zonder een tweede Vercel-cron (Hobby staat er maar één per dag toe).
-  let backup: "verstuurd" | "mislukt" | "overgeslagen" = "overgeslagen";
+  let backup: "verstuurd" | "gedeeltelijk" | "mislukt" | "overgeslagen" =
+    "overgeslagen";
   try {
     if (telegramConfigured && telegramChatId && weekdayBrussels(now) === "Sun") {
       const result = await buildBackup(admin, ownerId, now);
@@ -253,7 +254,13 @@ export async function GET(request: Request) {
         result.contents,
         `🗄 Wekelijkse backup — ${result.filename}\n${result.summary}`,
       );
-      backup = ok ? "verstuurd" : "mislukt";
+      // "gedeeltelijk": verstuurd, maar één of meer tabellen konden niet
+      // gelezen worden (staat ook als ⚠️ in het Telegram-bijschrift).
+      backup = ok
+        ? result.failed.length > 0
+          ? "gedeeltelijk"
+          : "verstuurd"
+        : "mislukt";
     }
   } catch (error) {
     console.error("[cron] backup mislukt:", error);

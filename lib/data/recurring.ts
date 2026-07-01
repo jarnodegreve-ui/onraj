@@ -2,7 +2,7 @@ import { toRecurringTransaction } from "@/lib/mappers";
 import { currentMonthKey, shiftMonth } from "@/lib/month";
 import { createClient } from "@/lib/supabase/server";
 import type { RecurringTransaction } from "@/lib/types";
-import { isMissingTable } from "./safe";
+import { isMissingColumn, isMissingTable } from "./safe";
 
 /** Haalt alle terugkerende sjablonen op (recentste eerst). */
 export async function listRecurring(): Promise<RecurringTransaction[]> {
@@ -21,9 +21,11 @@ export async function listRecurring(): Promise<RecurringTransaction[]> {
 
 /**
  * Materialiseert ontbrekende transacties voor alle actieve sjablonen tot en
- * met de huidige maand. Idempotent dankzij `last_generated_month`: een tweede
- * keer draaien maakt niets dubbel aan. Geeft het aantal aangemaakte transacties
- * terug.
+ * met de huidige maand. Race-vrij op DB-niveau (migratie 0025): elke rij draagt
+ * recurring_id en de unieke sleutel (recurring_id, occurred_on) laat een
+ * gelijktijdige tweede run stilletjes afketsen via on-conflict-do-nothing —
+ * `last_generated_month` is daarmee alleen nog een optimalisatie, geen slot.
+ * Geeft het aantal gematerialiseerde transacties terug.
  */
 export async function ensureRecurringTransactions(): Promise<number> {
   const supabase = await createClient();
@@ -58,6 +60,7 @@ export async function ensureRecurringTransactions(): Promise<number> {
     const rows: Array<Record<string, unknown>> = [];
     while (month <= limit) {
       rows.push({
+        recurring_id: template.id,
         occurred_on: `${month}-${day}`,
         amount: template.amount,
         direction: template.direction,
@@ -70,9 +73,24 @@ export async function ensureRecurringTransactions(): Promise<number> {
 
     if (rows.length === 0) continue;
 
-    const { error: insertError } = await supabase
+    // Dubbelen (parallelle run) ketsen af op de unieke sleutel i.p.v. dubbel
+    // geboekt te worden.
+    let { error: insertError } = await supabase
       .from("transactions")
-      .insert(rows);
+      .upsert(rows, {
+        onConflict: "recurring_id,occurred_on",
+        ignoreDuplicates: true,
+      });
+    if (insertError && isMissingColumn(insertError)) {
+      // Vóór migratie 0025: oude gedrag zonder recurring_id.
+      const legacy = rows.map(({ recurring_id: _r, ...rest }) => {
+        void _r;
+        return rest;
+      });
+      ({ error: insertError } = await supabase
+        .from("transactions")
+        .insert(legacy));
+    }
     if (insertError) throw new Error(insertError.message);
 
     const { error: updateError } = await supabase

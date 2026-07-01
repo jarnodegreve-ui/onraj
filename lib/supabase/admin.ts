@@ -28,12 +28,21 @@ export async function getOwnerUserId(): Promise<string | null> {
   const { data, error } = await admin.auth.admin.listUsers();
   if (error || !data) return null;
 
-  // Als ALLOWED_EMAIL gezet is, MOET de eigenaar exact matchen — geen stille
-  // terugval op "de eerste gebruiker" (zou bij een tweede auth-user fout zijn).
+  // Als ALLOWED_EMAIL gezet is, MOET de eigenaar exact matchen. Zonder
+  // ALLOWED_EMAIL alleen doorgaan als er precies één gebruiker is — bij
+  // meerdere accounts (bv. een testaccount) mag er nooit stil "de eerste"
+  // gekozen worden: dan zouden cron en bot in de verkeerde account schrijven.
   const email = process.env.ALLOWED_EMAIL?.toLowerCase();
-  const user = email
-    ? data.users.find((u) => u.email?.toLowerCase() === email)
-    : data.users[0];
+  let user: (typeof data.users)[number] | undefined;
+  if (email) {
+    user = data.users.find((u) => u.email?.toLowerCase() === email);
+  } else if (data.users.length === 1) {
+    user = data.users[0];
+  } else {
+    console.error(
+      "[admin] meerdere auth-gebruikers zonder ALLOWED_EMAIL — eigenaar onbepaald.",
+    );
+  }
 
   cachedOwnerId = user?.id ?? null;
   return cachedOwnerId;
