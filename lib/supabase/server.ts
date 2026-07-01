@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseConfigured } from "./env";
 
@@ -35,3 +36,17 @@ export async function createClient() {
     },
   });
 }
+
+/**
+ * De ingelogde gebruiker, met request-scoped dedup via React `cache()`. Layout,
+ * finance-lock en data-helpers kunnen dit binnen één render vrij aanroepen: de
+ * (netwerk-)`getUser()`-call gebeurt hoogstens één keer per request i.p.v. bij
+ * elke helper opnieuw.
+ */
+export const getSessionUser = cache(async () => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+});

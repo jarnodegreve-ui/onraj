@@ -19,6 +19,7 @@ import {
   createTransaction,
   updateTransaction,
 } from "@/lib/actions/transactions";
+import { submitOnMetaEnter } from "@/lib/forms";
 import type { TransactieRichting, Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -118,7 +119,7 @@ function TransactionForm({
 
   return (
     <>
-      <div className="grid gap-4">
+      <div className="grid gap-4" onKeyDown={submitOnMetaEnter(save)}>
         <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
           <SegButton
             active={direction === "uitgave"}
@@ -150,6 +151,7 @@ function TransactionForm({
             <Label htmlFor="tx-amount">Bedrag (€)</Label>
             <Input
               id="tx-amount"
+              autoFocus
               inputMode="decimal"
               placeholder="0,00"
               value={amount}

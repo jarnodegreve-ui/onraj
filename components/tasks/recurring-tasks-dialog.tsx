@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
   Pause,
@@ -129,14 +128,14 @@ function RecurringList({
   onNew: () => void;
   onEdit: (rt: RecurringTask) => void;
 }) {
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
+  // De acties revalideren /taken + /dashboard; deze dialog leeft op /taken, dus
+  // Next ververst de lijst automatisch — geen router.refresh() nodig.
   function toggle(rt: RecurringTask) {
     startTransition(async () => {
       const result = await setRecurringTaskActive(rt.id, !rt.active);
-      if (result.ok) router.refresh();
-      else toast.error("Mislukt", { description: result.error });
+      if (!result.ok) toast.error("Mislukt", { description: result.error });
     });
   }
 
@@ -151,7 +150,6 @@ function RecurringList({
       const result = await deleteRecurringTask(rt.id);
       if (result.ok) {
         toast.success("Verwijderd");
-        router.refresh();
       } else {
         toast.error("Verwijderen mislukt", { description: result.error });
       }
@@ -243,7 +241,6 @@ function RecurringForm({
   categories: string[];
   onBack: () => void;
 }) {
-  const router = useRouter();
   const [title, setTitle] = useState(recurring?.title ?? "");
   const [priority, setPriority] = useState<TaskPriority>(
     recurring?.priority ?? "middel",
@@ -279,7 +276,6 @@ function RecurringForm({
         : await createRecurringTask(payload);
       if (result.ok) {
         toast.success(recurring ? "Bijgewerkt" : "Toegevoegd");
-        router.refresh();
         onBack();
       } else {
         toast.error("Opslaan mislukt", { description: result.error });

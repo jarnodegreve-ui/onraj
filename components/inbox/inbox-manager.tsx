@@ -2,9 +2,17 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeftRight, Check, FileText, ListTodo, Trash2 } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Check,
+  FileText,
+  Inbox,
+  ListTodo,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -79,12 +87,11 @@ export function InboxManager({
 
   if (items.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center text-sm text-muted-foreground">
-          Je inbox is leeg 🎉 Alles wat je via Telegram inspreekt, fotografeert
-          of typt, landt hier om snel te triëren.
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={Inbox}
+        title="Je inbox is leeg 🎉"
+        description="Alles wat je via Telegram inspreekt, fotografeert of typt, landt hier om snel te triëren."
+      />
     );
   }
 

@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { createNote, updateNote } from "@/lib/actions/notes";
+import { submitOnMetaEnter } from "@/lib/forms";
 import type { Note } from "@/lib/types";
 
 export function NoteEditor({
@@ -94,11 +95,12 @@ function NoteEditorForm({
 
   return (
     <>
-      <div className="grid gap-4">
+      <div className="grid gap-4" onKeyDown={submitOnMetaEnter(save)}>
         <div className="grid gap-2">
           <Label htmlFor="note-title">Titel</Label>
           <Input
             id="note-title"
+            autoFocus
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Titel van je notitie"

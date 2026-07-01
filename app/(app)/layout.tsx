@@ -12,7 +12,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { countInbox } from "@/lib/data/inbox";
 import { supabaseConfigured } from "@/lib/supabase/env";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 
 export default async function AppLayout({
   children,
@@ -25,32 +25,30 @@ export default async function AppLayout({
   // In preview-modus (geen Supabase) tonen we de shell zonder auth-check.
   if (supabaseConfigured) {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // getUser() (gededupt via cache), de MFA-check en de inbox-badge hangen niet
+    // van elkaar af → parallel i.p.v. serieel. De AAL-check is faalveilig: een
+    // fout blokkeert nooit (geen lockout).
+    const [user, aal, inbox] = await Promise.all([
+      getSessionUser(),
+      supabase.auth.mfa
+        .getAuthenticatorAssuranceLevel()
+        .then((r) => r.data)
+        .catch(() => null),
+      countInbox().catch(() => 0),
+    ]);
     if (!user) {
       redirect("/login");
     }
 
     // MFA step-up: met een geverifieerde authenticator moet de sessie naar
     // aal2 vóór de app opengaat. Hier (Server Component) i.p.v. in de proxy,
-    // zodat client-navigatie netjes redirect i.p.v. te breken. Faalveilig: een
-    // fout in de AAL-check blokkeert nooit (geen lockout).
-    let needsStepUp = false;
-    try {
-      const { data: aal } =
-        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-      needsStepUp = aal?.currentLevel === "aal1" && aal?.nextLevel === "aal2";
-    } catch {
-      needsStepUp = false;
-    }
-    if (needsStepUp) {
+    // zodat client-navigatie netjes redirect i.p.v. te breken.
+    if (aal?.currentLevel === "aal1" && aal?.nextLevel === "aal2") {
       redirect("/mfa");
     }
 
     email = user.email ?? null;
-    // Badge met aantal nog-te-triëren captures (faalt stil → 0).
-    inboxCount = await countInbox().catch(() => 0);
+    inboxCount = inbox;
   }
 
   return (

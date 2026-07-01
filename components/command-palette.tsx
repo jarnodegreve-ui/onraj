@@ -93,7 +93,8 @@ export function CommandPalette() {
       <button
         type="button"
         onClick={openPalette}
-        className="flex h-8 items-center gap-2 rounded-md border bg-background px-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        aria-label="Zoeken (⌘K)"
+        className="flex h-8 items-center gap-2 rounded-md border bg-background px-2.5 text-sm text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <Search className="size-4" />
         <span className="hidden md:inline">Zoeken…</span>

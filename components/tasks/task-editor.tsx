@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createTask, updateTask } from "@/lib/actions/tasks";
+import { submitOnMetaEnter } from "@/lib/forms";
 import { TASK_PRIORITIES } from "@/lib/tasks";
 import type { Task, TaskPriority } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -97,11 +98,12 @@ function TaskForm({
 
   return (
     <>
-      <div className="grid gap-4">
+      <div className="grid gap-4" onKeyDown={submitOnMetaEnter(save)}>
         <div className="grid gap-2">
           <Label htmlFor="task-title">Titel</Label>
           <Input
             id="task-title"
+            autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Bijv. offerte nakijken"

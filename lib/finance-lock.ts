@@ -3,7 +3,7 @@ import { createHash, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 
 import { isMissingTable } from "@/lib/data/safe";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 
 export const FIN_COOKIE = "fin_unlock";
 
@@ -20,12 +20,10 @@ export function pinMatches(pin: string, userId: string, hash: string) {
 }
 
 export async function getFinancePinHash(): Promise<string | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) return null;
 
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("app_settings")
     .select("finance_pin_hash")
@@ -45,8 +43,10 @@ export async function isUnlocked(): Promise<boolean> {
 
 // {pinSet, unlocked, locked} — locked = pincode ingesteld én niet ontgrendeld.
 export async function financeLockState() {
-  const hash = await getFinancePinHash();
-  const unlocked = await isUnlocked();
+  const [hash, unlocked] = await Promise.all([
+    getFinancePinHash(),
+    isUnlocked(),
+  ]);
   return { pinSet: !!hash, unlocked, locked: !!hash && !unlocked };
 }
 

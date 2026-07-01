@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { CalendarDays, Flag, Plus, Tag } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +20,7 @@ import { listTaskCategoryNames } from "@/lib/actions/categories";
 import { createNote } from "@/lib/actions/notes";
 import { createTask } from "@/lib/actions/tasks";
 import { formatDate } from "@/lib/format";
+import { submitOnMetaEnter } from "@/lib/forms";
 import { TASK_PRIORITIES, priorityMeta } from "@/lib/tasks";
 import type { TaskPriority } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -115,7 +115,6 @@ function QuickForm({
   initialMode: Mode;
   onClose: () => void;
 }) {
-  const router = useRouter();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -160,9 +159,10 @@ function QuickForm({
             });
 
       if (result.ok) {
+        // De actie revalideert al de route waar het item verschijnt
+        // (/taken of /notities + /dashboard) → geen extra router.refresh() nodig.
         toast.success(mode === "note" ? "Notitie toegevoegd" : "Taak toegevoegd");
         onClose();
-        router.refresh();
       } else {
         toast.error("Opslaan mislukt", { description: result.error });
       }
@@ -177,7 +177,7 @@ function QuickForm({
 
   return (
     <>
-      <div className="grid gap-4">
+      <div className="grid gap-4" onKeyDown={submitOnMetaEnter(save)}>
         <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
           <SegButton active={mode === "note"} onClick={() => setMode("note")}>
             Notitie
@@ -343,7 +343,7 @@ function QuickForm({
                       onClick={() => setCategory(active ? "" : name)}
                       aria-pressed={active}
                       className={cn(
-                        "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                        "rounded-full border px-2.5 py-1 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50",
                         active
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-border bg-secondary text-muted-foreground hover:text-foreground",
@@ -393,7 +393,7 @@ function FieldToggle({
       aria-label={label}
       aria-pressed={active}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50",
         active
           ? "border-primary text-primary"
           : set
@@ -420,7 +420,7 @@ function SegButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+        "rounded-md px-3 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50",
         active
           ? "bg-background shadow-sm"
           : "text-muted-foreground hover:text-foreground",

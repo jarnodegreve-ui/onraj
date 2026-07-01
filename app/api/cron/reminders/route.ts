@@ -10,7 +10,12 @@ import {
   createAdminClient,
   getOwnerUserId,
 } from "@/lib/supabase/admin";
-import { pushConfigured, sendPush, type PushSub } from "@/lib/push";
+import {
+  pushConfigured,
+  sendPush,
+  type PushPayload,
+  type PushSub,
+} from "@/lib/push";
 import {
   sendTelegramDocument,
   sendTelegramMessage,
@@ -73,6 +78,29 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   const now = new Date();
 
+  // Push naar alle toestellen; ruimt verlopen subscriptions (404/410 → "gone")
+  // meteen op, zodat dode endpoints zich niet opstapelen.
+  async function pushToAllDevices(payload: PushPayload) {
+    if (!pushConfigured) return;
+    const { data: subs } = await admin
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth")
+      .eq("user_id", ownerId);
+    for (const row of subs ?? []) {
+      const sub: PushSub = {
+        endpoint: row.endpoint,
+        keys: { p256dh: row.p256dh, auth: row.auth },
+      };
+      const result = await sendPush(sub, payload);
+      if (result === "gone") {
+        await admin
+          .from("push_subscriptions")
+          .delete()
+          .eq("endpoint", row.endpoint);
+      }
+    }
+  }
+
   let taskCount = 0;
 
   // Elke sectie eigen try/catch: een hapering in één stap mag de rest (incl.
@@ -126,23 +154,11 @@ export async function GET(request: Request) {
             "📈 Het is zondag — vergeet je beleggingskoersen niet bij te werken in ONRAJ (Financiën).",
           );
         }
-        if (pushConfigured) {
-          const { data: priceSubs } = await admin
-            .from("push_subscriptions")
-            .select("endpoint, p256dh, auth")
-            .eq("user_id", ownerId);
-          for (const row of priceSubs ?? []) {
-            const sub: PushSub = {
-              endpoint: row.endpoint,
-              keys: { p256dh: row.p256dh, auth: row.auth },
-            };
-            await sendPush(sub, {
-              title: "📈 Koersen bijwerken",
-              body: "Het is zondag — werk je beleggingskoersen bij.",
-              url: "/financien",
-            });
-          }
-        }
+        await pushToAllDevices({
+          title: "📈 Koersen bijwerken",
+          body: "Het is zondag — werk je beleggingskoersen bij.",
+          url: "/financien",
+        });
       }
     }
   } catch (error) {
@@ -165,23 +181,11 @@ export async function GET(request: Request) {
             "💼 Nieuwe maand — werk je rekeningstanden bij in ONRAJ (Financiën) zodat je vermogen klopt.",
           );
         }
-        if (pushConfigured) {
-          const { data: worthSubs } = await admin
-            .from("push_subscriptions")
-            .select("endpoint, p256dh, auth")
-            .eq("user_id", ownerId);
-          for (const row of worthSubs ?? []) {
-            const sub: PushSub = {
-              endpoint: row.endpoint,
-              keys: { p256dh: row.p256dh, auth: row.auth },
-            };
-            await sendPush(sub, {
-              title: "💼 Vermogen bijwerken",
-              body: "Nieuwe maand — werk je rekeningstanden bij.",
-              url: "/financien",
-            });
-          }
-        }
+        await pushToAllDevices({
+          title: "💼 Vermogen bijwerken",
+          body: "Nieuwe maand — werk je rekeningstanden bij.",
+          url: "/financien",
+        });
       }
     }
   } catch (error) {

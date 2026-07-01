@@ -48,7 +48,7 @@ export function AppSidebar({
           onClick={() => setOpenMobile(false)}
           aria-label="Naar dashboard"
           className={cn(
-            "flex items-center rounded-md px-2 py-2 transition-colors hover:bg-sidebar-accent/50",
+            "flex items-center rounded-md px-2 py-2 outline-none transition-colors hover:bg-sidebar-accent/50 focus-visible:ring-2 focus-visible:ring-ring/50",
             collapsed && "justify-center px-0",
           )}
         >

@@ -18,7 +18,7 @@ export function StatCard({
   return (
     <div
       data-slot="card"
-      className="flex items-center gap-4 rounded-xl border bg-card p-5"
+      className="flex items-center gap-4 rounded-2xl bg-card p-5 ring-1 ring-foreground/10"
     >
       {Icon && (
         <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">

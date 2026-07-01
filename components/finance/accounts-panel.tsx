@@ -261,7 +261,7 @@ export function AccountsPanel({ balances }: { balances: AccountBalance[] }) {
                       key={name}
                       type="button"
                       onClick={() => setNewAccount(name)}
-                      className="rounded-full border bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                      className="rounded-full border bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
                     >
                       + {name}
                     </button>

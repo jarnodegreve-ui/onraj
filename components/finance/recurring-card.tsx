@@ -146,7 +146,7 @@ function RecurringRow({
         onClick={toggleActive}
         disabled={pending}
         aria-label={recurring.active ? "Pauzeren" : "Activeren"}
-        className="text-muted-foreground transition-colors hover:text-foreground"
+        className="rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         {recurring.active ? (
           <Pause className="size-4" />

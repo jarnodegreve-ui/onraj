@@ -49,7 +49,7 @@ export function MobileNav() {
             type="button"
             onClick={() => setAddOpen(true)}
             aria-label="Snel toevoegen"
-            className="-mt-1 flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 transition-transform active:scale-95"
+            className="-mt-1 flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 outline-none transition-transform active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <Plus className="size-6" />
           </button>
